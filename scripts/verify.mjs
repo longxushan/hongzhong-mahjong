@@ -57,7 +57,7 @@ try {
 
   // 只加速 AI 思考，不写入文件
   await page.evaluate(() => {
-    if (window.CFG) { CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0; }
+    if (typeof CFG !== 'undefined') { CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0; }
   });
 
   await page.click('#startBtn');
@@ -66,7 +66,8 @@ try {
 
   // 状态驱动：等到玩家自己的出牌回合（手里 14 张）
   await page.waitForFunction(
-    () => window.G && G.awaiting === 'discard' && typeof p === 'function' && p(0).hand.length === 14,
+    () => typeof G !== 'undefined' && !!G && G.awaiting === 'discard'
+      && typeof p === 'function' && p(0).hand.length === 14,
     null,
     { timeout: 30000 }
   );
@@ -92,6 +93,20 @@ try {
     errors.length ? errors.slice(0, 3).join(' | ') : '0 条');
 } catch (e) {
   assert('验证流程完整执行', false, e.message.split('\n')[0]);
+  try {
+    const diag = await page.evaluate(() => ({
+      hasG: typeof G !== 'undefined' && !!G,
+      awaiting: (typeof G !== 'undefined' && G) ? G.awaiting : null,
+      hands: (typeof G !== 'undefined' && G) ? G.players.map(pl => pl.hand.length) : null,
+      roleShown: !!document.querySelector('#roleSelect.show'),
+      roleBtns: document.querySelectorAll('.roleBtn').length,
+      splash: !!document.querySelector('#splash'),
+    }));
+    console.log('  诊断：' + JSON.stringify(diag));
+  } catch (e2) {
+    console.log('  诊断读取失败：' + e2.message);
+  }
+  if (errors.length) console.log('  页面错误：' + errors.slice(0, 5).join(' | '));
 } finally {
   await browser.close();
 }
