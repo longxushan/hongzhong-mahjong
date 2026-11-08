@@ -121,8 +121,76 @@ const r7 = await page.evaluate(() => {
 });
 check('AI（conservative）门槛更高：主色仅9张时不锁清一色、按精算', !r7.stance || r7.isWan, `姿态=${r7.stance}，AI打出=${r7.mdId}`);
 
+// 用例8：RISK 冒险档分化——激进/大牌/进修型敢慢 3 步、容忍碰退 1 步；保守/沉稳型严格
+const r8 = await page.evaluate(() => {
+  const a = RISK.aggressive, c = RISK.conservative, g = RISK.grand, s = RISK.steady, l = RISK.learning;
+  return { aGap: a.safeGap, gGap: g.safeGap, lGap: l.safeGap, cGap: c.safeGap, sGap: s.safeGap, aTol: a.pengTol, cTol: c.pengTol };
+});
+check('RISK 冒险档分化（safeGap/pengTol）', r8.aGap===3 && r8.gGap===3 && r8.lGap===3 && r8.cGap===2 && r8.sGap===2 && r8.aTol===1 && r8.cTol===0, `激进${r8.aGap}步/容忍${r8.aTol}，保守${r8.cGap}步/容忍${r8.cTol}，沉稳${r8.sGap}步`);
+
+// 用例9：大牌宣言——grand 首次锁姿态播一次性格宣言（语音+toast），重复调用不刷屏
+const r9 = await page.evaluate(() => {
+  const ai = p(1); ai.style = 'grand';
+  const ids = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W3','W6','B5','B8','T4'];
+  ai.hand = ids.map((x, i) => window.__mk(x, 960000 + i));
+  G._stanceSaid = {}; // 重置宣言标记（用例6已触发过一次），验证「首次播、重复不播」
+  let said = 0, txt = '';
+  const backup = speakText;
+  speakText = function (pl, t) { said++; txt = t; };
+  masterDiscard(ai); masterDiscard(ai); // 连续两次：宣言只应播一次
+  speakText = backup;
+  return { said, txt, marked: !!(G._stanceSaid && G._stanceSaid[ai.seat]) };
+});
+check('大牌宣言：grand 首次锁姿态只播一次', r9.said === 1 && r9.marked && r9.txt.includes('清一色'), `语音 ${r9.said} 次：「${r9.txt}」`);
+
+// 用例10：清一色姿态碰方向保护——别色对子拒碰、主色对子走向听比较
+const r10 = await page.evaluate(() => {
+  const ai = p(2); ai.style = 'grand';
+  const ids = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W3','W6','B5','B5'];
+  ai.hand = ids.map((x, i) => window.__mk(x, 970000 + i));
+  return { offSuit: masterClaim(ai, 'B5', 'peng'), mainSuit: masterClaim(ai, 'W4', 'peng') };
+});
+check('清一色姿态：别色对子拒碰', r10.offSuit === false, `别色碰=${r10.offSuit}（主色走向听比较=${r10.mainSuit}）`);
+
+// 用例11：碰容忍差异——若探测到 after=before+1 的碰：激进过闸、保守必拒（随机固定 0.5，纯测 tol）
+const r11 = await page.evaluate(() => {
+  const ai = p(3);
+  const decks = [
+    ['W1','W1','W1','T3','T3','T3','B5','B5','B7','B7','W9','W9','T6'],
+    ['W1','W1','W2','W3','W4','W5','T3','T3','T3','B5','B6','B7','W9'],
+    ['T2','T2','T2','W4','W4','W4','B6','B6','B9','B9','W7','W7','T5'],
+  ];
+  let probe = null, deckIdx = -1;
+  for (let di = 0; di < decks.length && !probe; di++) {
+    ai.hand = decks[di].map((x, i) => window.__mk(x, 980000 + i));
+    const before = calcShanten(ai.hand, ai.melds);
+    const cnt = {}; for (const t of ai.hand) cnt[t.id] = (cnt[t.id] || 0) + 1;
+    for (const id of Object.keys(cnt).filter(k => cnt[k] >= 2)) {
+      const hold = ai.hand.filter(t => t.id !== id);
+      const after = minShantenAfterDiscard(hold, ai.melds.concat([{ type: 'peng', tiles: [] }]));
+      if (after - before === 1) { probe = id; deckIdx = di; break; }
+    }
+  }
+  if (!probe) return { skip: true };
+  const res = { skip: false, probe, deckIdx };
+  const backupRand = Math.random;
+  Math.random = () => 0.5;
+  for (const st of ['aggressive', 'conservative']) {
+    ai.style = st;
+    res[st] = masterClaim(ai, probe, 'peng');
+  }
+  Math.random = backupRand;
+  return res;
+});
+if (r11.skip) {
+  console.log('○ 碰容忍差异：探测手牌中无 after=before+1 的碰组合，本用例跳过（tol 参数已由用例8锁定）');
+  results.push({ name: '碰容忍差异（跳过）', ok: true, detail: '无+1组合' });
+} else {
+  check('碰容忍差异：激进敢碰退1步、保守必拒', r11.aggressive === true && r11.conservative === false, `碰 ${r11.probe} 后向听+1：激进=${r11.aggressive}，保守=${r11.conservative}`);
+}
+
 await browser.close();
 const pass = results.every(r => r.ok) && errors.length === 0;
 console.log(`\nJS 报错：${errors.length} 条${errors.length ? '：' + errors.slice(0, 3).join(' | ') : ''}`);
-console.log(pass ? '结果：7/7 项通过' : '结果：存在失败项，需修复');
+console.log(pass ? `结果：${results.length}/${results.length} 项通过` : '结果：存在失败项，需修复');
 process.exit(pass ? 0 : 1);

@@ -1617,13 +1617,47 @@ const MASTER_PROFILE={
   learning:{big:0.4,noise:0.15},
   flexible:{big:0.35,noise:0.2}
 };
+// 大牌冒险档（2026-11-08 用户需求：做大牌的冒险求胜欲按性格分化，在碰杠、做牌坚持度上体现）：
+// safeGap=为大牌最多慢几步（激进/大牌/进修型敢慢 3 步，保守/沉稳型只肯 2 步）；
+// pengTol=姿态下碰杠允许的向听回退（激进型为加速大牌敢碰退一步，保守型严格不退）；
+// boost=姿态下碰/杠概率加成（碰碰胡见对就碰、清一色碰主色加速、杠上花诱惑）
+const RISK={
+  conservative:{safeGap:2,pengTol:0,boost:0},
+  steady:{safeGap:2,pengTol:0,boost:0.15},
+  aggressive:{safeGap:3,pengTol:1,boost:0.35},
+  grand:{safeGap:3,pengTol:1,boost:0.3},
+  academic:{safeGap:2,pengTol:0,boost:0.1},
+  learning:{safeGap:3,pengTol:1,boost:0.2},
+  flexible:{safeGap:2,pengTol:1,boost:0.2}
+};
+// 大牌宣言：AI 首次锁定大牌姿态时说一句性格化的话（语音+toast），让冒险欲看得见
+const STANCE_SAY={
+  conservative:{qing:'这手主色齐整，做清一色有把握，稳稳地做。',seven:'对子成型了，七对走稳。',pong:'刻子已成，碰碰胡十拿九稳。'},
+  steady:{qing:'牌路已清，按清一色走，不急不慌。',seven:'对子够数，七对走起。',pong:'刻子在手，碰碰胡稳中带攻。'},
+  aggressive:{qing:'就冲这门清一色，翻倍见！',seven:'对子这么多，七对直接冲！',pong:'见对就碰，碰碰胡干起来！'},
+  grand:{qing:'这牌不冲清一色可惜了——做大的！',seven:'七对配豪华，豪一把！',pong:'碰碰豪胡，见对就碰！'},
+  academic:{qing:'向听与进张核算通过，清一色收益最优。',seven:'七对成型度达标，执行七对。',pong:'刻子结构最优，走碰碰胡。'},
+  learning:{qing:'跟上牌势，这把清一色学着做！',seven:'七对路子顺，闯一把！',pong:'碰碰胡有戏，敢碰敢赢！'},
+  flexible:{qing:'牌往一处走，清一色随机应变。',seven:'顺势转七对，灵活应对。',pong:'碰碰胡路子活，能碰就碰。'}
+};
 function masterDiscard(pl){
   const style=pl.style||'flexible';
   const mp=MASTER_PROFILE[style]||MASTER_PROFILE.flexible;
+  const rk=RISK[style]||RISK.flexible;
   const d=handDiagnose(pl);
   // 大牌姿态：性格只调启动门槛（大牌偏好越高越早锁定），姿态达成后所有角色都可自主决断做大牌
   // bigHandStance 的 conserv 参数用 1-mp.big：偏好 0（保守型）→conserv 1→要求更高成型度才转大牌
   const stance=bigHandStance(pl,d,1-mp.big);
+  // 大牌宣言：AI 首次锁定姿态说一句性格话（语音+toast），每局每家一次；玩家不播（自己的决断自己定）
+  if(stance&&!pl.human){
+    if(!G._stanceSaid)G._stanceSaid={};
+    if(!G._stanceSaid[pl.seat]){
+      G._stanceSaid[pl.seat]=true;
+      const say=STANCE_SAY[style]||STANCE_SAY.flexible;
+      const line=say[stance.kind]||say.qing;
+      try{speakText(pl,line);toast(pl.name+'：'+line);}catch(e){}
+    }
+  }
   const seen={},cands=[];
   for(const t of pl.hand){
     if(seen[t.id]||t.id==='Z')continue;seen[t.id]=1; // 红中由打红中专门逻辑处理，高手不轻易打
@@ -1646,7 +1680,7 @@ function masterDiscard(pl){
     let fit=0;
     if(stance){
       fit=stanceFit(stance,c.id,d);
-      if(c.sh>shMin+2)fit=0; // 烂牌安全闸：大牌最多慢 2 步，超出即回纯精算
+      if(c.sh>shMin+rk.safeGap)fit=0; // 烂牌安全闸宽度按性格：激进/大牌/进修型慢3步也坚持，其余最多2步
     }
     // 姿态未达成时维持纯精算；达成后 fit*25 可压过最多 2 级向听差（100/级），即敢于为大牌拆搭
     c.score=-c.sh*100+c.iw*2+c.dw*0.2+fit*25+Math.random()*mp.noise;
@@ -1688,23 +1722,35 @@ function minShantenAfterDiscard(hand,melds){
 function masterClaim(pl,id,kind){
   const style=pl.style||'flexible';
   const d=handDiagnose(pl);
-  const lead=recommendHandType(d,pl).lead;
-  // 方向保护：无副露做七对时碰杠即破坏；做清一色时别色不碰杠
-  if(pl.melds.length===0&&lead==='七对')return false;
-  if(lead==='清一色'&&id[0]!==d.mainSuit)return false;
+  const mp=MASTER_PROFILE[style]||MASTER_PROFILE.flexible;
+  const rk=RISK[style]||RISK.flexible;
+  const stance=bigHandStance(pl,d,1-mp.big);
+  // 方向保护：做七对（无副露）碰杠即破坏（暗杠拆豪华七对也拒）；做清一色别色不碰不杠
+  if(stance&&stance.kind==='seven')return false;
+  if(stance&&stance.kind==='qing'&&id[0]!==d.mainSuit)return false;
+  if(!stance){
+    // 姿态未达阈值时保留原方向保护（低成型度也不破坏既有牌路）
+    const lead=recommendHandType(d,pl).lead;
+    if(pl.melds.length===0&&lead==='七对')return false;
+    if(lead==='清一色'&&id[0]!==d.mainSuit)return false;
+  }
   // 向听比较：不碰保持现状 vs 碰杠后再最优出牌
   const before=calcShanten(pl.hand,pl.melds);
   const hold=pl.hand.filter(t=>t.id!==id); // 碰去手里2张、明杠去3张
   const after=minShantenAfterDiscard(hold,pl.melds.concat([{type:kind==='gang'?'minggang':'peng',tiles:[]}]));
   const rate=CLAIM_RATE[style]||CLAIM_RATE.flexible;
+  // 姿态下碰杠欲加成：碰碰胡见对就碰、清一色碰主色加速、杠分+杠上花诱惑（性格差异保留）
+  const boost=stance?rk.boost:0;
   if(kind==='gang'){
-    // 杠有确定杠分+杠上花机会，仅在严重恶化时拒绝，否则按性格概率
+    // 杠有确定杠分+杠上花机会，仅在严重恶化时拒绝，否则按性格概率（姿态下更积极）
     if(after>before+1)return false;
-    return Math.random()<rate.gang;
+    return Math.random()<Math.min(1,rate.gang+boost);
   }
-  if(after>before)return false;
+  // 姿态加速容忍：做碰碰胡/清一色时为抢速度，激进/豪/闯/活型敢让碰后向听退一步，保守/沉稳型严格不退
+  const tol=(stance&&(stance.kind==='pong'||stance.kind==='qing'))?rk.pengTol:0;
+  if(after>before+tol)return false;
   if(after<before)return true;
-  return Math.random()<rate.peng;
+  return Math.random()<Math.min(1,rate.peng+boost);
 }
 function aiWantClaim(pl,id,kind){return masterClaim(pl,id,kind);}
 const TIMED={claim:1,gangself:1,zimo:1,qiang:1};
