@@ -27,6 +27,7 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 await page.goto(pathToFileURL(FILE).href, { waitUntil: 'load' });
+await page.evaluate(() => { CFG.diceMs = 40; CFG.diceGap = 20; CFG.diceAuto = 30; CFG.diceHold = 40; });
 await page.click('#startBtn');
 await page.waitForSelector('#roleSelect.show .roleBtn', { timeout: 10000 });
 await page.locator('.roleBtn').first().click();

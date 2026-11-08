@@ -55,16 +55,19 @@ try {
   await page.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
   assert('页面加载', true, `${fs.statSync(FILE).size} 字节`);
 
-  // 只加速 AI 思考，不写入文件
+  // 只加速 AI 思考与掷骰动画，不写入文件
   await page.evaluate(() => {
-    if (typeof CFG !== 'undefined') { CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0; }
+    if (typeof CFG !== 'undefined') {
+      CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0;
+      CFG.diceMs = 40; CFG.diceGap = 20; CFG.diceAuto = 30; CFG.diceHold = 40;
+    }
   });
 
   await page.click('#startBtn');
   await page.waitForSelector('#roleSelect.show .roleBtn', { timeout: 10000 });
   await page.locator('.roleBtn').first().click();
 
-  // 状态驱动：等到玩家自己的出牌回合（手里 14 张）
+  // 状态驱动：等到玩家自己的出牌回合（手里 14 张）；开局掷骰在 run() 首局自动完成
   await page.waitForFunction(
     () => typeof G !== 'undefined' && !!G && G.awaiting === 'discard'
       && typeof p === 'function' && p(0).hand.length === 14,
@@ -72,6 +75,14 @@ try {
     { timeout: 30000 }
   );
   assert('进入牌局（玩家回合，手牌 14 张）', true);
+
+  // 开局掷骰定庄：首局应完整走完（四人掷定东→东掷数位定庄），结果留痕且数位正确、浮层已收起
+  const dice = await page.evaluate(() => {
+    const r = window._diceResult;
+    return r ? { ...r, math: (r.east + r.s - 1) % 4, overlayShown: document.getElementById('diceOverlay').classList.contains('show') } : null;
+  });
+  assert('开局掷骰定东数位定庄', !!dice && dice.dealer === dice.math && !dice.overlayShown && dice.rolls.filter(x => x != null).length === 4,
+    dice ? `东=座位${dice.east}（掷${dice.rolls[dice.east]}点定东），东再掷 ${dice.s} 点，数到座位${dice.dealer} 坐庄` : '未检测到掷骰结果');
 
   const r = await page.evaluate(() => {
     const total = G.players.reduce((s, pl) =>
@@ -193,14 +204,15 @@ try {
   });
   assert('AI 座位指示灯用小号光效', aiGlow === 'turnPulseS', `animation=${aiGlow}`);
 
-  // 谁赢谁坐庄：模拟上局座位3胡牌，开新局后庄家应为座位3且其手牌14张
+  // 谁赢谁坐庄：模拟上局座位3胡牌，开新局后庄家应为座位3且其手牌14张（掷骰仅首局，此局不再掷）
   const dz = await page.evaluate(() => {
     lastWinner = 3; lastDealer = 1; hasPlayed = true;
+    window._diceResult = null;
     run();
-    return { dealer: G.dealer, hand: p(3).hand.length };
+    return { dealer: G.dealer, hand: p(3).hand.length, reDice: !!window._diceResult };
   });
-  assert('谁赢谁坐庄（胡牌者下局当庄）', dz.dealer === 3 && dz.hand === 14,
-    `新局庄家=座位${dz.dealer}（座位3胡牌），庄家手牌 ${dz.hand} 张`);
+  assert('谁赢谁坐庄（胡牌者下局当庄，非首局不再掷骰）', dz.dealer === 3 && dz.hand === 14 && !dz.reDice,
+    `新局庄家=座位${dz.dealer}（座位3胡牌），庄家手牌 ${dz.hand} 张，重掷骰=${dz.reDice}`);
 
   assert('运行期零 JavaScript 报错', errors.length === 0,
     errors.length ? errors.slice(0, 3).join(' | ') : '0 条');

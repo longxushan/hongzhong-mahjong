@@ -30,14 +30,15 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 
 await page.goto(pathToFileURL(FILE).href, { waitUntil: 'load' });
-await page.evaluate(() => { CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0; });
+await page.evaluate(() => { CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0; CFG.diceMs = 40; CFG.diceGap = 20; CFG.diceAuto = 30; CFG.diceHold = 40; });
 await page.click('#startBtn');
 await page.waitForSelector('#roleSelect.show .roleBtn', { timeout: 10000 });
 await page.locator('.roleBtn').first().click();
 
 const samples = [];
+let skippedRule = 0;
 let guard = 0;
-while (samples.length < N && guard < 120) {
+while (samples.length < N && guard < 160) {
   guard++;
   await page.waitForFunction(
     () => typeof G !== 'undefined' && !!G && (G.over || (G.awaiting === 'discard' && p(0).hand.length === 14)),
@@ -45,11 +46,22 @@ while (samples.length < N && guard < 120) {
   ).catch(() => null);
   const over = await page.evaluate(() => !G || G.over);
   if (over) { await page.evaluate(() => { restart(); }); continue; }
+  // 打红中确认弹窗：自动确认，解锁「手里≥2红中必须先打红中」的规则锁定局
+  const cz = await page.evaluate(() => G.awaiting === 'confirmZ');
+  if (cz) { await page.evaluate(() => humanRespond({ yes: 1 })); await page.waitForTimeout(200); continue; }
   const ok = await page.evaluate(() => G.awaiting === 'discard' && p(0).hand.length === 14);
   if (!ok) { await page.waitForTimeout(400); continue; }
 
   const r = await page.evaluate(() => {
     const me = p(0), d = handDiagnose(me), pick = teachPick(d), md = masterDiscard(me);
+    if (pick.rule) {
+      // 特例路径（红中硬规则/冒险打红中）：不参与向听对比；zBlocked 打红中推进（confirmZ 由外层自动确认）
+      const outTile = (pick.id === 'Z' && blockedByZRule(me))
+        ? me.hand.find(t => t.id === 'Z')
+        : (me.hand.find(t => t.id !== 'Z') || me.hand[0]);
+      humanRespond(outTile);
+      return { skipped: true };
+    }
     const seen = {}, arr = [];
     for (const t of me.hand) {
       if (t.id === 'Z' || seen[t.id]) continue; seen[t.id] = 1;
@@ -67,15 +79,15 @@ while (samples.length < N && guard < 120) {
     } catch (e) {}
     const outTile = me.hand.find(t => t.id !== 'Z') || me.hand[0]; // 推进用普通牌，避免红中确认弹 10 秒等待
     humanRespond(outTile);
-    return { pickId: pick.id, rule: !!pick.rule, pickSh, mdId: md ? md.id : null, mdSh, minSh, candCount: arr.length, stanceInfo };
+    return { pickId: pick.id, rule: false, pickSh, mdId: md ? md.id : null, mdSh, minSh, candCount: arr.length, stanceInfo };
   });
+  if (r.skipped) { skippedRule++; await page.waitForTimeout(250); continue; }
   samples.push(r);
   await page.waitForTimeout(250);
 }
 await browser.close();
 
 console.log(`采样 ${samples.length} 个真实决策点（每点平均 ${Math.round(samples.reduce((s, x) => s + x.candCount, 0) / Math.max(1, samples.length))} 个候选牌逐一验算）\n`);
-const ruleS = samples.filter(s => s.rule);
 const norm = samples.filter(s => !s.rule);
 const pickOpt = norm.filter(s => s.pickSh === s.minSh);
 const mdOpt = norm.filter(s => s.mdSh === s.minSh);
@@ -87,7 +99,7 @@ for (const s of norm.filter(x => x.pickSh !== x.minSh)) {
 console.log(`② AI 精算 masterDiscard 同样达到最小向听：${mdOpt.length}/${norm.length}`);
 const tie = norm.filter(s => s.mdSh === s.pickSh);
 console.log(`③ 师傅建议与 AI 精算向听一致（差距 0）：${tie.length}/${norm.length}`);
-console.log(`④ 特例路径（红中硬规则/冒险打红中）：${ruleS.length} 个 —— 这是规则与期望值打法，不参与向听对比`);
+console.log(`④ 特例路径跳过（红中硬规则/冒险打红中）：${skippedRule} 个 —— 规则与期望值打法，打红中自动确认以解锁、不参与向听对比`);
 console.log(`⑤ 运行期 JS 报错：${errors.length} 条${errors.length ? '：' + errors.slice(0, 3).join(' | ') : ''}`);
 const stanceExplained = s => s.stanceInfo && s.stanceInfo.pickFit > 0 && (s.pickSh == null || s.pickSh - s.minSh <= 2);
 const pickBad = norm.filter(s => s.pickSh !== s.minSh && !stanceExplained(s));
