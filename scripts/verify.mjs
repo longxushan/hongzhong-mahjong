@@ -275,6 +275,23 @@ try {
   assert('谁赢谁坐庄（胡牌者下局当庄，非首局不再掷骰）', dz.dealer === 3 && dz.hand === 14 && !dz.reDice,
     `新局庄家=座位${dz.dealer}（座位3胡牌），庄家手牌 ${dz.hand} 张，重掷骰=${dz.reDice}`);
 
+  // 托管加速（2026-11-09 用户要求：托管状态每人思考 0.4 秒，快速打完一轮 8 局拿总分）
+  const hosted = await page.evaluate(async () => {
+    const btn = document.getElementById('autoBtn');
+    btn.click();
+    const on = humanAuto === true && p(0).auto === true && btn.textContent === '取消托管';
+    const t0 = Date.now();
+    await think();
+    const ms = Date.now() - t0;
+    const nextFast = presentResult.toString().includes('1200');
+    const diceFast = diceForDealer.toString().includes('dFast') && rollDice.toString().includes('fast?60:CFG.diceMs');
+    btn.click();
+    const off = humanAuto === false && p(0).auto === false && btn.textContent === '托管';
+    return { on, ms, nextFast, diceFast, off };
+  });
+  assert('托管加速：思考 0.4 秒 + 结算 1.2 秒自动连开', hosted.on && hosted.off && hosted.ms >= 380 && hosted.ms < 1500 && hosted.nextFast && hosted.diceFast,
+    `托管思考实测 ${hosted.ms}ms（目标 400），结算 1.2s 自动下一局=${hosted.nextFast}，掷骰提速=${hosted.diceFast}，开关往返正常`);
+
   assert('运行期零 JavaScript 报错', errors.length === 0,
     errors.length ? errors.slice(0, 3).join(' | ') : '0 条');
 } catch (e) {
