@@ -130,6 +130,15 @@ try {
   assert('移动端声音修复（非空预热+条件取消）', sndFix.warm && sndFix.noBlankCancel,
     `warm=${sndFix.warm}, noBlankCancel=${sndFix.noBlankCancel}`);
 
+  // TTS 可用性自动检测：不可用（如部分鸿蒙/国产浏览器）时短路报牌、提示并用音效兜底
+  const ttsProbe = await page.evaluate(() => ({
+    hasFlag: typeof ttsAvailable !== 'undefined',
+    probe: primeSpeech.toString().includes('onstart') && primeSpeech.toString().includes('2000'),
+    shortCircuit: speakText.toString().includes('ttsAvailable===false'),
+  }));
+  assert('TTS 可用性自动检测与兜底', ttsProbe.hasFlag && ttsProbe.probe && ttsProbe.shortCircuit,
+    `flag=${ttsProbe.hasFlag}, probe=${ttsProbe.probe}, shortCircuit=${ttsProbe.shortCircuit}`);
+
   // 手机竖屏自动横屏：390×844 视口下舞台应为 rot（CSS 旋转 90°）而非 pport（上下分割）
   const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
