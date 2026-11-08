@@ -137,6 +137,20 @@ try {
   assert('对局账单：按钮弹出每局明细+累计汇总表', histOk.ok,
     `弹窗=${histOk.shown}，空态提示=${histOk.emptyHint}，表格行=${histOk.rows}（表头+2明细+累计），累计行=${histOk.hasSum}`);
 
+  // 游戏规则弹窗与最新规则同步（2026-11-09 用户要求：每次修改后自动检查规则、及时更新）：
+  // 关键条款关键词清单——以后每次规则级变更，同步改 rulesModal 文本后必须在此清单加上新条款关键词，
+  // verify 在每次推送前必跑，漏改弹窗或漏加关键词都会让本断言变红。
+  const rulesSync = await page.evaluate(() => {
+    const t = document.getElementById('rulesModal').textContent;
+    const keys = ['112 张', '开局掷骰定庄', '为「东」', '以他为 1 数起', '谁赢谁坐庄', '红中可替代任意牌', '禁止胡牌',
+      '不能吃牌', '只能自摸', '抢杠胡', '七对', '碰碰胡', '清一色', '豪华七对', '杠上花', '单局封顶 50',
+      '8 局为一轮', '战绩', '清空本轮累计分'];
+    const miss = keys.filter(k => !t.includes(k));
+    return { ok: miss.length === 0, miss };
+  });
+  assert('游戏规则弹窗与最新规则同步', rulesSync.ok,
+    rulesSync.ok ? '掷骰定庄/谁赢坐庄/红中/牌型/计分封顶/轮次/战绩等关键条款齐全' : '规则弹窗缺失：' + rulesSync.miss.join('、'));
+
   // 角色声音重设：7 个角色均含 female/rate/pitch/prefer，梅姐为女声
   const vp = await page.evaluate(() => {
     const names = Object.keys(ROLE_VOICE_PROFILE);
