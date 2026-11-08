@@ -319,7 +319,7 @@
     <div class="ruleHead"><h3 style="margin:0">游戏规则</h3><button class="ruleClose" id="rulesCloseBtn">关闭</button></div>
     <div class="ruleSec"><h4>一、牌张与人数</h4><ol>
       <li>筒、条、万各 1～9，每种 4 张共 108 张，加红中 4 张，合计 112 张；无风牌、箭牌、花牌。</li>
-      <li>4 人对局，庄家 14 张先出牌，闲家各 13 张；逆时针摸一打一。庄家胡牌连庄，未胡则按序轮换。</li>
+      <li>4 人对局，庄家 14 张先出牌，闲家各 13 张；逆时针摸一打一。谁赢谁坐庄：本局胡牌者下局当庄家；流局无人胡牌则庄家按序轮换。</li>
     </ol></div>
     <div class="ruleSec"><h4>二、抓牌（摸牌）</h4><ol>
       <li>轮流从牌墙头部摸牌，摸一张、打一张。</li>
@@ -1628,7 +1628,7 @@ function clearCountdown(){if(G._cd){clearInterval(G._cd);G._cd=null;}const c=doc
 function humanRespond(v){clearCountdown();if(G.humanResolve){const r=G.humanResolve;G.humanResolve=null;G.awaiting=null;r(v);}}
 function takeOverByAI(){if(!G.humanResolve)return;const me=p(0),k=G.awaiting;if(k==='discard')humanRespond(aiChooseDiscard(me));else if(k==='zimo'||k==='qiang')humanRespond({hu:'hu'});else if(k==='gangself'){const an=findAnGang(me),bu=findBuGang(me);if(an.length)humanRespond({kind:'an',id:an[0].id});else if(bu.length)humanRespond({kind:'bu',id:bu[0]});else humanRespond({pass:1});}else if(k==='claim')humanRespond({pass:1});else if(k==='confirmZ')humanRespond({yes:1});}
 
-async function run(forceDealer){const myToken=++runToken;const nd=forceDealer!=null?forceDealer:(!hasPlayed?0:(lastWinner===lastDealer?lastDealer:(lastDealer+1)%4));hasPlayed=true;lastDealer=nd;lastWinner=null;
+async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变更：谁赢谁坐庄——上局胡牌者下局当庄家；流局无人胡则按序轮换 */const nd=forceDealer!=null?forceDealer:(!hasPlayed?0:(lastWinner!=null?lastWinner:(lastDealer+1)%4));hasPlayed=true;lastDealer=nd;lastWinner=null;
   G=newGame(nd);G.token=myToken;log('新对局，庄家='+(nd===0?'你('+humanName+')':G.players[nd].name)+'，留底6张，50分封顶');
   log('对手风格：'+G.players.filter(x=>x.style).map(x=>x.name+'·'+AI_STYLE_NAME[x.style]).join('，'));resetMoveLog();render();
   if(isPhonePort())applyPhonePortDock();

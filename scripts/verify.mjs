@@ -145,6 +145,15 @@ try {
     await page2.close();
   }
 
+  // 谁赢谁坐庄：模拟上局座位3胡牌，开新局后庄家应为座位3且其手牌14张
+  const dz = await page.evaluate(() => {
+    lastWinner = 3; lastDealer = 1; hasPlayed = true;
+    run();
+    return { dealer: G.dealer, hand: p(3).hand.length };
+  });
+  assert('谁赢谁坐庄（胡牌者下局当庄）', dz.dealer === 3 && dz.hand === 14,
+    `新局庄家=座位${dz.dealer}（座位3胡牌），庄家手牌 ${dz.hand} 张`);
+
   assert('运行期零 JavaScript 报错', errors.length === 0,
     errors.length ? errors.slice(0, 3).join(' | ') : '0 条');
 } catch (e) {
