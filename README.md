@@ -36,13 +36,11 @@ git push origin main
 
 首次 `git push` 需要在弹出的浏览器中登录一次 GitHub（本机使用 Git Credential Manager，目前尚未保存凭证），授权一次之后就免登录了。
 
-### 方式 B：WorkBuddy 内一键发布（免凭证）
+### 方式 B：WorkBuddy 内让我代发
 
-```bash
-npm run publish
-```
+直接在 WorkBuddy 对话里说「把红中麻将推上去」，我会执行 `git push`。GitHub 凭证已保存在本机凭据管理器（Git Credential Manager），推送免登录。
 
-该脚本通过 WorkBuddy 的 GitHub 连接器通道直接把本地文件推到 `main`（适合尚未配置 git 凭证时）。仅处理 UTF-8 文本文件；二进制文件请用方式 A。
+> 注意：`scripts/publish.mjs`（GitHub 连接器通道）对新建仓库不可用——集成令牌对个人新仓库无写入权限（403 Resource not accessible by integration），仅对账号下已授权的旧仓库可能有效，保留作备用。
 
 ### 本地预览与验证
 
