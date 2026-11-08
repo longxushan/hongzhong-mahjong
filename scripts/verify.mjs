@@ -163,6 +163,17 @@ try {
     await page2.close();
   }
 
+  // 庄家「庄」角标：仅庄家座位显示，其余三个隐藏
+  const badge = await page.evaluate(() => {
+    const shown = [];
+    for (let i = 0; i < 4; i++) {
+      const b = document.querySelector('#seat' + i + ' .dealerBadge');
+      shown.push(!!b && b.style.display !== 'none');
+    }
+    return { count: shown.filter(x => x).length, dealer: G.dealer };
+  });
+  assert('庄家头像带「庄」角标', badge.count === 1, `庄家=座位${badge.dealer}，角标 ${badge.count} 个`);
+
   // 谁赢谁坐庄：模拟上局座位3胡牌，开新局后庄家应为座位3且其手牌14张
   const dz = await page.evaluate(() => {
     lastWinner = 3; lastDealer = 1; hasPlayed = true;
