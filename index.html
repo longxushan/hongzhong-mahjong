@@ -1004,6 +1004,61 @@ function recommendHandType(d,me){
     :'';
   return {list,lead,leadText,planName:PLAN_NAME[lead],planMult:PLAN_MULT[lead],zStrategy,gangNote};
 }
+// ===== 大牌姿态引擎（2026-11-08 用户需求：做大牌者有自主决断权）=====
+// 识别当前手牌是否值得锁定大牌路线：清一色、七对、碰碰胡及组合（清一色碰碰胡×8、清一色七对×4）。
+// conserv=0~1 保守度：越高越晚锁定（要求更高成型度才转大牌）；返回 null 表示维持普通精算路线。
+// 每种姿态都带烂牌安全闸：允许为做大牌牺牲向听，但最多恶化 2 级（见 stanceFit 调用处）。
+function bigHandStance(pl,d,conserv){
+  const mainN=d.sc[d.mainSuit],suitRem=suitRemaining(d.mainSuit);
+  const meldPongs=pl.melds.filter(m=>m.type==='peng'||m.type.indexOf('gang')>=0).length;
+  const c=conserv||0;
+  // 七对成型度：自数实体对子（2张=1对，4张=2对，3张拆开=1对+1孤张）
+  const cnt={};for(const t of pl.hand){if(t.id!=='Z')cnt[t.id]=(cnt[t.id]||0)+1;}
+  let pPairs=0;for(const k in cnt){if(cnt[k]>=4)pPairs+=2;else if(cnt[k]>=2)pPairs+=1;}
+  // 清一色：主花色成型度达标，且剩余进张（牌墙可摸+红中）足以补齐；残局要求更高
+  const qTh=c>=0.6?10:9;
+  const qing=mainN>=qTh&&(mainN+suitRem+d.zN>=13)&&!(d.wall<18&&mainN<12);
+  // 七对：无副露，实体对子成型（红中可顶一个对子）
+  const sTh=c>=0.6?5:4;
+  const seven=pl.melds.length===0&&(pPairs>=sTh||(pPairs>=sTh-1&&d.zN>=1));
+  // 碰碰胡：刻子+对子+已碰杠副露 ≥4 组
+  const pong=(d.pongs.length+d.pairCount+meldPongs)>=4;
+  let kind=null,name='';
+  if(qing&&(pong||seven)){kind='qing';name='清一色'+(pong?'碰碰胡（×8）':'七对（×4）');}
+  else if(qing){kind='qing';name='清一色（×2）';}
+  else if(seven&&d.pongs.length<2&&meldPongs===0){kind='seven';name='七对（×2，四张一样豪华七对×4）';}
+  else if(pong||seven){kind='pong';name='碰碰胡（×4）';} // 手里已有≥2刻或有碰的副露时，刻子是碰碰胡本钱，优先碰碰胡（番×4 > 七对×2）
+  if(!kind)return null;
+  return {kind,name,paired:qing&&seven};
+}
+// 大牌路线契合度（0~10）：打出该牌对大牌方向的贡献；红中恒为 0（由打红中专门逻辑处理）
+function stanceFit(stance,id,d){
+  if(!stance||id==='Z')return 0;
+  const isPair=d.pairs.indexOf(id)>=0,isPong=d.pongs.indexOf(id)>=0;
+  const isMain=id[0]===d.mainSuit,isOrphan=d.orphans.indexOf(id)>=0;
+  switch(stance.kind){
+    case 'qing': // 别色牌一概可拆（含别色搭子/成型面子）；主色全留（清七对时主色孤张弱留）
+      if(!isMain)return 10;
+      return stance.paired&&!isPair&&!isPong?3:0;
+    case 'seven': // 实体对子/刻子绝不拆；孤张先走，散搭让位
+      if(isPair||isPong)return 0;
+      return isOrphan?10:6;
+    case 'pong': // 对子/刻子是本钱绝不拆；其余（孤张/搭子/成型顺子）让位
+      if(isPair||isPong)return 0;
+      return isOrphan?10:8;
+  }
+  return 0;
+}
+// 大牌路线话术：向玩家说明为何这步可以不为向听最优
+function stanceKou(stance,nm){
+  const head='做大牌·'+stance.name+'——做大牌不必步步按最快胡牌走：';
+  switch(stance.kind){
+    case 'qing':return head+'主花色已成型，别色牌搭子再好也要拆。'+nm+'不是主花色，趁早打出、把牌路集中到一门；慢这一两步，换番数翻倍，值得。';
+    case 'seven':return head+'七对只认对子。'+nm+'不是对子，孤张散搭先走、对子全部保住，凑满 7 对即胡，比拆对求快更划算。';
+    case 'pong':return head+'碰碰胡只认刻子。'+nm+'非对非刻，顺子搭子让位、对子全部保住，见对就碰，4 刻 1 将即成。';
+  }
+  return head+nm+'符合大牌方向，可放心打出。';
+}
 function readOpponents(){
   const out=[];
   for(let i=1;i<4;i++){
@@ -1084,11 +1139,25 @@ function teachPick(d){
     }
     cands.push({id:t.id,sh,vt,iw,draws,dw,role:tileRoleRank(t.id,d)});
   }
-  // 向听主导（拆成型面子会让向听变大，自然排后），再比听牌宽度、一进听进张，最后才用基础牌理兜底
-  cands.sort((a,b)=>a.sh-b.sh||b.iw-a.iw||b.dw-a.dw||b.role-a.role);
+  // 大牌姿态：成型度达标时教学建议切换到大牌导向口径（用户需求：做大牌不必按最快胡牌走）
+  let shMin=99;for(const c of cands)shMin=Math.min(shMin,c.sh);
+  const stance=bigHandStance(me,d,0.5);
+  if(stance){
+    for(const c of cands){
+      c.fit=stanceFit(stance,c.id,d);
+      if(c.sh>shMin+2)c.fit=0; // 烂牌安全闸：允许为大牌慢 1-2 步，再多即回普通路线
+    }
+    cands.sort((a,b)=>b.fit-a.fit||a.sh-b.sh||b.iw-a.iw||b.dw-a.dw||b.role-a.role);
+  }else{
+    // 向听主导（拆成型面子会让向听变大，自然排后），再比听牌宽度、一进听进张，最后才用基础牌理兜底
+    cands.sort((a,b)=>a.sh-b.sh||b.iw-a.iw||b.dw-a.dw||b.role-a.role);
+  }
   const best=cands[0],nm=tileName(tileFromId(best.id));
+  if(stance&&best.fit>0){
+    return {id:best.id,kou:stanceKou(stance,nm),rule:false,ting:best.iw>0?best:null,stance,effDraws:best.draws,effWeight:best.dw};
+  }
   if(best.iw>0){
-    return {id:best.id,kou:'听牌不拆搭，宽听胜窄听：打出后听 '+best.vt.map(x=>tileName(tileFromId(x))).join('、')+'，听牌面最宽、胡牌机会最大。',rule:false,ting:best};
+    return {id:best.id,kou:'听牌不拆搭，宽听胜窄听：打出后听 '+best.vt.map(x=>tileName(tileFromId(x))).join('、')+'，听牌面最宽、胡牌机会最大。',rule:false,ting:best,stance};
   }
   const listTxt=best.draws.slice(0,6).map(x=>tileName(tileFromId(x))).join('、')+(best.draws.length>6?'等':'');
   const meldNote=d.completeMelds.length?('已成型的 '+d.completeMelds.join('、')+' 要保留，不拆成型面子；'):'';
@@ -1103,7 +1172,7 @@ function teachPick(d){
     else if(d.embedded.indexOf(best.id)>=0)kou=meldNote+'两害相权取其轻：'+nm+'所在嵌张搭进张较窄，先打它，保留两面搭和中张。';
     else kou=meldNote+'两害相权取其轻：先打对牌型帮助最小的 '+nm+'，保留更有希望的搭子。';
   }
-  return {id:best.id,kou,rule:false,ting:null,effDraws:best.draws,effWeight:best.dw};
+  return {id:best.id,kou,rule:false,ting:null,stance,effDraws:best.draws,effWeight:best.dw};
 }
 let teachOn=false;
 try{localStorage.removeItem('banshanTeach');}catch(e){}  // 2026-11-08：清除旧版竖屏自动开启教学的遗留状态；教学开关改用新键，各端默认关，手动开启后记忆
@@ -1348,14 +1417,16 @@ let lastReview=null;
 let warnTimer=null;
 function resetMoveLog(){moveLog=[];clearWarn();refreshDock();}
 // 玩家出牌时记录决策（用于局后复盘）；实时提醒已在点选时由 liveWarn 完成，这里不再重复提醒
+// good 判定：师傅首推牌，或处于大牌姿态且所选牌符合大牌方向（做大牌不必按最快胡牌走）
 function recordMove(chosenTile){
   try{
     const me=p(0),d=handDiagnose(me),pick=teachPick(d);
-    const good=chosenTile.id===pick.id;
+    const good=chosenTile.id===pick.id||(pick.stance&&stanceFit(pick.stance,chosenTile.id,d)>0);
     moveLog.push({chosen:chosenTile.id,best:pick.id,good:good,stage:d.stage,reason:pick.kou});
   }catch(e){}
 }
 // 点选一张牌时实时分析：选对正向确认、选错提醒并给出建议，持续显示直到改选或出牌
+// 大牌姿态下的自主决断：所选牌符合大牌方向即视为方向正确，不按向听数报错
 function liveWarn(tile){
   if(!mistakeWarnOn)return;
   const me=p(0),d=handDiagnose(me),pick=teachPick(d);
@@ -1364,6 +1435,10 @@ function liveWarn(tile){
   if(tile.id===pick.id){
     el.className='liveWarn warnGood';
     el.innerHTML='<b>师傅点评：这张选得对，可放心打出</b>你选的 '+nm+' 正是我推荐的牌。'+pick.kou;
+  }else if(pick.stance&&stanceFit(pick.stance,tile.id,d)>0&&tile.id!=='Z'){
+    const best=tileName(tileFromId(pick.id));
+    el.className='liveWarn warnGood';
+    el.innerHTML='<b>师傅点评：大牌方向，打得通</b>你正在做'+pick.stance.name+'，选的 '+nm+' 符合大牌路线，做牌不为最快胡、这步走得通；我同路线的首推是 '+best+'。'+pick.kou;
   }else{
     const best=tileName(tileFromId(pick.id));
     el.className='liveWarn warnBad';
@@ -1546,7 +1621,9 @@ function masterDiscard(pl){
   const style=pl.style||'flexible';
   const mp=MASTER_PROFILE[style]||MASTER_PROFILE.flexible;
   const d=handDiagnose(pl);
-  const lead=recommendHandType(d,pl).lead;
+  // 大牌姿态：性格只调启动门槛（大牌偏好越高越早锁定），姿态达成后所有角色都可自主决断做大牌
+  // bigHandStance 的 conserv 参数用 1-mp.big：偏好 0（保守型）→conserv 1→要求更高成型度才转大牌
+  const stance=bigHandStance(pl,d,1-mp.big);
   const seen={},cands=[];
   for(const t of pl.hand){
     if(seen[t.id]||t.id==='Z')continue;seen[t.id]=1; // 红中由打红中专门逻辑处理，高手不轻易打
@@ -1561,17 +1638,19 @@ function masterDiscard(pl){
       let ok;try{ok=canReachTenpai(trial,pl.melds);}catch(e){ok=false;}
       if(ok)dw+=rem;
     }
-    let bigFit=0;
-    if(lead==='七对'||lead==='全碰'){
-      const same=pl.hand.filter(x=>x.id===t.id).length;
-      if(same===1)bigFit=8;
-    }else if(lead==='清一色'){
-      if(t.id[0]!==d.mainSuit)bigFit=10;
-    }
-    cands.push({id:t.id,sh,iw,dw,bigFit});
+    cands.push({id:t.id,sh,iw,dw});
   }
   if(!cands.length)return null;
-  for(const c of cands)c.score=-c.sh*100+c.iw*2+c.dw*0.2+c.bigFit*mp.big+Math.random()*mp.noise;
+  let shMin=99;for(const c of cands)shMin=Math.min(shMin,c.sh);
+  for(const c of cands){
+    let fit=0;
+    if(stance){
+      fit=stanceFit(stance,c.id,d);
+      if(c.sh>shMin+2)fit=0; // 烂牌安全闸：大牌最多慢 2 步，超出即回纯精算
+    }
+    // 姿态未达成时维持纯精算；达成后 fit*25 可压过最多 2 级向听差（100/级），即敢于为大牌拆搭
+    c.score=-c.sh*100+c.iw*2+c.dw*0.2+fit*25+Math.random()*mp.noise;
+  }
   cands.sort((a,b)=>b.score-a.score);
   return pl.hand.find(t=>t.id===cands[0].id);
 }

@@ -59,9 +59,15 @@ while (samples.length < N && guard < 120) {
     const minSh = Math.min(...arr.map(x => x.sh));
     const pickSh = pick.id === 'Z' ? null : (arr.find(x => x.id === pick.id) || {}).sh;
     const mdSh = !md || md.id === 'Z' ? null : (arr.find(x => x.id === md.id) || {}).sh;
+    // 大牌姿态诊断：未最优样本要能自证是大牌路线（用户需求：做大牌允许慢 1-2 步）
+    let stanceInfo = null;
+    try {
+      const st = pick.stance || null;
+      if (st) stanceInfo = { kind: st.kind, name: st.name, pickFit: pick.id === 'Z' ? 0 : stanceFit(st, pick.id, d), shGap: pickSh == null ? null : pickSh - minSh };
+    } catch (e) {}
     const outTile = me.hand.find(t => t.id !== 'Z') || me.hand[0]; // 推进用普通牌，避免红中确认弹 10 秒等待
     humanRespond(outTile);
-    return { pickId: pick.id, rule: !!pick.rule, pickSh, mdId: md ? md.id : null, mdSh, minSh, candCount: arr.length };
+    return { pickId: pick.id, rule: !!pick.rule, pickSh, mdId: md ? md.id : null, mdSh, minSh, candCount: arr.length, stanceInfo };
   });
   samples.push(r);
   await page.waitForTimeout(250);
@@ -74,12 +80,17 @@ const norm = samples.filter(s => !s.rule);
 const pickOpt = norm.filter(s => s.pickSh === s.minSh);
 const mdOpt = norm.filter(s => s.mdSh === s.minSh);
 console.log(`① 打错提醒的建议牌达到「全候选最小向听」：${pickOpt.length}/${norm.length}${norm.length ? '（' + Math.round(pickOpt.length / norm.length * 100) + '%）' : ''}`);
-for (const s of norm.filter(x => x.pickSh !== x.minSh)) console.log(`   未达最优：建议 ${s.pickId}（向听 ${s.pickSh}） vs 最优 ${s.minSh}`);
+for (const s of norm.filter(x => x.pickSh !== x.minSh)) {
+  const st = s.stanceInfo;
+  console.log(`   建议非向听最优：${s.pickId}（向听 ${s.pickSh} vs 最优 ${s.minSh}）` + (st && st.pickFit > 0 ? ` —— 大牌姿态[${st.name}]路线牌（契合度 ${st.pickFit}，慢 ${st.shGap} 步在安全闸内）` : ' —— 无姿态解释，需复核！'));
+}
 console.log(`② AI 精算 masterDiscard 同样达到最小向听：${mdOpt.length}/${norm.length}`);
 const tie = norm.filter(s => s.mdSh === s.pickSh);
 console.log(`③ 师傅建议与 AI 精算向听一致（差距 0）：${tie.length}/${norm.length}`);
 console.log(`④ 特例路径（红中硬规则/冒险打红中）：${ruleS.length} 个 —— 这是规则与期望值打法，不参与向听对比`);
 console.log(`⑤ 运行期 JS 报错：${errors.length} 条${errors.length ? '：' + errors.slice(0, 3).join(' | ') : ''}`);
-const pass = errors.length === 0 && pickOpt.length === norm.length && norm.length >= 5;
-console.log(pass ? '\n结论：抽检全部通过——打错提醒的建议在牌理（向听）层面与 AI 精算同级、始终最优。' : '\n结论：存在未最优样本或报错，需复核。');
+const stanceExplained = s => s.stanceInfo && s.stanceInfo.pickFit > 0 && (s.pickSh == null || s.pickSh - s.minSh <= 2);
+const pickBad = norm.filter(s => s.pickSh !== s.minSh && !stanceExplained(s));
+const pass = errors.length === 0 && pickBad.length === 0 && norm.length >= 5;
+console.log(pass ? '\n结论：抽检通过——普通路线建议向听最优；大牌姿态样本慢 1-2 步属预期（做大牌自主决断）。' : '\n结论：存在无法用大牌姿态解释的未最优样本或报错，需复核。');
 process.exit(pass ? 0 : 1);
