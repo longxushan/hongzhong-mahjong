@@ -174,6 +174,15 @@ try {
   });
   assert('庄家头像带「庄」角标', badge.count === 1, `庄家=座位${badge.dealer}，角标 ${badge.count} 个`);
 
+  // 打牌回合指示灯：当前行动玩家放大 + 呼吸金光
+  const glow = await page.evaluate(() => {
+    const t = document.querySelector('#seat' + G.current + ' .who.active .turn');
+    if (!t) return { ok: false, why: 'no active turn' };
+    const cs = getComputedStyle(t);
+    return { ok: cs.transform !== 'none' && cs.animationName === 'turnPulse' && cs.backgroundColor !== 'rgb(136, 136, 136)' };
+  });
+  assert('打牌回合指示灯放大+呼吸金光', glow.ok, `scale+turnPulse 动画`);
+
   // 谁赢谁坐庄：模拟上局座位3胡牌，开新局后庄家应为座位3且其手牌14张
   const dz = await page.evaluate(() => {
     lastWinner = 3; lastDealer = 1; hasPlayed = true;

@@ -28,10 +28,11 @@
   #seat1 .dealerBadge,#seat3 .dealerBadge{width:13px;height:13px;font-size:8.5px;}
   .large .dealerBadge{width:18px;height:18px;font-size:11.5px;}
   .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
-  .who .turn{width:8px;height:8px;border-radius:50%;background:#888;}
+  .who .turn{width:8px;height:8px;border-radius:50%;background:#888;flex:0 0 auto;transition:transform .18s;}
   .who .whoAvatar{width:20px;height:20px;border-radius:50%;object-fit:cover;flex:0 0 auto;}
   .large .who .whoAvatar{width:26px;height:26px;}
-  .who.active .turn{background:#ffe14d;box-shadow:0 0 8px #ffe14d;}
+  .who.active .turn{background:#ffe14d;transform:scale(1.55);animation:turnPulse 1.2s ease-in-out infinite;box-shadow:0 0 16px 5px #ffe14d,0 0 30px 10px rgba(255,225,77,.5);}
+  @keyframes turnPulse{0%,100%{box-shadow:0 0 14px 4px #ffe14d,0 0 26px 8px rgba(255,225,77,.42);}50%{box-shadow:0 0 20px 7px #ffe14d,0 0 38px 14px rgba(255,225,77,.68);}}
   @keyframes nameFlash{
     0%,100%{color:#fff;}
     50%{color:#ffe14d;text-shadow:0 0 10px rgba(255,225,77,.95);}
