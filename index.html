@@ -161,6 +161,13 @@
   #histModal .hhType{color:#d9a441;font-size:12px;flex:0 0 auto;}
   #histModal .hhTiles{display:flex;flex-wrap:wrap;gap:2px;align-items:center;}
   #histModal .hhTiles .tp-sm{width:calc(var(--sm)*0.55);height:calc(var(--sm)*0.72);}
+  /* 四家摊牌：每局结算弹窗内展示各家手牌+副露（庄家带标记，暗杠明一张盖三张） */
+  .revealHands{margin-top:12px;}
+  .revealHead{color:#f3d9a4;font-size:13px;font-weight:700;margin-bottom:4px;}
+  .revealRow{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed rgba(255,255,255,.1);flex-wrap:wrap;}
+  .rhName{color:#e8e8e8;font-size:12px;flex:0 0 96px;text-align:left;}
+  .rhTiles{display:flex;flex-wrap:wrap;gap:2px;align-items:center;}
+  .revealRow .tp-sm{width:calc(var(--sm)*0.55);height:calc(var(--sm)*0.72);}
   #tipsModal .ruleSec{margin-bottom:11px;}
   #tipsModal h4{color:#f3d9a4;font-size:13px;margin:0 0 4px;border-left:3px solid var(--gold);padding-left:7px;}
   #tipsModal ol{margin:0;padding-left:19px;}
@@ -421,6 +428,7 @@
       <li>8 局为一轮，顶栏显示第 N/8 局；一轮固定同桌 4 人、其他三家不换人，积分排行榜只统计这 4 人。</li>
       <li>第 8 局结束弹出最终积分榜单，可开始下一轮；开始下一轮会把手里的子重新回到 100 起底，重新从第 1/8 局计起。</li>
       <li>顶栏「战绩」随时可查每局输赢明细与各家手里的子数，口径与结算一致（每局净分含杠分、单局封顶 50）。</li>
+      <li>每局结束结算时四家摊牌：各家手牌与副露全部亮出（流局局摊四家、胡牌局另摊其余三家，赢家整副牌单独展示），看完再进入下一局。</li>
     </ol></div>
   </div>
 </div>
@@ -2305,6 +2313,20 @@ async function showWin(seat,how,w,from){sndWin();const pl=p(seat);const hasZ=pl.
   const winPlan=buildWinPlan(pl,w,how);
   await presentResult({title:how==='tianhu'?'天胡！':how==='dihu'?'地胡！':how==='qiang'?'抢杠胡！':'胡牌',how,pl,ma,base,fs,handTypes,winPlan,cap,total,d});}
 async function showLiuJu(){sndLiuJu();log('留底6张，流局');const d=G.players.map(x=>({seat:x.seat,hu:0,pay:0,gang:x.gangScore,net:x.gangScore}));lastWinner=null;G.over=true;makeReview('留底 6 张，无人胡牌，本局流局，只结算杠分。','liuju');await presentResult({title:'流局',pl:null,ma:null,base:0,fs:[],cap:false,total:0,d});}
+// 四家摊牌（2026-11-09 用户需求：每局结束各家手牌摊开给大家看，再进入下一局；
+// 胡牌局赢家整副牌已在上方单独展示，此处摊其余三家；流局局摊全部四家）
+function allHandsHTML(skipSeat){
+  let h='<div class="revealHands"><div class="revealHead">'+(skipSeat==null?'四家摊牌':'其余三家摊牌')+'</div>';
+  for(let i=0;i<4;i++){
+    if(i===skipSeat)continue;
+    const pl=p(i);
+    let tiles='';
+    for(const t of pl.hand)tiles+=tileDiv(t,true);
+    for(const m of pl.melds)tiles+=(m.type==='angang')?anGangDiv(m):m.tiles.map(t=>tileDiv(t,true)).join('');
+    h+='<div class="revealRow"><span class="rhName">'+pl.name+(i===0?'（你）':'')+(G&&G.dealer===i?' ·庄':'')+'</span><span class="rhTiles">'+(tiles||'—')+'</span></div>';
+  }
+  return h+'</div>';
+}
 function presentResult(r){return new Promise(res=>{
   if(!r._cumAdded){addCum(r.d);r._cumAdded=true;pushHist(r);}
   if(!r._speechDone){r._speechDone=true;try{speakScore(r.pl||p(0),r.pl?buildWinSpeech(r):buildLiuJuSpeech());}catch(e){}}
@@ -2315,6 +2337,7 @@ function presentResult(r){return new Promise(res=>{
     for(const f of r.fs)h+='<div class="row"><span>'+f.n+'</span><span>×'+f.v+'</span></div>';if(r.cap)h+='<div class="row"><span>超出封顶</span><span>按50分</span></div>';
     h+='<div class="row"><span>本局胡牌得分</span><span class="plus">'+r.total+'</span></div>';}
   h+='<h3 style="margin-top:14px">各家总账（含杠分）</h3><div class="netGrid">';for(const x of r.d){const c=x.net>0?'plus':x.net<0?'minus':'';h+='<div class="row"><span>'+p(x.seat).name+'</span><span class="'+c+'">'+(x.net>0?'+':'')+x.net+'（杠'+(x.gang>0?'+':'')+x.gang+'）</span></div>';}h+='</div>';
+  h+=allHandsHTML(r.pl?r.pl.seat:null); // 每局结束四家摊牌：让大家看清各家手里剩什么牌再进下一局
   h+=cumRankHTML();
   h+='<div class="modalBtns"><button class="primary" id="mNext">'+(isFinal?'开始下一轮':'再来一局')+'</button><button id="mReview">师傅复盘</button><button id="mResetCum">清零累计</button><button id="mClose">查看桌面</button></div></div>';
   mk.innerHTML=h;document.getElementById('stage').appendChild(mk);
@@ -2329,9 +2352,9 @@ function presentResult(r){return new Promise(res=>{
   };
   mk.querySelector('#mNext').onclick=goNext;
   // 托管状态且非一轮终局：结算短暂展示后自动进入下一局，无需手动点
-  // 2026-11-09 托管加速：配套 0.4 秒出牌节奏，2.8 秒 → 1.2 秒自动开下一局，快速打完一轮 8 局
+  // 2026-11-09 托管加速：配套 0.4 秒出牌节奏自动连开；1.2 → 2.6 秒，留出看四家摊牌的时间
   if(humanAuto&&!isFinal){
-    const gap=1200;
+    const gap=2600;
     autoTimer=setTimeout(goNext,gap);
     const tip=document.createElement('div');tip.className='autoNextTip';tip.textContent='托管加速中，'+(gap/1000)+' 秒后自动开始下一局…';mk.querySelector('.modal').appendChild(tip);
   }

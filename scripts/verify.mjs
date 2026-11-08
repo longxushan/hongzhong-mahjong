@@ -152,7 +152,7 @@ try {
     const t = document.getElementById('rulesModal').textContent;
     const keys = ['112 张', '开局掷骰定庄', '为「东」', '以他为 1 数起', '谁赢谁坐庄', '红中可替代任意牌', '禁止胡牌',
       '不能吃牌', '只能自摸', '天胡', '地胡', '主动不胡', '抢杠胡', '七对', '碰碰胡', '清一色', '豪华七对', '杠上花', '单局封顶 50',
-      '100 个子', '8 局为一轮', '战绩', '100 起底'];
+      '100 个子', '8 局为一轮', '战绩', '100 起底', '四家摊牌'];
     const miss = keys.filter(k => !t.includes(k));
     // 100 子起底：重置后四家各 100
     const base = currentNames().every(nm => cumScore[nm] === 100);
@@ -308,14 +308,29 @@ try {
     const t0 = Date.now();
     await think();
     const ms = Date.now() - t0;
-    const nextFast = presentResult.toString().includes('1200');
+    const nextFast = presentResult.toString().includes('2600');
     const diceFast = diceForDealer.toString().includes('dFast') && rollDice.toString().includes('fast?60:CFG.diceMs');
     btn.click();
     const off = humanAuto === false && p(0).auto === false && btn.textContent === '托管';
     return { on, ms, nextFast, diceFast, off };
   });
-  assert('托管加速：思考 0.4 秒 + 结算 1.2 秒自动连开', hosted.on && hosted.off && hosted.ms >= 380 && hosted.ms < 1500 && hosted.nextFast && hosted.diceFast,
-    `托管思考实测 ${hosted.ms}ms（目标 400），结算 1.2s 自动下一局=${hosted.nextFast}，掷骰提速=${hosted.diceFast}，开关往返正常`);
+  assert('托管加速：思考 0.4 秒 + 结算 2.6 秒自动连开', hosted.on && hosted.off && hosted.ms >= 380 && hosted.ms < 1500 && hosted.nextFast && hosted.diceFast,
+    `托管思考实测 ${hosted.ms}ms（目标 400），结算 2.6s 自动下一局=${hosted.nextFast}，掷骰提速=${hosted.diceFast}，开关往返正常`);
+
+  // 四家摊牌（2026-11-09 用户需求：每局结束各家手牌摊开给大家看再进下一局）
+  const reveal = await page.evaluate(() => {
+    const okFn = typeof window.allHandsHTML === 'function' && presentResult.toString().includes('allHandsHTML');
+    const d = document.createElement('div');
+    d.innerHTML = allHandsHTML(null);
+    const all4 = d.querySelectorAll('.revealRow').length === 4;
+    const d2 = document.createElement('div');
+    d2.innerHTML = allHandsHTML(0);
+    const skip3 = d2.querySelectorAll('.revealRow').length === 3;
+    const hasTiles = d.querySelectorAll('.revealRow .tp-sm').length > 0;
+    return { okFn, all4, skip3, hasTiles };
+  });
+  assert('每局结算四家摊牌：手牌+副露亮出', reveal.okFn && reveal.all4 && reveal.skip3 && reveal.hasTiles,
+    `流局摊四家=${reveal.all4}，胡牌摊其余三家=${reveal.skip3}，含牌面图=${reveal.hasTiles}`);
 
   assert('运行期零 JavaScript 报错', errors.length === 0,
     errors.length ? errors.slice(0, 3).join(' | ') : '0 条');
