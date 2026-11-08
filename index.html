@@ -128,13 +128,13 @@
   .winPlan p:last-child{margin-bottom:0;}
   .modalBtns{display:flex;gap:10px;margin-top:8px;}.modalBtns button{flex:1;padding:7px 10px;font-size:13px;}
   .autoNextTip{margin-top:8px;padding:6px 10px;border-radius:8px;background:rgba(212,175,55,.14);border:1px solid rgba(212,175,55,.5);color:var(--gold);font-size:12px;text-align:center;}
-  /* 牌桌闲聊气泡：紧挨各座位头像下方弹出，几秒后淡出 */
-  .chatBox{position:relative;margin:2px 0;padding:4px 10px;max-width:170px;background:linear-gradient(135deg,rgba(255,248,225,.97),rgba(255,238,200,.97));color:#5a3811;border:1px solid rgba(180,120,40,.55);border-radius:10px;font-size:12px;line-height:1.35;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:chatPop .22s ease-out;z-index:6;pointer-events:none;word-break:break-all;}
+  /* 牌桌闲聊气泡：绝对定位悬浮于 #table 上（按座位锚定，不受窄列座位与旋转影响），几秒后淡出 */
+  .chatBox{position:absolute;max-width:150px;padding:4px 10px;background:linear-gradient(135deg,rgba(255,248,225,.97),rgba(255,238,200,.97));color:#5a3811;border:1px solid rgba(180,120,40,.55);border-radius:10px;font-size:12px;line-height:1.35;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:chatPop .22s ease-out;z-index:30;pointer-events:none;word-break:break-all;}
   .chatBox::before{content:'';position:absolute;top:-5px;left:18px;border:5px solid transparent;border-bottom-color:rgba(180,120,40,.55);}
+  .chatBox[data-cb="0"]::before{top:auto;bottom:-5px;border-bottom-color:transparent;border-top-color:rgba(180,120,40,.55);}
   .chatBox.out{animation:chatOut .3s ease-in forwards;}
-  #seat1 .chatBox,#seat3 .chatBox{font-size:10px;padding:3px 8px;max-width:120px;}
   .large .chatBox{font-size:14px;max-width:220px;}
-  .large #seat1 .chatBox,.large #seat3 .chatBox{font-size:12px;max-width:160px;}
+  html:not(.large) .chatBox{max-width:40vw;}
   @keyframes chatPop{from{opacity:0;transform:translateY(6px) scale(.9);}to{opacity:1;transform:none;}}
   @keyframes chatOut{to{opacity:0;transform:translateY(-4px);}}
   #rulesModal .ruleSec{margin-bottom:11px;}
@@ -1040,15 +1040,22 @@ const CHAT_SAY={
   learning:{good:['好牌！学以致用！','这摸牌有讲究。'],bad:['摸到难题了。','这张够呛，慢慢琢磨。'],peng:['碰得好，又学一招！','这口碰得有心得。'],lost:['牌被拿走了，记下来。','这一手要复盘。'],ting:['听牌了，成果在望！','学有所成，就等胡！'],low:['最后一搏，检验成果。','尾声了，稳住。']},
   flexible:{good:['哟，来牌了！','这牌妙啊。'],bad:['摸了张寂寞。','这张嘛……先看看。'],peng:['碰！变化来了！','这口碰得灵活。'],lost:['得，牌飞了。','又喂牌了。'],ting:['听牌！有戏！','成了成了，等胡！'],low:['牌不多了，走着瞧。','尾盘随机应变。']}
 };
-// 闲聊气泡：插入对应座位头像下方，约 2.6 秒后淡出；同一座位新气泡顶掉旧气泡
+// 闲聊气泡：绝对定位悬浮于 #table 牌桌上、按座位头像锚定（布局坐标不受旋转/窄列影响），约 2.6 秒后淡出
 function chatBubble(seat,text){
   try{
+    const tbl=document.getElementById('table');if(!tbl)return;
     const seatEl=document.getElementById('seat'+seat);if(!seatEl)return;
-    const old=seatEl.querySelector('.chatBox');if(old)old.remove();
-    const b=document.createElement('div');b.className='chatBox';b.textContent=text;
-    const who=seatEl.querySelector('.who');
-    if(who)who.insertAdjacentElement('afterend',b);else seatEl.appendChild(b);
-    setTimeout(()=>{if(b.parentNode){b.classList.add('out');setTimeout(()=>{try{b.remove();}catch(x){}},320);}},2600);
+    const who=seatEl.querySelector('.who');if(!who)return;
+    const old=tbl.querySelector('.chatBox[data-cb="'+seat+'"]');if(old)old.remove();
+    const b=document.createElement('div');b.className='chatBox';b.dataset.cb=String(seat);b.textContent=text;
+    tbl.appendChild(b);
+    const W=tbl.offsetWidth,H=tbl.offsetHeight,bw=b.offsetWidth,bh=b.offsetHeight;
+    const x=who.offsetLeft,y=who.offsetTop,ww=who.offsetWidth,wh=who.offsetHeight;
+    if(seat===0){b.style.left=Math.min(Math.max(4,x+ww/2-bw/2),Math.max(4,W-bw-4))+'px';b.style.bottom=(H-y+6)+'px';}
+    else if(seat===2){b.style.left=Math.min(Math.max(4,x+ww/2-bw/2),Math.max(4,W-bw-4))+'px';b.style.top=(y+wh+6)+'px';}
+    else if(seat===1){b.style.left=Math.max(4,x-bw-8)+'px';b.style.top=Math.min(Math.max(4,y+wh/2-bh/2),Math.max(4,H-bh-4))+'px';}
+    else{b.style.left=Math.min(x+ww+8,Math.max(4,W-bw-4))+'px';b.style.top=Math.min(Math.max(4,y+wh/2-bh/2),Math.max(4,H-bh-4))+'px';}
+    setTimeout(()=>{if(b.parentNode){b.classList.add('out');setTimeout(()=>{try{b.remove();}catch(x2){}},320);}},2600);
   }catch(e){}
 }
 // 闲聊入口：单人 9 秒冷却 + 全桌 3.2 秒全局间隔 + 概率闸防刷屏；气泡必出，语音走角色音色包（缺文件自动跳过）

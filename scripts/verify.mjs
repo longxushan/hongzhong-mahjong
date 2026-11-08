@@ -192,8 +192,15 @@ try {
     const okStyles = styles.length === 7 && styles.every(s => evs.every(e => Array.isArray(CHAT_SAY[s][e]) && CHAT_SAY[s][e].length >= 2));
     const okFn = ['chatMaybe', 'chatBubble', 'chatAfterDiscard'].every(f => typeof window[f] === 'function');
     chatBubble(2, '冒烟测试');
-    const bubble = !!document.querySelector('#seat2 .chatBox');
-    const t = document.querySelector('#seat2 .chatBox'); if (t) t.remove();
+    let bubble = false, bubblePos = null;
+    const bb = document.querySelector('#table .chatBox');
+    if (bb) {
+      const tb = document.getElementById('table').getBoundingClientRect();
+      const r = bb.getBoundingClientRect();
+      bubblePos = { w: Math.round(r.width), inTable: r.top >= tb.top - 5 && r.bottom <= tb.bottom + 30 && r.left >= tb.left - 5 && r.right <= tb.right + 5 };
+      bubble = bb.offsetWidth >= 60; // 气泡有足够宽度显示文字（防被窄列压扁）
+      bb.remove();
+    }
     return { okStyles, okFn, bubble, n: styles.length };
   });
   const chatFiles = [];
