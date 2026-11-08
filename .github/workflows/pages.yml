@@ -30,11 +30,12 @@ jobs:
         with:
           enablement: true
 
-      # 站点只发布单文件游戏，避免把文档/脚本等仓库内容暴露到线上
+      # 站点发布单文件游戏 + 语音包目录（108 条台词 mp3），避免把文档/脚本等仓库内容暴露到线上
       - name: Build site
         run: |
           mkdir -p _site
           cp index.html _site/index.html
+          cp -r voice _site/voice
           touch _site/.nojekyll
 
       - name: Upload artifact
