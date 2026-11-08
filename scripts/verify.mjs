@@ -153,6 +153,26 @@ try {
   assert('游戏规则弹窗与最新规则同步', rulesSync.ok,
     rulesSync.ok ? '掷骰定庄/谁赢坐庄/红中/牌型/计分封顶/100子起底/轮次/战绩等关键条款齐全，四家100子起底' : (rulesSync.miss.length ? '规则弹窗缺失：' + rulesSync.miss.join('、') : '100子起底异常'));
 
+  // 语音包（彻底解决手机没人声）：108 条预生成台词 mp3 齐全 + 播放引擎工作
+  const voiceFiles = [];
+  for (const lib of ['w', 'wf']) for (const id of [...['W','T','B'].flatMap(s => Array.from({length:9},(_,i)=>s+(i+1))), 'Z', 'peng', 'gang', 'angang', 'bugang', 'hu']) voiceFiles.push(`${lib}/${id}.mp3`);
+  for (let i = 0; i < 7; i++) voiceFiles.push(`host/names/${i}.mp3`, `role/${i}/qing.mp3`, `role/${i}/seven.mp3`, `role/${i}/pong.mp3`);
+  for (let n = 2; n <= 12; n++) voiceFiles.push(`host/n${n}.mp3`);
+  for (const k of ['zhi', 'dianzuida', 'zhuang']) voiceFiles.push(`host/${k}.mp3`);
+  const missVoice = voiceFiles.filter(f => !fs.existsSync(path.join(ROOT, 'voice', f)));
+  const vpTest = await page.evaluate(() => {
+    const me = p(0);
+    const okFn = ['vpPlay','vpSayTile','vpSayAction','vpSayEastDong','vpSayZhuang','vpSayStance','vpUnlock','vpStop'].every(f => typeof window[f] === 'function');
+    // 实测播放：报一张牌，Audio 元素 src 应指向语音包文件
+    vpStop(); vpQueue = [];
+    try { vpSayTile(me, { id: 'W5' }); } catch (e) {}
+    const src = vpAudio ? String(vpAudio.src) : '';
+    vpStop();
+    return { okFn, srcHasVoice: /voice\/(w|wf)\/W5\.mp3/.test(src) };
+  });
+  assert('语音包：108 条台词齐全 + 播放引擎直放 mp3', missVoice.length === 0 && vpTest.okFn && vpTest.srcHasVoice,
+    missVoice.length ? '缺文件：' + missVoice.slice(0, 3).join(',') + ` 共${missVoice.length}个` : (vpTest.srcHasVoice ? '引擎正常，报牌指向 voice/w|wf 词库' : `函数=${vpTest.okFn}，src=${vpTest.src}`));
+
   // 角色声音重设：7 个角色均含 female/rate/pitch/prefer，梅姐为女声
   const vp = await page.evaluate(() => {
     const names = Object.keys(ROLE_VOICE_PROFILE);

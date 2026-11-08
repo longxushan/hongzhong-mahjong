@@ -598,6 +598,7 @@ function chooseRole(nm){
   sndClick();
   try{initAudio();}catch(e){} // 选角色是第二个用户手势：再次确保音频通道在手势内解锁
   primeSpeech();              // 同理再预热一次 TTS（iOS 双保险）
+  vpUnlock();                 // 语音包音频元素再解锁一次
   layout();run();
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -712,7 +713,7 @@ async function diceForDealer(token){
     const eastName=east===0?'你('+humanName+')':aiNames[east-1];
     // 定东播报：点数最大者语音+屏显报坐东（2026-11-09 用户要求：掷完骰要报谁坐庄）
     const eastSay=(east===0?'我':aiNames[east-1])+' 掷 '+scores[east]+' 点最大，坐东！';
-    try{speakText({name:east===0?humanName:aiNames[east-1],seat:east},eastSay);}catch(e){}
+    vpSayEastDong(east,scores[east]);
     toast(eastName+' 掷 '+scores[east]+' 点最大，坐东');
     await sleep(Math.max(80,CFG.diceHold));
     // 阶段二：东家掷骰定庄（以东为 1 数起，数到点数者坐庄）
@@ -732,7 +733,7 @@ async function diceForDealer(token){
     diceSetVal(cells,dealer,undefined,'庄'); // 庄家格子加「庄」标：坐庄只是先抓牌的身份，不换角色
     // 定庄播报：庄家语音+屏显报名（梅姐坐庄就报「梅姐坐庄」）
     const dealerSay=(dealer===0?'我':aiNames[dealer-1])+'坐庄，先抓牌！';
-    try{speakText({name:dealer===0?humanName:aiNames[dealer-1],seat:dealer},dealerSay);}catch(e){}
+    vpSayZhuang(dealer);
     toast(dealerName+' 坐庄，先抓牌');
     await sleep(Math.max(80,CFG.diceHold));
     window._diceResult={east,rolls:scores,s,dealer};
@@ -910,7 +911,63 @@ function speakText(pl,txt){
     fire();
   });
 }
-function speakName(pl,t){speakText(pl,t.id==='Z'?'红中！':tileName(t));}
+function speakName(pl,t){vpSayTile(pl,t);/*牌名统一走语音包；TTS 仅用于动态长句*/}
+// ===== 语音包（2026-11-09：彻底解决手机没人声——Edge 神经音色预生成 108 条台词 mp3 于 voice/ 目录，
+// 直接播放音频文件，不依赖各手机系统的 TTS 引擎；鸿蒙/国产浏览器 TTS 静默失败时人声照常）=====
+// 目录约定（与 scripts/gen-voice.py 一致）：w|wf/{牌id|动作}.mp3（男/女声词库）、host/{names/i|n2~n12|zhi|dianzuida|zhuang}.mp3（播报员）、role/{i}/{qing|seven|pong}.mp3（角色宣言）
+const ROLE_ORDER=['龙须山人','福星道人','曹大师','僧大兴','许华少','梅姐','厨建国'];
+function vpIdx(name){return ROLE_ORDER.indexOf(name);}
+function vpLib(pl){return (ROLE_VOICE_PROFILE[pl.name]&&ROLE_VOICE_PROFILE[pl.name].female)?'wf/':'w/';}
+let vpAudio=null,vpQueue=[],vpBusy=false;
+const VP_SILENCE='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+function vpUnlock(){ // 用户手势内解锁音频元素（iOS/安卓自动播放限制）
+  try{
+    if(!vpAudio)vpAudio=new Audio();
+    vpAudio.onended=null;vpAudio.onerror=null;
+    vpAudio.src=VP_SILENCE;vpAudio.volume=0;
+    const pr=vpAudio.play();if(pr&&pr.catch)pr.catch(()=>{});
+  }catch(e){}
+}
+function vpPlay(files){ // 依序播放语音包（files 为 voice/ 下相对路径，不含扩展名）
+  if(!soundOn)return;
+  try{vpQueue=vpQueue.concat(files);}catch(e){return;}
+  if(!vpBusy)vpNext();
+}
+function vpNext(){
+  if(!vpQueue.length){vpBusy=false;return;}
+  vpBusy=true;
+  const f=vpQueue.shift();
+  try{
+    if(!vpAudio)vpAudio=new Audio();
+    vpAudio.onended=vpNext;
+    vpAudio.onerror=vpNext; // 缺文件跳到下一条，不卡流程
+    vpAudio.src='voice/'+f+'.mp3';
+    vpAudio.volume=Math.min(1,Math.max(0,appVolume));
+    const pr=vpAudio.play();
+    if(pr&&pr.catch)pr.catch(()=>{vpNext();});
+  }catch(e){vpBusy=false;}
+}
+function vpStop(){vpQueue=[];try{if(vpAudio){vpAudio.pause();vpAudio.onended=null;vpAudio.onerror=null;}}catch(e){}vpBusy=false;}
+// 报牌：牌名词库（按角色性别选声库）
+function vpSayTile(pl,t){vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)]);}
+// 动作词：碰/杠/暗杠/补杠
+function vpSayAction(pl,key){vpPlay([vpLib(pl)+key]);}
+// 播报员句子：掷骰定东（X 掷 N 点最大坐东）、定庄（X 坐庄先抓牌）
+function vpSayEastDong(seat,sum){
+  const nm=seat===0?humanName:aiNames[seat-1];
+  const i=vpIdx(nm);if(i<0)return;
+  vpPlay(['host/names/'+i,'host/zhi','host/n'+sum,'host/dianzuida']);
+}
+function vpSayZhuang(seat){
+  const nm=seat===0?humanName:aiNames[seat-1];
+  const i=vpIdx(nm);if(i<0)return;
+  vpPlay(['host/names/'+i,'host/zhuang']);
+}
+// 角色宣言（大牌姿态）
+function vpSayStance(pl,kind){
+  const i=vpIdx(pl.name);if(i<0)return;
+  vpPlay(['role/'+i+'/'+kind]);
+}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1500);}
 function log(t){/* 左上角信息已移除 */}
 
@@ -1740,12 +1797,12 @@ function canPeng(pl,id){return id!=='Z'&&pl.hand.filter(t=>t.id===id).length>=2;
 function canMingGang(pl,id){return id!=='Z'&&pl.hand.filter(t=>t.id===id).length>=3;}
 function findAnGang(pl){return pl.hand.filter(t=>t.id!=='Z'&&pl.hand.filter(x=>x.id===t.id).length===4).filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i);}
 function findBuGang(pl){const o=[];for(const m of pl.melds)if(m.type==='peng'&&pl.hand.some(t=>t.id===m.base))o.push(m.base);return o;}
-function doPeng(pl,id){const t=[];for(let k=0;k<2;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}pl.melds.push({type:'peng',base:id,tiles:t});sndPeng();flashPlayer(pl);speakText(pl,'碰！');scheduleTeachRefresh();}
+function doPeng(pl,id){const t=[];for(let k=0;k<2;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}pl.melds.push({type:'peng',base:id,tiles:t});sndPeng();flashPlayer(pl);vpSayAction(pl,'peng');scheduleTeachRefresh();}
 function doGang(pl,kind,id){sndGang();const t=[];if(kind==='angang'){for(let k=0;k<4;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}pl.melds.push({type:'angang',base:id,tiles:t});settleGang(pl.seat,'angang');}
   else if(kind==='minggang'){for(let k=0;k<3;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}pl.melds.push({type:'minggang',base:id,tiles:t});}
   else{const m=pl.melds.find(x=>x.base===id&&x.type==='peng');const i=pl.hand.findIndex(x=>x.id===id);m.tiles.push(pl.hand.splice(i,1)[0]);m.type='bugang';settleGang(pl.seat,'bugang');}
   flashPlayer(pl);
-  speakText(pl,kind==='angang'?'暗杠！':kind==='minggang'?'杠！':'补杠！');
+  vpSayAction(pl,kind==='angang'?'angang':kind==='minggang'?'gang':'bugang');
   scheduleTeachRefresh();
 }
 function settleGang(seat,kind){const me=p(seat);if(kind==='angang'){for(let i=0;i<4;i++)if(i!==seat){p(i).gangScore-=2;me.gangScore+=2;}log(me.name+' 暗杠，三家各付2子');}if(kind==='bugang'){for(let i=0;i<4;i++)if(i!==seat){p(i).gangScore-=1;me.gangScore+=1;}log(me.name+' 补杠，三家各付1子');}}
@@ -1876,7 +1933,7 @@ function masterDiscard(pl){
       G._stanceSaid[pl.seat]=true;
       const say=STANCE_SAY[style]||STANCE_SAY.flexible;
       const line=say[stance.kind]||say.qing;
-      try{speakText(pl,line);toast(pl.name+'：'+line);}catch(e){}
+      try{vpSayStance(pl,stance.kind);toast(pl.name+'：'+line);}catch(e){}
     }
   }
   const seen={},cands=[];
@@ -2334,6 +2391,7 @@ function startGame(){
   if(started)return;started=true;
   initAudio();
   primeSpeech();
+  vpUnlock(); // 语音包音频元素在此手势内解锁（手机自动播放限制）
   const root=document.documentElement;
   const enterFs=root.requestFullscreen||root.webkitRequestFullscreen;
   if(enterFs){try{const pr=enterFs.call(root);if(pr&&pr.catch)pr.catch(()=>{});}catch(e){}}
@@ -2353,7 +2411,7 @@ soundBtn.addEventListener('click',function(){
   }else soundOn=false;
   initAudio();applyAppVolume();syncSoundUI();
   try{localStorage.setItem('banshanVol',String(appVolume));}catch(e){}
-  if(soundOn)sndClick();else{try{speechSynthesis.cancel();}catch(e){}}
+  if(soundOn)sndClick();else{try{speechSynthesis.cancel();}catch(e){}vpStop();}
 });
 syncSoundUI();
 // 保持 AudioContext 活跃：系统据此识别为媒体播放，音量键控制游戏声音

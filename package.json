@@ -8,7 +8,8 @@
     "verify": "node scripts/verify.mjs",
     "probe": "node scripts/probe-shanten.mjs",
     "publish": "node scripts/publish.mjs",
-    "test-stance": "node scripts/test-stance.mjs"
+    "test-stance": "node scripts/test-stance.mjs",
+    "voice": "python scripts/gen-voice.py"
   },
   "devDependencies": {
     "playwright-core": "^1.49.0"
