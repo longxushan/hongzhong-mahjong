@@ -27,6 +27,8 @@ jobs:
       # 首次运行时自动启用 Pages 并把构建源设为 GitHub Actions
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       # 站点只发布单文件游戏，避免把文档/脚本等仓库内容暴露到线上
       - name: Build site
