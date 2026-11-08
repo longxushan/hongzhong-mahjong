@@ -103,6 +103,19 @@ try {
   assert('打法攻略弹窗可用', tipsOk.shown && tipsOk.secs >= 6 && tipsOk.tbls >= 3,
     `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张`);
 
+  // 手机竖屏自动横屏：390×844 视口下舞台应为 rot（CSS 旋转 90°）而非 pport（上下分割）
+  const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  try {
+    await page2.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
+    const land = await page2.evaluate(() => {
+      const st = document.getElementById('stage');
+      return { rot: st.classList.contains('rot'), pport: st.classList.contains('pport') };
+    });
+    assert('手机竖屏自动旋转横屏', land.rot && !land.pport, `rot=${land.rot}, pport=${land.pport}`);
+  } finally {
+    await page2.close();
+  }
+
   assert('运行期零 JavaScript 报错', errors.length === 0,
     errors.length ? errors.slice(0, 3).join(' | ') : '0 条');
 } catch (e) {

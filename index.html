@@ -1199,7 +1199,7 @@ document.addEventListener('pointerdown',function(e){
 });
 window.addEventListener('resize',function(){try{applyColWidths();}catch(e){}});
 // ===== 牌桌/教学区水平分割线（鼠标/触摸上下拖拽）=====
-function isPhonePort(){return innerHeight>innerWidth&&Math.min(innerWidth,innerHeight)<768;}
+function isPhonePort(){return false;}// 2026-11-08 应用户要求：手机竖屏打开也自动旋转强制横屏（原为上下分割布局，pport 样式保留备用）
 function dockKey(){return isPhonePort()?'banshanDockHPort':'banshanDockH';}
 function syncSplitter(){
   const sp=document.getElementById('hSplitter'),dock=document.getElementById('bottomDock'),stage=document.getElementById('stage');
