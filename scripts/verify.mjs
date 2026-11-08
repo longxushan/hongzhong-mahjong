@@ -175,6 +175,23 @@ try {
   assert('语音包：108 条台词齐全 + 播放引擎直放 mp3', missVoice.length === 0 && vpTest.okFn && vpTest.srcHasVoice,
     missVoice.length ? '缺文件：' + missVoice.slice(0, 3).join(',') + ` 共${missVoice.length}个` : (vpTest.srcHasVoice ? '引擎正常，报牌指向 voice/w|wf 词库' : `函数=${vpTest.okFn}，src=${vpTest.src}`));
 
+  // 牌桌闲聊（2026-11-09 用户需求：打牌过程中每人说话/弹字幕表达感想）：七风格×六情境台词 + 座位气泡 + 84 条角色音色语音
+  const chatOk = await page.evaluate(() => {
+    const evs = ['good', 'bad', 'peng', 'lost', 'ting', 'low'];
+    const styles = Object.keys(CHAT_SAY);
+    const okStyles = styles.length === 7 && styles.every(s => evs.every(e => Array.isArray(CHAT_SAY[s][e]) && CHAT_SAY[s][e].length >= 2));
+    const okFn = ['chatMaybe', 'chatBubble', 'chatAfterDiscard'].every(f => typeof window[f] === 'function');
+    chatBubble(2, '冒烟测试');
+    const bubble = !!document.querySelector('#seat2 .chatBox');
+    const t = document.querySelector('#seat2 .chatBox'); if (t) t.remove();
+    return { okStyles, okFn, bubble, n: styles.length };
+  });
+  const chatFiles = [];
+  for (let i = 0; i < 7; i++) for (const e of ['good', 'bad', 'peng', 'lost', 'ting', 'low']) for (let k = 0; k < 2; k++) chatFiles.push(`role/${i}/chat-${e}-${k}.mp3`);
+  const missChat = chatFiles.filter(f => !fs.existsSync(path.join(ROOT, 'voice', f)));
+  assert('牌桌闲聊：七风格×六情境台词+座位气泡+84条语音', chatOk.okStyles && chatOk.okFn && chatOk.bubble && missChat.length === 0,
+    chatOk.okStyles && chatOk.bubble ? '台词/气泡/引擎在位，' + (missChat.length ? '缺语音：' + missChat.slice(0, 3).join(',') : '84 条角色音色闲聊语音齐全') : `台词=${chatOk.okStyles}，气泡=${chatOk.bubble}，引擎=${chatOk.okFn}，缺语音 ${missChat.length} 条`);
+
   // 角色声音重设：7 个角色均含 female/rate/pitch/prefer，梅姐为女声
   const vp = await page.evaluate(() => {
     const names = Object.keys(ROLE_VOICE_PROFILE);

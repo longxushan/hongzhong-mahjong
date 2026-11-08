@@ -49,6 +49,20 @@ def parse_stance_say():
         if say: out[style] = say
     return out
 
+def parse_chat_say():
+    """从 index.html 解析 CHAT_SAY 七风格×六情境闲聊台词（数组），防文本漂移"""
+    html = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
+    m = re.search(r'const CHAT_SAY=\{(.*?)\n\};', html, re.S)
+    if not m: sys.exit('未找到 CHAT_SAY')
+    out = {}
+    for style, inner in re.findall(r"(\w+):\{(.*?)\}\s*,?", m.group(1)):
+        ev = {}
+        for k, arr in re.findall(r"(good|bad|peng|lost|ting|low):\[([^\]]*)\]", inner):
+            lines = re.findall(r"'([^']*)'", arr)
+            if lines: ev[k] = lines
+        if ev: out[style] = ev
+    return out
+
 STYLE_OF_ROLE = {0:'learning',1:'grand',2:'academic',3:'conservative',4:'aggressive',5:'steady',6:'flexible'}
 
 async def gen_one(sem, path, text, voice, rate='0%', pitch='+0Hz'):
@@ -88,6 +102,13 @@ async def main():
         v, r, p = ROLE_VOICE[i]
         for kind, txt in stance[STYLE_OF_ROLE[i]].items():
             jobs.append(('role/' + str(i) + '/' + kind, txt, v, r, p))
+    # ④ 牌桌闲聊（按 CHAT_SAY 解析结果 × 各角色音色）：role/{i}/chat-{情境}-{序号}
+    chat = parse_chat_say()
+    for i, name in enumerate(ROLES):
+        v, r, p = ROLE_VOICE[i]
+        for ev, lines in chat[STYLE_OF_ROLE[i]].items():
+            for k, txt in enumerate(lines):
+                jobs.append(('role/' + str(i) + '/chat-' + ev + '-' + str(k), txt, v, r, p))
     sem = asyncio.Semaphore(8)
     results = await asyncio.gather(*(gen_one(sem, a, b, c, d, e) for a, b, c, d, e in jobs))
     ok = sum(1 for _, s in results if s == 'ok')

@@ -128,6 +128,15 @@
   .winPlan p:last-child{margin-bottom:0;}
   .modalBtns{display:flex;gap:10px;margin-top:8px;}.modalBtns button{flex:1;padding:7px 10px;font-size:13px;}
   .autoNextTip{margin-top:8px;padding:6px 10px;border-radius:8px;background:rgba(212,175,55,.14);border:1px solid rgba(212,175,55,.5);color:var(--gold);font-size:12px;text-align:center;}
+  /* 牌桌闲聊气泡：紧挨各座位头像下方弹出，几秒后淡出 */
+  .chatBox{position:relative;margin:2px 0;padding:4px 10px;max-width:170px;background:linear-gradient(135deg,rgba(255,248,225,.97),rgba(255,238,200,.97));color:#5a3811;border:1px solid rgba(180,120,40,.55);border-radius:10px;font-size:12px;line-height:1.35;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:chatPop .22s ease-out;z-index:6;pointer-events:none;word-break:break-all;}
+  .chatBox::before{content:'';position:absolute;top:-5px;left:18px;border:5px solid transparent;border-bottom-color:rgba(180,120,40,.55);}
+  .chatBox.out{animation:chatOut .3s ease-in forwards;}
+  #seat1 .chatBox,#seat3 .chatBox{font-size:10px;padding:3px 8px;max-width:120px;}
+  .large .chatBox{font-size:14px;max-width:220px;}
+  .large #seat1 .chatBox,.large #seat3 .chatBox{font-size:12px;max-width:160px;}
+  @keyframes chatPop{from{opacity:0;transform:translateY(6px) scale(.9);}to{opacity:1;transform:none;}}
+  @keyframes chatOut{to{opacity:0;transform:translateY(-4px);}}
   #rulesModal .ruleSec{margin-bottom:11px;}
   #rulesModal h4{color:#f3d9a4;font-size:13px;margin:0 0 4px;border-left:3px solid var(--gold);padding-left:7px;}
   #rulesModal ol{margin:0;padding-left:19px;}
@@ -970,6 +979,60 @@ function vpSayZhuang(seat){
 function vpSayStance(pl,kind){
   const i=vpIdx(pl.name);if(i<0)return;
   vpPlay(['role/'+i+'/'+kind]);
+}
+// ===== 牌桌闲聊（2026-11-09 用户需求：打牌过程中每人说话/弹字幕表达感想，牌局更有意思）=====
+// 七风格 × 六情境各两句：good=摸到好牌/进张 bad=摸到废牌/久无进展 peng=自己碰杠成功
+// lost=打出的牌被人碰走 ting=刚听牌 low=牌墙快见底；台词与 gen-voice.py 同源（从本表解析生成语音）
+const CHAT_SAY={
+  conservative:{good:['这张摸得踏实。','又进一步，稳。'],bad:['急不得，慢慢来。','沉住气，不慌。'],peng:['碰了这口，落袋为安。','这刻子稳了。'],lost:['被他碰走了，无妨。','下轮舍牌谨慎些。'],ting:['听牌了，守着打。','听上了，求稳。'],low:['牌墙不多了，稳字当头。','尾盘了，一步一算。']},
+  steady:{good:['这牌来得顺。','这张顶用。'],bad:['不来就不来，不急。','又摸张闲牌。'],peng:['碰一口，牌型顺了。','这碰得值。'],lost:['哎，好牌喂人了。','这张喂得心疼。'],ting:['听牌了，就等它来。','成了，稳稳等胡。'],low:['墙快见底，见机行事。','尾盘别放炮。']},
+  aggressive:{good:['来了！好牌！','哈哈，天助我也！'],bad:['什么破牌！','又摸废牌，气人！'],peng:['碰！就是这么快！','这口必须碰！'],lost:['我的牌也敢碰？！','好牌全喂人了！'],ting:['听牌了，给我来！','就差一张，冲！'],low:['牌不多了，拼一把！','尾盘直接刚！']},
+  grand:{good:['好牌！大胡有指望！','此牌有福相！'],bad:['命数未到，再等等。','唉，劫数啊。'],peng:['福到！这口碰得妙！','又近大胡一步！'],lost:['此牌与我无缘呐。','福牌喂了旁人。'],ting:['大胡在望，就差一张！','天机已现！'],low:['成败在此一搏！','尾局了，豪一把！']},
+  academic:{good:['进张概率显著提升。','此牌效率很高。'],bad:['这张期望值为负。','摸牌效率偏低。'],peng:['碰牌使向听下降，正确。','这口符合最优解。'],lost:['舍牌被碰，重新计算。','牌墙信息已更新。'],ting:['已到听牌，等待进张。','听牌确认，张数可观。'],low:['余牌不足，风险上升。','尾盘误差容忍度低。']},
+  learning:{good:['好牌！学以致用！','这摸牌有讲究。'],bad:['摸到难题了。','这张够呛，慢慢琢磨。'],peng:['碰得好，又学一招！','这口碰得有心得。'],lost:['牌被拿走了，记下来。','这一手要复盘。'],ting:['听牌了，成果在望！','学有所成，就等胡！'],low:['最后一搏，检验成果。','尾声了，稳住。']},
+  flexible:{good:['哟，来牌了！','这牌妙啊。'],bad:['摸了张寂寞。','这张嘛……先看看。'],peng:['碰！变化来了！','这口碰得灵活。'],lost:['得，牌飞了。','又喂牌了。'],ting:['听牌！有戏！','成了成了，等胡！'],low:['牌不多了，走着瞧。','尾盘随机应变。']}
+};
+// 闲聊气泡：插入对应座位头像下方，约 2.6 秒后淡出；同一座位新气泡顶掉旧气泡
+function chatBubble(seat,text){
+  try{
+    const seatEl=document.getElementById('seat'+seat);if(!seatEl)return;
+    const old=seatEl.querySelector('.chatBox');if(old)old.remove();
+    const b=document.createElement('div');b.className='chatBox';b.textContent=text;
+    const who=seatEl.querySelector('.who');
+    if(who)who.insertAdjacentElement('afterend',b);else seatEl.appendChild(b);
+    setTimeout(()=>{if(b.parentNode){b.classList.add('out');setTimeout(()=>{try{b.remove();}catch(x){}},320);}},2600);
+  }catch(e){}
+}
+// 闲聊入口：单人 9 秒冷却 + 全桌 3.2 秒全局间隔 + 概率闸防刷屏；气泡必出，语音走角色音色包（缺文件自动跳过）
+function chatMaybe(seat,event,prob){
+  try{
+    if(!G||G.over)return;
+    const pl=p(seat);if(!pl)return;
+    const now=Date.now();
+    if(!G._chatT)G._chatT={};
+    if(!G._chatGT)G._chatGT=0;
+    if(now-(G._chatT[seat]||0)<9000||now-G._chatGT<3200)return;
+    if(Math.random()>(prob==null?0.55:prob))return;
+    const say=CHAT_SAY[styleOfName(pl.name)]||CHAT_SAY.flexible;
+    const lines=say[event];if(!lines||!lines.length)return;
+    const k=Math.floor(Math.random()*lines.length);
+    G._chatT[seat]=now;G._chatGT=now;
+    chatBubble(seat,lines[k]);
+    const vi=vpIdx(pl.name);
+    if(vi>=0)vpPlay(['role/'+vi+'/chat-'+event+'-'+k]);
+  }catch(e){}
+}
+// 出牌后感想：向听下降→得意；刚听牌→报喜（每家每局一次）；久无进展→小牢骚
+function chatAfterDiscard(pl){
+  try{
+    const sh=calcShanten(pl.hand,pl.melds);
+    const prev=pl._chatSh==null?sh:pl._chatSh;
+    pl._chatSh=sh;
+    if(!G._tingSaid)G._tingSaid={};
+    if(sh===0&&prev>0&&!G._tingSaid[pl.seat]){G._tingSaid[pl.seat]=1;chatMaybe(pl.seat,'ting',1);return;}
+    if(sh<prev){chatMaybe(pl.seat,'good',0.45);return;}
+    if(sh===prev)chatMaybe(pl.seat,'bad',0.14);
+  }catch(e){}
 }
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1500);}
 function log(t){/* 左上角信息已移除 */}
@@ -2064,6 +2127,8 @@ async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变
   log('对手风格：'+G.players.filter(x=>x.style).map(x=>x.name+'·'+AI_STYLE_NAME[x.style]).join('，'));resetMoveLog();render();
   if(isPhonePort())applyPhonePortDock();
   while(!G.over&&myToken===runToken){const cur=p(G.current);const first=G.firstTurn&&G.current===G.dealer;
+    // 牌桌闲聊：牌墙见底时随机一家感慨一次（每局一次）
+    if(!G._lowSaid&&wallRemain()<=12){G._lowSaid=1;chatMaybe(randInt(4),'low',1);}
     if(!first){if(wallRemain()<=CFG.keepTiles){await showLiuJu();break;}if(!G.skipDraw)drawTile(cur,false);}G.skipDraw=false;G.firstTurn=false;render();if(!cur.human){await think();if(myToken!==runToken)return;}
     const skipWinCheck=G.justClaim;G.justClaim=false;const w=analyzeWin(cur);if(!skipWinCheck&&w.win){
       /* 天胡/地胡（2026-11-09 规则）：天胡=庄家起手 14 张未打牌即胡（总子数×4）；
@@ -2087,7 +2152,10 @@ async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变
     let disc;if(cur.human&&!cur.auto){let settled=false;while(!settled){disc=await waitHuman('discard',{});if(myToken!==runToken)return;if(disc.id==='Z'){const ok=await waitHuman('confirmZ',{});if(myToken!==runToken)return;if(ok.yes)settled=true;}else settled=true;}}else{disc=aiChooseDiscard(cur);await think();if(myToken!==runToken)return;}
     if(cur.human&&!cur.auto)recordMove(disc);
     discardTile(cur,disc);render();
-    const cl=await claimsAfterDiscard(cur.seat,disc.id);if(myToken!==runToken)return;if(cl){const who=p(cl.seat);if(cl.kind==='peng'){
+    chatAfterDiscard(cur); // 牌桌闲聊：出牌后感想（进张得意/刚听牌/久无进展牢骚）
+    const cl=await claimsAfterDiscard(cur.seat,disc.id);if(myToken!==runToken)return;if(cl){const who=p(cl.seat);
+      chatMaybe(cl.seat,'peng',0.6);chatMaybe(cur.seat,'lost',0.5); // 闲聊：碰者得意、被碰者心疼
+      if(cl.kind==='peng'){
       doPeng(who,disc.id);
       const pm=who.melds[who.melds.length-1];
       const fi=cur.discard.findIndex(t=>t.uid===disc.uid);
