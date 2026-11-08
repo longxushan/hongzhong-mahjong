@@ -143,19 +143,21 @@ try {
   const rulesSync = await page.evaluate(() => {
     const t = document.getElementById('rulesModal').textContent;
     const keys = ['112 张', '开局掷骰定庄', '为「东」', '以他为 1 数起', '谁赢谁坐庄', '红中可替代任意牌', '禁止胡牌',
-      '不能吃牌', '只能自摸', '抢杠胡', '七对', '碰碰胡', '清一色', '豪华七对', '杠上花', '单局封顶 50',
+      '不能吃牌', '只能自摸', '天胡', '地胡', '主动不胡', '抢杠胡', '七对', '碰碰胡', '清一色', '豪华七对', '杠上花', '单局封顶 50',
       '100 个子', '8 局为一轮', '战绩', '100 起底'];
     const miss = keys.filter(k => !t.includes(k));
     // 100 子起底：重置后四家各 100
     const base = currentNames().every(nm => cumScore[nm] === 100);
-    return { ok: miss.length === 0 && base, miss, base };
+    // 天胡/地胡判定与番型逻辑在代码中齐备
+    const bigWin = showWin.toString().includes("tianhu") && showWin.toString().includes("dihu");
+    return { ok: miss.length === 0 && base && bigWin, miss, base, bigWin };
   });
   assert('游戏规则弹窗与最新规则同步', rulesSync.ok,
-    rulesSync.ok ? '掷骰定庄/谁赢坐庄/红中/牌型/计分封顶/100子起底/轮次/战绩等关键条款齐全，四家100子起底' : (rulesSync.miss.length ? '规则弹窗缺失：' + rulesSync.miss.join('、') : '100子起底异常'));
+    rulesSync.ok ? '掷骰/坐庄/天胡地胡/红中/牌型/计分封顶/100子/轮次/战绩条款齐全，天胡地胡番型逻辑在代码' : (rulesSync.miss.length ? '规则弹窗缺失：' + rulesSync.miss.join('、') : '基础分/天胡逻辑异常'));
 
   // 语音包（彻底解决手机没人声）：108 条预生成台词 mp3 齐全 + 播放引擎工作
   const voiceFiles = [];
-  for (const lib of ['w', 'wf']) for (const id of [...['W','T','B'].flatMap(s => Array.from({length:9},(_,i)=>s+(i+1))), 'Z', 'peng', 'gang', 'angang', 'bugang', 'hu']) voiceFiles.push(`${lib}/${id}.mp3`);
+  for (const lib of ['w', 'wf']) for (const id of [...['W','T','B'].flatMap(s => Array.from({length:9},(_,i)=>s+(i+1))), 'Z', 'peng', 'gang', 'angang', 'bugang', 'hu', 'tianhu', 'dihu']) voiceFiles.push(`${lib}/${id}.mp3`);
   for (let i = 0; i < 7; i++) voiceFiles.push(`host/names/${i}.mp3`, `role/${i}/qing.mp3`, `role/${i}/seven.mp3`, `role/${i}/pong.mp3`);
   for (let n = 2; n <= 12; n++) voiceFiles.push(`host/n${n}.mp3`);
   for (const k of ['zhi', 'dianzuida', 'zhuang']) voiceFiles.push(`host/${k}.mp3`);

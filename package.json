@@ -9,7 +9,8 @@
     "probe": "node scripts/probe-shanten.mjs",
     "publish": "node scripts/publish.mjs",
     "test-stance": "node scripts/test-stance.mjs",
-    "voice": "python scripts/gen-voice.py"
+    "voice": "python scripts/gen-voice.py",
+    "test-tianhu": "node scripts/test-tianhu.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.49.0"

@@ -379,6 +379,7 @@
     </ol></div>
     <div class="ruleSec"><h4>五、胡牌</h4><ol>
       <li>默认只能自摸胡，不能点炮。</li>
+      <li>天胡：庄家起手 14 张、一张未打即胡，总子数×4；地胡：非庄家第一巡摸牌即胡（此时全场仅庄家打过一张、无人碰杠），总子数×2。两者主动不胡可按正常打牌继续，但资格只有起手这一次。</li>
       <li>唯一例外是抢杠胡：手中有红中不可抢，无红中可抢别人补杠的牌。</li>
       <li>杠上开花保留。</li>
       <li>牌型为基本 4 面子加 1 将；特殊牌型有七对、全碰（碰碰胡）、清一色、杠上开花；全碰与七对互斥。</li>
@@ -387,7 +388,7 @@
       <li>基础分：自摸 3 分，有红中减 1，有碰或杠减 1（只减一次），最低 1 分。</li>
       <li>翻码：在牌墙头部翻，只认 1、5、9，每张 1 分；软胡（有红中）翻 4 张不保底 0～4；硬胡（无红中）翻 6 张，0 张保底 6 分。</li>
       <li>小计 = 基础分 + 翻码。</li>
-      <li>番型连乘：全碰×4、七对×2（其中 4 张一样的豪华七对×4）、清一色×2、杠上花×2、红中 2 的 n 次方（全碰与七对互斥）。</li>
+      <li>番型连乘：天胡×4、地胡×2、全碰×4、七对×2（其中 4 张一样的豪华七对×4）、清一色×2、杠上花×2、红中 2 的 n 次方（全碰与七对互斥）。起手无碰杠时基数即为有红中 2 子、无红中 3 子。</li>
       <li>单局封顶 50 分。</li>
       <li>杠分：暗杠三家各付 2（共 6）；补杠三家各付 1（共 3）；放杠由点杠者单独付 2；流局也照付，不占 50 封顶，可累计。</li>
     </ol></div>
@@ -1751,6 +1752,8 @@ function buildThinkHTML(){
   return h;
 }
 const REVIEW_KNOWLEDGE={
+  tianhu:'天胡是庄家起手 14 张不打一张直接胡，总分×4，可遇不可求。遇上系统会先问你胡不胡——不胡就按正常打牌继续，但天胡资格只有这一次。',
+  dihu:'地胡是非庄家第一巡摸牌就胡（此时全场只打过庄家一张、无人碰杠），总分×2。同样可以先不胡、继续按正常打；一旦过了这一巡就只剩普通自摸。',
   sevenPairs:'七对不靠面子，靠 7 个对子。看到手里对子多（4 对以上）就早定方向、专打孤张，红中能顶一个对子；残局对子不够要及时放弃。',
   qingyise:'清一色只留一个花色，进张集中、番数翻倍。定调前先看该花色的牌和可进张够不够，一旦做牌就要狠心打掉别的花色，中途犹豫最容易两头落空。',
   allpong:'碰碰胡全靠刻子和碰，见到对子就往刻子上做。它和七对互斥，手里对子多但散张也多时，要早判断走哪条路。',
@@ -2060,7 +2063,17 @@ async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变
   if(isPhonePort())applyPhonePortDock();
   while(!G.over&&myToken===runToken){const cur=p(G.current);const first=G.firstTurn&&G.current===G.dealer;
     if(!first){if(wallRemain()<=CFG.keepTiles){await showLiuJu();break;}if(!G.skipDraw)drawTile(cur,false);}G.skipDraw=false;G.firstTurn=false;render();if(!cur.human){await think();if(myToken!==runToken)return;}
-    const skipWinCheck=G.justClaim;G.justClaim=false;const w=analyzeWin(cur);if(!skipWinCheck&&w.win){let dw=false;if(cur.human&&!cur.auto){const r=await waitHuman('zimo',{});if(myToken!==runToken)return;dw=!!(r&&r.hu);}else dw=true;if(dw){await showWin(cur.seat,'zimo',w);break;}}
+    const skipWinCheck=G.justClaim;G.justClaim=false;const w=analyzeWin(cur);if(!skipWinCheck&&w.win){
+      /* 天胡/地胡（2026-11-09 规则）：天胡=庄家起手 14 张未打牌即胡（总子数×4）；
+         地胡=非庄家第一巡摸牌即胡（总子数×2，此时全场仅庄家打过一张、无碰杠副露）；主动不胡则正常继续 */
+      const discTotal=G.players.reduce((s,x)=>s+x.discard.length,0);
+      const noMelds=G.players.every(x=>x.melds.length===0);
+      const bigWin=(first&&cur.seat===G.dealer)?'tianhu':(!first&&discTotal===1&&noMelds&&cur.seat!==G.dealer)?'dihu':null;
+      let dw=false;if(cur.human&&!cur.auto){
+        if(bigWin)toast(bigWin==='tianhu'?'天胡！起手即胡，总分×4':'地胡！一摸即胡，总分×2');
+        const r=await waitHuman('zimo',{});if(myToken!==runToken)return;dw=!!(r&&r.hu);}
+      else dw=true;
+      if(dw){await showWin(cur.seat,bigWin||'zimo',w);break;}}
     let gh=false;
     if(cur.human&&!cur.auto){const canG=wallRemain()>CFG.keepTiles;const an=canG?findAnGang(cur):[],bu=canG?findBuGang(cur):[];if(an.length||bu.length){const r=await waitHuman('gangself',{an,bu});if(myToken!==runToken)return;if(r&&r.kind){if(r.kind==='an')doGang(cur,'angang',r.id);else{const rb=await checkQiangGang(cur.seat,r.id);if(myToken!==runToken)return;if(rb)break;doGang(cur,'bugang',r.id);}gh=true;}}}
     else{const canG=wallRemain()>CFG.keepTiles;let did=false;
@@ -2161,21 +2174,26 @@ function speakScore(pl,txt){
   },450);
 }
 async function showWin(seat,how,w,from){sndWin();const pl=p(seat);const hasZ=pl.hand.some(t=>t.id==='Z');const hasMeld=pl.melds.length>0;let base=3-(hasZ?1:0)-(hasMeld?1:0);if(base<1)base=1;const ma=flipMa(pl);const fs=[];
+  // 天胡×4 / 地胡×2（2026-11-09 规则：起手胡总子数翻倍；起手无碰杠，基数=有红中2/无红中3）
+  if(how==='tianhu')fs.push({n:'天胡',v:4});
+  if(how==='dihu')fs.push({n:'地胡',v:2});
   if(w.sevenPairs)fs.push({n:w.deluxeSeven?'豪华七对':'七对',v:w.deluxeSeven?4:2});else if(w.allPong)fs.push({n:'全碰(碰碰胡)',v:4});if(w.qingyise)fs.push({n:'清一色',v:2});if(how==='ganghua')fs.push({n:'杠上开花',v:2});const tz=pl.discard.filter(t=>t.id==='Z').length;if(tz)fs.push({n:'打出'+tz+'只红中',v:Math.pow(2,tz)});
   const handTypes=[];
+  if(how==='tianhu')handTypes.push('天胡');if(how==='dihu')handTypes.push('地胡');
   if(w.sevenPairs)handTypes.push(w.deluxeSeven?'豪华七对':'七对');else if(w.allPong)handTypes.push('全碰(碰碰胡)');
   if(w.qingyise)handTypes.push('清一色');
   if(how==='ganghua')handTypes.push('杠上开花');
+  if(how==='tianhu'||how==='dihu')vpSayAction(pl,how);
   let mult=1;for(const f of fs)mult*=f.v;let total=(base+ma.hit)*mult;const cap=total>CFG.cap;if(cap)total=CFG.cap;
   const d=[];for(let i=0;i<4;i++){const x=p(i);let hu=0,pay=0;if(i===seat)hu=(how==='qiang'?total:total*3);if(how!=='qiang'){if(i!==seat)pay=-total;}else if(i===from)pay=-total;d.push({seat:i,hu,pay,gang:x.gangScore,net:hu+pay+x.gangScore});}
   lastWinner=seat;G.over=true;
-  const kKey=w.sevenPairs?'sevenPairs':w.allPong?'allpong':w.qingyise?'qingyise':how==='ganghua'?'ganghua':'basic';
+  const kKey=how==='tianhu'?'tianhu':how==='dihu'?'dihu':w.sevenPairs?'sevenPairs':w.allPong?'allpong':w.qingyise?'qingyise':how==='ganghua'?'ganghua':'basic';
   const winnerTxt=seat===0?'你':pl.name;
-  const howTxt=how==='qiang'?'抢杠胡':how==='ganghua'?'杠上开花':'自摸';
+  const howTxt=how==='tianhu'?'天胡':how==='dihu'?'地胡':how==='qiang'?'抢杠胡':how==='ganghua'?'杠上开花':'自摸';
   const typeTxt=handTypes.length?handTypes.join('、'):'基本胡牌';
   makeReview(winnerTxt+howTxt+'，牌型：'+typeTxt+'，本局得分 '+total+' 分。',kKey);
   const winPlan=buildWinPlan(pl,w,how);
-  await presentResult({title:how==='qiang'?'抢杠胡！':'胡牌',pl,ma,base,fs,handTypes,winPlan,cap,total,d});}
+  await presentResult({title:how==='tianhu'?'天胡！':how==='dihu'?'地胡！':how==='qiang'?'抢杠胡！':'胡牌',pl,ma,base,fs,handTypes,winPlan,cap,total,d});}
 async function showLiuJu(){sndLiuJu();log('留底6张，流局');const d=G.players.map(x=>({seat:x.seat,hu:0,pay:0,gang:x.gangScore,net:x.gangScore}));lastWinner=null;G.over=true;makeReview('留底 6 张，无人胡牌，本局流局，只结算杠分。','liuju');await presentResult({title:'流局',pl:null,ma:null,base:0,fs:[],cap:false,total:0,d});}
 function presentResult(r){return new Promise(res=>{
   if(!r._cumAdded){addCum(r.d);r._cumAdded=true;pushHist(r);}
