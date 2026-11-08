@@ -89,6 +89,20 @@ try {
   assert('全局牌数守恒 = 112', r.total === 112, `实测 ${r.total}，牌墙 ${r.wallRemain}`);
   assert('28 种牌的 tileRemaining 与牌墙真实数一致', r.mismatch.length === 0,
     r.mismatch.length ? '不一致：' + r.mismatch.join(',') : '28/28 全部一致');
+
+  // 打法攻略弹窗：打开、检查分节与表格、关闭
+  const tipsOk = await page.evaluate(() => {
+    document.getElementById('tipsBtn').click();
+    const m = document.getElementById('tipsModal');
+    const shown = m && m.style.display !== 'none';
+    const secs = m ? m.querySelectorAll('.ruleSec').length : 0;
+    const tbls = m ? m.querySelectorAll('table').length : 0;
+    if (shown) m.style.display = 'none';
+    return { shown, secs, tbls };
+  });
+  assert('打法攻略弹窗可用', tipsOk.shown && tipsOk.secs >= 6 && tipsOk.tbls >= 3,
+    `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张`);
+
   assert('运行期零 JavaScript 报错', errors.length === 0,
     errors.length ? errors.slice(0, 3).join(' | ') : '0 条');
 } catch (e) {

@@ -128,6 +128,18 @@
   #rulesModal li{font-size:12.5px;color:#e8e8e8;line-height:1.7;}
   #rulesModal .ruleHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
   #rulesModal .ruleClose{background:#555;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:13px;cursor:pointer;}
+  #tipsModal .ruleSec{margin-bottom:11px;}
+  #tipsModal h4{color:#f3d9a4;font-size:13px;margin:0 0 4px;border-left:3px solid var(--gold);padding-left:7px;}
+  #tipsModal ol{margin:0;padding-left:19px;}
+  #tipsModal li{font-size:12.5px;color:#e8e8e8;line-height:1.7;}
+  #tipsModal .ruleHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  #tipsModal .ruleClose{background:#555;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:13px;cursor:pointer;}
+  #tipsModal table{width:100%;border-collapse:collapse;margin:4px 0 8px;}
+  #tipsModal th{background:#3a3320;color:var(--gold);padding:4px 6px;border:1px solid #5a512e;font-size:12px;text-align:left;}
+  #tipsModal td{padding:4px 6px;border:1px solid #4a4a4a;font-size:12px;color:#e8e8e8;line-height:1.5;vertical-align:top;}
+  #tipsModal .tipSlogan{background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.55);border-radius:8px;padding:8px 11px;color:var(--gold);font-size:13.5px;font-weight:700;text-align:center;margin-bottom:10px;letter-spacing:1px;}
+  #tipsModal .tipKey{color:#ffe14d;font-weight:700;}
+  #tipsModal .tipWarn{color:#ff9d7a;font-weight:700;}
   #teachPanel{width:100%;text-align:center;box-sizing:border-box;}
   .masterModalBox{max-width:900px!important;width:96%;}
   .mHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:8px;}
@@ -287,7 +299,7 @@
   <span class="topTag" id="ruleTag">只能自摸（无红中可抢杠）</span>
   <span class="topTag" id="infoTag">封顶 <b>50</b> · 当前 <b>-</b></span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="teachBtn">教学模式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="teachBtn">教学模式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -347,6 +359,85 @@
       <li>8 局为一轮，顶栏显示第 N/8 局；一轮固定同桌 4 人、其他三家不换人，积分排行榜只统计这 4 人。</li>
       <li>第 8 局结束弹出最终积分榜单，可开始下一轮；开始下一轮会清空本轮累计分，重新从第 1/8 局计起。</li>
     </ol></div>
+  </div>
+</div>
+<div class="mask" id="tipsModal" style="display:none">
+  <div class="modal">
+    <div class="ruleHead"><h3 style="margin:0">打法攻略 · 最优建议</h3><button class="ruleClose" id="tipsCloseBtn">关闭</button></div>
+    <div class="tipSlogan">快硬胡 + 红中变现 + 暗杠白拿 + 残局防抢杠</div>
+    <div class="ruleSec"><h4>〇、一句话定打法</h4><ol>
+      <li>只能自摸、不可点炮，等于纯进攻游戏：防守牌理（打熟张、避生张）基本作废；唯一目标是<b>比别人先自摸，同时把分值结构做对</b>。</li>
+    </ol></div>
+    <div class="ruleSec"><h4>一、规则决定的五条战略推论</h4>
+      <table>
+        <tr><th>规则</th><th>战略推论</th></tr>
+        <tr><td>只能自摸、不可点炮</td><td>防守无意义，全速进攻；生张随便打（唯一小险：放杠 -2）</td></tr>
+        <tr><td>打出红中后胡牌 ×2ⁿ</td><td>红中首先是<b>分数资源</b>，其次才是万能牌——能白打就白打</td></tr>
+        <tr><td>硬胡翻 6 张保底 6，软胡翻 4 张无保底</td><td>赢的时候手里没红中，光是打底分就多 2 分期望</td></tr>
+        <tr><td>暗杠 +6 / 补杠 +3 / 放杠 +2，流局也付、不占 50 封顶</td><td>暗杠无风险白拿；牌差时杠分是唯一稳定收入</td></tr>
+        <tr><td>抢杠由补杠者一人独扛全部赔付</td><td>残局补杠是全游戏最大的单点风险（最高 -150）</td></tr>
+      </table>
+    </div>
+    <div class="ruleSec"><h4>二、核心账：红中怎么用最值钱</h4>
+      <table>
+        <tr><th>胡法</th><th>基础分</th><th>翻码期望</th><th>小计</th><th>红中倍数</th><th>期望总分</th></tr>
+        <tr><td>软胡（手里留 1 红）</td><td>2</td><td>≈1.3</td><td>≈3.3</td><td>×1</td><td class="tipKey">≈3 分</td></tr>
+        <tr><td>硬胡（打出 1 红）</td><td>3</td><td>≈2.5</td><td>≈5.5</td><td>×2</td><td class="tipKey">≈11 分</td></tr>
+        <tr><td>硬胡（打出 2 红）</td><td>3</td><td>≈2.5</td><td>≈5.5</td><td>×4</td><td class="tipKey">≈22 分</td></tr>
+        <tr><td>硬胡（打出 3 红）</td><td>3</td><td>≈2.5</td><td>≈5.5</td><td>×8</td><td class="tipKey">≈44 分</td></tr>
+      </table>
+      <ol>
+        <li>每多打出一只红中，得分近乎翻倍；留红中换来的只是快 1～2 轮，打出来换来的是 <span class="tipKey">3～7 倍的分值</span>。</li>
+        <li>起手 ≥2 只红中：反正被硬规则锁胡（必须先打一只），第一只照打不误；牌型支持就继续打第二只，冲硬胡 ×4。</li>
+        <li>手里 1 只红中，三种情况立刻打掉：去掉红中就听牌；普通对子 ≥4 对转七对；同花色 ≥9 张转清一色。</li>
+        <li>打红中若涨 1 向听——开局、中盘（牌墙 &gt;25）基本值得打；残局（牌墙 &lt;25）或已接近听牌，留着抢速度。</li>
+        <li>牌烂（向听 ≥3～4）：别再想着变现，红中留手里当万能牌先把胡摸到——<span class="tipKey">软胡 3 分也是分，流局 0 分才是输</span>。</li>
+        <li>打出的红中谁也碰不了杠不了胡不了——零副作用，唯一成本是你自己的向听。</li>
+      </ol>
+    </div>
+    <div class="ruleSec"><h4>三、牌型方向优先级</h4>
+      <table>
+        <tr><th>方向</th><th>番数</th><th>触发条件</th><th>说明</th></tr>
+        <tr><td>全碰</td><td>×4</td><td>对子/刻子 ≥4 组</td><td>本玩法第一番型；红中可代刻子；碰就是加速器</td></tr>
+        <tr><td>七对</td><td>×2（豪华×4）</td><td>实体对子 ≥4（无副露）</td><td>关门自摸流；某牌实体 4 张=豪华七对</td></tr>
+        <tr><td>清一色</td><td>×2</td><td>同色 ≥9 张</td><td>可与全碰叠成 ×8，接近封顶</td></tr>
+        <tr><td>平胡快硬胡</td><td>×2ⁿ</td><td>默认路线</td><td>5.5 打底 × 红中倍数，稳</td></tr>
+      </table>
+      <ol>
+        <li>不能吃、只能碰杠——<b>对子的价值远高于普通麻将</b>。</li>
+        <li>起手对子多：直接锁全碰，逢碰必碰（本规则碰完还能杠）。</li>
+        <li>起手同色浓 + 对子多：全碰清一色双开（×8，配上打出红中直接奔封顶 50）。</li>
+        <li>起手平均：平胡快硬胡，别贪。</li>
+      </ol>
+    </div>
+    <div class="ruleSec"><h4>四、碰杠策略（杠分是流局保险）</h4><ol>
+      <li><span class="tipKey">暗杠：无脑开。</span>白拿 6 分、流局也付、不占封顶、不可被抢、还有杠上开花（×2）机会——全游戏唯一的免费午餐。</li>
+      <li>明杠（放杠）：不破坏牌型就杠（+2），顺手收钱。</li>
+      <li>补杠：+3 的甜头，-150 的尾部风险。前期、中盘放心补；<span class="tipWarn">残局（牌墙 &lt;15）或对手有明显听牌迹象：忍住不补</span>——抢杠由你一人独扛全部赔付。</li>
+      <li>危险信号：对手<b>打过红中</b>（说明手上大概率无红、有抢杠资格）+ 开始跟打熟张（听牌标志）→ 此时补杠高危。</li>
+      <li>反过来，你自己手里无红中时，盯紧别人的补杠提示，能抢就抢（硬胡路线的你天然有抢杠资格）。</li>
+    </ol></div>
+    <div class="ruleSec"><h4>五、听牌与节奏</h4><ol>
+      <li>自摸麻将看<b>牌墙剩余</b>，不看牌河安全：两面/三面听、所听牌在牌墙里剩余多的组合优先；单吊最差。直接用底部「听牌一览」栏的剩余张数做决策。</li>
+      <li>留底 6 张是硬终点：牌墙剩 ~10 张就停止一切抓牌杠补——<b>想杠趁早，补杠别拖到残局</b>。</li>
+      <li>牌墙 &lt;20 且向听 ≥3：转收杠分模式，求暗杠、求流局，别恋战。</li>
+      <li>别人先听牌你防不了（无点炮）——这套规则里<b>唯一的防守，就是比对手更快自摸</b>。</li>
+    </ol></div>
+    <div class="ruleSec"><h4>六、决策速查表</h4>
+      <table>
+        <tr><th>你的局面</th><th>最优动作</th></tr>
+        <tr><td>起手 2+ 红中</td><td>按规则先打 1 只；牌型不差继续打第 2 只冲 ×4</td></tr>
+        <tr><td>1 红中 + 去红即听</td><td>立刻打红中 → 硬胡 ×2</td></tr>
+        <tr><td>1 红中 + 对子 ≥4 / 同色 ≥9</td><td>打红中，转七对 / 清一色</td></tr>
+        <tr><td>1 红中 + 牌烂（向听 ≥3）</td><td>留着当万能牌，先求胡</td></tr>
+        <tr><td>有暗杠机会</td><td>无条件开</td></tr>
+        <tr><td>残局 + 有人打过红中且示听</td><td>不补杠</td></tr>
+        <tr><td>自己无红中 + 别人补杠提示</td><td>评估听牌面，能抢则抢</td></tr>
+        <tr><td>牌墙 &lt;20 + 向听 ≥3</td><td>放弃胡牌，收杠分等流局</td></tr>
+        <tr><td>终盘出牌</td><td>无需顾忌生张（无点炮），只避开明杠张（-2）</td></tr>
+      </table>
+    </div>
+    <div class="revPoint"><b>配合教学面板练习：</b>本游戏 AI 本身就是「向听主导 + 不拆成型面子 + 红中变现」的打法，拿不准时看底部「推荐打出」栏；打完用复盘弹窗核对：<b>红中打没打对时机、补杠有没有冒险、听牌面选没选宽</b>——这三个点练熟，你就是这桌的「超级麻将高手师傅」。<br><span style="color:#9bb8ab;font-size:11.5px">仅用于单机娱乐与离线学习。</span></div>
   </div>
 </div>
 <div class="mask" id="reviewModal" style="display:none">
@@ -1755,6 +1846,9 @@ function restart(sameDealer){if(G&&G.humanResolve)humanRespond({pass:1});run(sam
 document.getElementById('rulesBtn').onclick=function(){document.getElementById('rulesModal').style.display='flex';try{speechSynthesis.cancel();}catch(e){}};
 document.getElementById('rulesCloseBtn').onclick=function(){document.getElementById('rulesModal').style.display='none';};
 document.getElementById('rulesModal').onclick=function(e){if(e.target===this)this.style.display='none';};
+document.getElementById('tipsBtn').onclick=function(){document.getElementById('tipsModal').style.display='flex';try{speechSynthesis.cancel();}catch(e){}};
+document.getElementById('tipsCloseBtn').onclick=function(){document.getElementById('tipsModal').style.display='none';};
+document.getElementById('tipsModal').onclick=function(e){if(e.target===this)this.style.display='none';};
 document.getElementById('teachBtn').onclick=toggleTeach;
 document.getElementById('thinkBtn').onclick=toggleThink;
 document.getElementById('reviewBtn').onclick=function(){
