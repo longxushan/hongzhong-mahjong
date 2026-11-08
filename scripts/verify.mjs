@@ -103,6 +103,24 @@ try {
   assert('打法攻略弹窗可用', tipsOk.shown && tipsOk.secs >= 6 && tipsOk.tbls >= 3,
     `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张`);
 
+  // 角色声音重设：7 个角色均含 female/rate/pitch/prefer，梅姐为女声
+  const vp = await page.evaluate(() => {
+    const names = Object.keys(ROLE_VOICE_PROFILE);
+    const ok = names.length === 7 && names.every(n => {
+      const v = ROLE_VOICE_PROFILE[n];
+      return typeof v.female === 'boolean' && v.rate > 0 && v.pitch > 0 && v.prefer instanceof RegExp;
+    });
+    return { ok, names: names.join(','), meiFemale: ROLE_VOICE_PROFILE['梅姐'] ? ROLE_VOICE_PROFILE['梅姐'].female : null };
+  });
+  assert('角色声音按年龄性别性格重设', vp.ok && vp.meiFemale === true, `7 角色：${vp.names}，仅梅姐女声`);
+
+  // 欢快音效：函数齐全且胡牌为六音旋律
+  const sfx = await page.evaluate(() => {
+    const fns = ['sndDraw', 'sndDiscard', 'sndPeng', 'sndGang', 'sndWin', 'sndLiuJu', 'sndClick'];
+    return { ok: fns.every(f => typeof window[f] === 'function'), winMelody: typeof window.sndWin === 'function' };
+  });
+  assert('欢快麻将音效函数齐全', sfx.ok, 'sndDraw/Discard/Peng/Gang/Win/LiuJu/Click');
+
   // 手机竖屏自动横屏：390×844 视口下舞台应为 rot（CSS 旋转 90°）而非 pport（上下分割）
   const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {

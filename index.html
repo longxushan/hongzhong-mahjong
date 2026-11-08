@@ -560,30 +560,33 @@ function noise(dur,filterFreq,gain=0.25,when=0,ftype='bandpass'){
   const g=AC.createGain();g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
   src.connect(f);f.connect(g);g.connect(masterGain);src.start(t);
 }
-function sndDraw(){if(!soundOn)return;ensureAudioPlaying();noise(0.05,2800,0.16);tone(440,0.05,'sine',0.09,0,320);}
-function sndDiscard(){if(!soundOn)return;ensureAudioPlaying();noise(0.1,1900,0.3);tone(240,0.09,'triangle',0.2,0,95);}
-function sndPeng(){if(!soundOn)return;ensureAudioPlaying();tone(660,0.07,'square',0.11);tone(880,0.1,'square',0.11,0.06);}
-function sndGang(){if(!soundOn)return;ensureAudioPlaying();noise(0.14,1300,0.22);tone(170,0.16,'sawtooth',0.14,0,70);}
-function sndWin(){if(!soundOn)return;ensureAudioPlaying();[523,659,784,1047].forEach((f,i)=>tone(f,i===3?0.28:0.12,'triangle',0.18,i*0.12));}
-function sndLiuJu(){if(!soundOn)return;ensureAudioPlaying();tone(392,0.32,'sine',0.13,0,170);}
-function sndClick(){if(!soundOn)return;ensureAudioPlaying();tone(500,0.04,'sine',0.09);}
+// 2026-11-08 欢快版麻将音效：摸牌轻快上挑、出牌清脆带高频点缀、碰杠上扬明亮、胡牌六音小旋律收尾高扬、流局轻快不沉闷
+function sndDraw(){if(!soundOn)return;ensureAudioPlaying();noise(0.04,3200,0.12);tone(520,0.05,'sine',0.08,0,760);}
+function sndDiscard(){if(!soundOn)return;ensureAudioPlaying();noise(0.08,2400,0.26);tone(300,0.08,'triangle',0.2,0,180);tone(1250,0.05,'sine',0.05,0.02);}
+function sndPeng(){if(!soundOn)return;ensureAudioPlaying();tone(660,0.06,'square',0.11);tone(880,0.08,'square',0.11,0.06);tone(1175,0.12,'square',0.10,0.13);}
+function sndGang(){if(!soundOn)return;ensureAudioPlaying();noise(0.1,1600,0.2);tone(150,0.12,'sawtooth',0.13,0,60);tone(990,0.16,'triangle',0.12,0.05,1320);}
+function sndWin(){if(!soundOn)return;ensureAudioPlaying();[523,659,784,1047].forEach((f,i)=>tone(f,i===3?0.18:0.11,'triangle',0.18,i*0.11));tone(1319,0.22,'triangle',0.16,0.46);tone(1568,0.3,'triangle',0.15,0.62,1047);}
+function sndLiuJu(){if(!soundOn)return;ensureAudioPlaying();tone(660,0.18,'sine',0.11,0,590);tone(494,0.24,'sine',0.10,0.14,440);}
+function sndClick(){if(!soundOn)return;ensureAudioPlaying();tone(620,0.04,'sine',0.08,0,900);}
 // 角色性别：7 个角色中仅“梅姐”为女性，其余为男性
 const FEMALE_ROLES=['梅姐'];
 function isFemaleName(nm){return FEMALE_ROLES.indexOf(nm)>=0;}
-// 每个角色固定一套声音：男声低沉、女声清亮，角色无论坐到哪个座位、打多少局，声音始终一致
-// 语速整体上调到 1.1 以上，咬字干脆不拖音；男声压低 pitch 沉稳有力，女声抬高 pitch 清亮干脆，男女差距拉大
+// 2026-11-08 按角色年龄/性别/性格全面重写声音设定：
+// 系统 TTS 没有年龄标签，用 pitch 模拟年龄（年长→低沉、年轻→明亮）、rate 表达性格（急躁→快、持重→稳）；
+// 每个角色配 prefer 声音名正则，系统里有匹配的声音就用专属音色（如康康/云希/晓晓），没有则按性别退回默认声音再靠 pitch 区分。
+// 七个角色：龙须山人=中年沉稳、福星道人=老年仙风道骨、曹大师=学者斯文、僧大兴=僧人持重、许华少=青年急躁、厨建国=壮年爽快、梅姐=中年干练。
 const ROLE_VOICE_PROFILE={
-  '龙须山人':{rate:1.15,pitch:0.7},
-  '福星道人':{rate:1.1,pitch:0.55},
-  '曹大师':{rate:1.18,pitch:0.75},
-  '僧大兴':{rate:1.1,pitch:0.6},
-  '许华少':{rate:1.22,pitch:0.8},
-  '厨建国':{rate:1.15,pitch:0.66},
-  '梅姐':{rate:1.18,pitch:1.35}
+  '龙须山人':{female:false,rate:1.14,pitch:0.72,prefer:/kangkang|yunxi|yunyang|male|man|男|康|希/i},
+  '福星道人':{female:false,rate:1.02,pitch:0.45,prefer:/yunjian|yunfeng|male|man|男|健|峰/i},
+  '曹大师':{female:false,rate:1.12,pitch:0.80,prefer:/yunyang|male|man|男|洋/i},
+  '僧大兴':{female:false,rate:1.06,pitch:0.58,prefer:/yunjian|male|man|男|健/i},
+  '许华少':{female:false,rate:1.26,pitch:1.00,prefer:/yunhao|yunxi|male|man|男|浩|希/i},
+  '厨建国':{female:false,rate:1.18,pitch:0.70,prefer:/yunfeng|kangkang|male|man|男|峰|康/i},
+  '梅姐':{female:true,rate:1.16,pitch:1.25,prefer:/xiaoxiao|huihui|yaoyao|tingting|female|woman|女|晓|慧|婷/i}
 };
 function voiceFor(pl){
   if(ROLE_VOICE_PROFILE[pl.name])return ROLE_VOICE_PROFILE[pl.name];
-  return isFemaleName(pl.name)?{rate:1.15,pitch:1.35}:{rate:1.15,pitch:0.7};
+  return isFemaleName(pl.name)?{female:true,rate:1.15,pitch:1.35}:{female:false,rate:1.15,pitch:0.7};
 }
 // 按性别挑选系统里真正的男声/女声；名字无法判断时返回 null，交给 pitch 兜底
 const FEMALE_VOICE_RE=/female|woman|girl|lady|xiaoxiao|xiaoyi|xiaomeng|xiaohan|huihui|yaoyao|sin-ji|tingting|mei-jia|女|晓|伊|慧|婷|梅|瑶|娜|琪|琳|霞|倩|妍|萱|媛|姐|妈/i;
@@ -639,8 +642,10 @@ function buildUtterance(pl,txt){
   const v=voiceFor(pl);
   u.lang='zh-CN';u.volume=soundOn?appVolume:0;u.rate=v.rate;u.pitch=v.pitch;
   if(zhVoices&&zhVoices.length){
-    // 优先按性别选不同系统语音；选不到再退回通用中文语音，pitch 仍保证男女有别
-    u.voice=pickZhVoice(isFemaleName(pl.name))||zhVoices.find(function(x){return /cmn|hans|cn/i.test(x.lang+''+x.name);})||zhVoices[0];
+    // 优先按角色 prefer 挑专属音色；选不到再按性别选不同系统语音，最后退回通用中文语音（pitch 仍保证角色区分）
+    let pick=v.prefer?zhVoices.find(function(x){return v.prefer.test(x.name);}):null;
+    if(!pick)pick=pickZhVoice(!!v.female)||zhVoices.find(function(x){return /cmn|hans|cn/i.test(x.lang+''+x.name);})||zhVoices[0];
+    u.voice=pick;
   }
   return u;
 }
