@@ -134,6 +134,13 @@
   #rulesModal li{font-size:12.5px;color:#e8e8e8;line-height:1.7;}
   #rulesModal .ruleHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
   #rulesModal .ruleClose{background:#555;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:13px;cursor:pointer;}
+  /* 对局账单（战绩）：每局输赢明细 + 总额汇总表 */
+  #histModal .histTable{width:100%;border-collapse:collapse;margin-top:6px;}
+  #histModal .histTable th,#histModal .histTable td{font-size:12px;padding:5px 4px;text-align:center;border-bottom:1px solid rgba(255,255,255,.12);color:#e8e8e8;white-space:nowrap;}
+  #histModal .histTable th{color:#f3d9a4;background:rgba(255,255,255,.05);font-weight:700;}
+  #histModal .histTable td.htT{text-align:left;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+  #histModal .histTable tr.htSum td{font-weight:800;color:#f3d9a4;border-top:2px solid rgba(217,164,65,.55);border-bottom:none;font-size:12.5px;}
+  #histModal .histNote{font-size:11.5px;color:#bdbdbd;margin:6px 0 0;}
   #tipsModal .ruleSec{margin-bottom:11px;}
   #tipsModal h4{color:#f3d9a4;font-size:13px;margin:0 0 4px;border-left:3px solid var(--gold);padding-left:7px;}
   #tipsModal ol{margin:0;padding-left:19px;}
@@ -326,7 +333,7 @@
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="teachBtn">教学模式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -341,10 +348,15 @@
   <div id="thinkContent" style="display:none"></div>
 </div>
 <div id="toast"></div>
+<div class="mask" id="histModal" style="display:none">
+  <div class="modal">
+    <div class="ruleHead"><h3 style="margin:0">对局账单 · 本轮（1~8 局）</h3><button class="ruleClose" id="histCloseBtn">关闭</button></div>
+    <div id="histBody"></div>
+  </div>
+</div>
 <div class="mask" id="rulesModal" style="display:none">
   <div class="modal">
-    <div class="ruleHead"><h3 style="margin:0">游戏规则</h3><button class="ruleClose" id="rulesCloseBtn">关闭</button></div>
-    <div class="ruleSec"><h4>一、牌张与人数</h4><ol>
+    <div class="ruleHead"><h3 style="margin:0">游戏规则</h3><button class="ruleClose" id="rulesCloseBtn">关闭</button></div>    <div class="ruleSec"><h4>一、牌张与人数</h4><ol>
       <li>筒、条、万各 1～9，每种 4 张共 108 张，加红中 4 张，合计 112 张；无风牌、箭牌、花牌。</li>
       <li>4 人对局，庄家 14 张先出牌，闲家各 13 张；逆时针摸一打一。谁赢谁坐庄：本局胡牌者下局当庄家；流局无人胡牌则庄家按序轮换。</li>
     </ol></div>
@@ -516,6 +528,33 @@ let aiNames=['曹大师','福星道人','许华少'];
 let cumScore={};
 try{const saved=JSON.parse(localStorage.getItem('banshanCum')||'{}');if(saved&&typeof saved==='object')cumScore=saved;}catch(e){cumScore={};}
 function saveCum(){try{localStorage.setItem('banshanCum',JSON.stringify(cumScore));}catch(e){}}
+// 对局账单（战绩）：每局结束时记一笔（局号/结果/各家净分含杠分），随 localStorage 持久化，与累计分同生命周期
+let hist=[];
+try{const _h=JSON.parse(localStorage.getItem('banshanHist')||'[]');if(Array.isArray(_h))hist=_h;}catch(e){hist=[];}
+function saveHist(){try{localStorage.setItem('banshanHist',JSON.stringify(hist));}catch(e){}}
+function pushHist(r){
+  try{
+    hist.push({r:roundNum,t:r.title+(r.pl?'·'+r.pl.name:''),d:r.d.map(x=>({n:p(x.seat).name,v:x.net,g:x.gang}))});
+    if(hist.length>ROUND_MAX)hist=hist.slice(-ROUND_MAX);
+    saveHist();
+  }catch(e){}
+}
+function buildHistHTML(){
+  if(!hist.length)return '<p style="color:#e8e8e8;font-size:13px">本轮还没有打完的对局，结算一局后这里会记一笔。</p>';
+  const names=currentNames();
+  let h='<table class="histTable"><tr><th>局</th><th>结果</th>'+names.map(n=>'<th>'+n+'</th>').join('')+'</tr>';
+  for(const row of hist){
+    h+='<tr><td>'+row.r+'</td><td class="htT">'+row.t+'</td>'+names.map(n=>{
+      const c=row.d.find(x=>x.n===n),v=c?c.v:0;
+      return '<td class="'+(v>0?'plus':v<0?'minus':'')+'">'+(v>0?'+':'')+v+'</td>';
+    }).join('')+'</tr>';
+  }
+  h+='<tr class="htSum"><td colspan="2">本轮累计</td>'+names.map(n=>{
+    const v=cumScore[n]||0;
+    return '<td class="'+(v>0?'plus':v<0?'minus':'')+'">'+(v>0?'+':'')+v+'</td>';
+  }).join('')+'</tr></table>';
+  return h+'<p class="histNote">每格为该局净分（含杠分，单局封顶 50）；末行为本轮 8 局累计。清零累计或换角色开新桌会重新记。</p>';
+}
 const ROUND_MAX=8;
 let roundNum=1;
 try{const rn=parseInt(localStorage.getItem('banshanRound'),10);if(rn>=1&&rn<=ROUND_MAX)roundNum=rn;}catch(e){roundNum=1;}
@@ -527,7 +566,7 @@ function addCum(d){
 }
 function currentNames(){return [humanName,aiNames[0],aiNames[1],aiNames[2]];}
 // 把累计分重置为当前这一桌 4 人、各 0 分（换人或新一轮时调用，保证排行榜恒为 4 人）
-function resetCumForCurrent(){cumScore={};for(const nm of currentNames())cumScore[nm]=0;saveCum();}
+function resetCumForCurrent(){cumScore={};for(const nm of currentNames())cumScore[nm]=0;saveCum();hist=[];saveHist();}
 function rankListHTML(){
   const rows=currentNames().map(nm=>({nm,v:cumScore[nm]||0})).sort((a,b)=>b.v-a.v);
   let h='<div class="rankGrid">';
@@ -2069,7 +2108,7 @@ async function showWin(seat,how,w,from){sndWin();const pl=p(seat);const hasZ=pl.
   await presentResult({title:how==='qiang'?'抢杠胡！':'胡牌',pl,ma,base,fs,handTypes,winPlan,cap,total,d});}
 async function showLiuJu(){sndLiuJu();log('留底6张，流局');const d=G.players.map(x=>({seat:x.seat,hu:0,pay:0,gang:x.gangScore,net:x.gangScore}));lastWinner=null;G.over=true;makeReview('留底 6 张，无人胡牌，本局流局，只结算杠分。','liuju');await presentResult({title:'流局',pl:null,ma:null,base:0,fs:[],cap:false,total:0,d});}
 function presentResult(r){return new Promise(res=>{
-  if(!r._cumAdded){addCum(r.d);r._cumAdded=true;}
+  if(!r._cumAdded){addCum(r.d);r._cumAdded=true;pushHist(r);}
   if(!r._speechDone){r._speechDone=true;try{speakScore(r.pl||p(0),r.pl?buildWinSpeech(r):buildLiuJuSpeech());}catch(e){}}
   const isFinal=roundNum>=ROUND_MAX;
   const mk=document.createElement('div');mk.className='mask';let h='<div class="modal"><h3>'+(isFinal?'本轮最终结算榜单（第'+ROUND_MAX+'/'+ROUND_MAX+'局）':r.title)+'</h3>';
@@ -2199,6 +2238,14 @@ const warnBtnEl=document.getElementById('warnBtn');
 warnBtnEl.classList.toggle('btnActive',mistakeWarnOn);
 warnBtnEl.onclick=function(){mistakeWarnOn=!mistakeWarnOn;saveMistake();this.classList.toggle('btnActive',mistakeWarnOn);if(!mistakeWarnOn)clearWarn();toast(mistakeWarnOn?'打错提醒已开启':'打错提醒已关闭');sndClick();};
 document.getElementById('restartBtn').onclick=()=>restart(true);
+// 对局账单（战绩）：每局输赢明细 + 本轮累计汇总
+document.getElementById('histBtn').onclick=function(){
+  document.getElementById('histBody').innerHTML=buildHistHTML();
+  document.getElementById('histModal').style.display='flex';
+  try{speechSynthesis.cancel();}catch(e){}
+};
+document.getElementById('histCloseBtn').onclick=function(){document.getElementById('histModal').style.display='none';sndClick();};
+document.getElementById('histModal').onclick=function(e){if(e.target===this)this.style.display='none';};
 document.getElementById('autoBtn').onclick=function(){humanAuto=!humanAuto;p(0).auto=humanAuto;this.textContent=humanAuto?'取消托管':'托管';this.classList.toggle('btnActive',humanAuto);toast(humanAuto?'已托管（AI代打）':'已取消托管');if(humanAuto)takeOverByAI();};
 function fit(){
   const stage=document.getElementById('stage');

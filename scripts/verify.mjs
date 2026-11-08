@@ -114,6 +114,29 @@ try {
   assert('打法攻略弹窗可用', tipsOk.shown && tipsOk.secs >= 6 && tipsOk.tbls >= 3,
     `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张`);
 
+  // 对局账单（战绩）：顶栏按钮 → 弹窗展示每局输赢明细 + 本轮累计汇总
+  const histOk = await page.evaluate(() => {
+    const btn = document.getElementById('histBtn');
+    const modal = document.getElementById('histModal');
+    if (!btn || !modal) return { ok: false, why: 'no btn/modal' };
+    btn.click();
+    const shown = modal.style.display === 'flex';
+    const emptyHint = document.getElementById('histBody').textContent.includes('还没有打完的对局');
+    modal.style.display = 'none';
+    // 数据功能：塞两局假记录，生成明细表与累计行
+    hist = [
+      { r: 1, t: '胡牌·测试A', d: currentNames().map((n, i) => ({ n, v: i === 0 ? 24 : -8, g: 0 })) },
+      { r: 2, t: '流局', d: currentNames().map(n => ({ n, v: 0, g: 0 })) },
+    ];
+    const html = buildHistHTML();
+    const rows = (html.match(/<tr[\s>]/g) || []).length; // 表头1+明细2+累计1=4
+    const hasSum = html.includes('本轮累计');
+    const hasPlus = html.includes('plus');
+    return { ok: shown && rows === 4 && hasSum && hasPlus, shown, emptyHint, rows, hasSum };
+  });
+  assert('对局账单：按钮弹出每局明细+累计汇总表', histOk.ok,
+    `弹窗=${histOk.shown}，空态提示=${histOk.emptyHint}，表格行=${histOk.rows}（表头+2明细+累计），累计行=${histOk.hasSum}`);
+
   // 角色声音重设：7 个角色均含 female/rate/pitch/prefer，梅姐为女声
   const vp = await page.evaluate(() => {
     const names = Object.keys(ROLE_VOICE_PROFILE);
