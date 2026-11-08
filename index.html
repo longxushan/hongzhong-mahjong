@@ -396,9 +396,10 @@
       <li>每人总输赢 = 胡牌、翻码收付 + 全部杠分收付。</li>
     </ol></div>
     <div class="ruleSec"><h4>八、轮次</h4><ol>
+      <li>开局每人手里 100 个子（起底分），每局输赢直接从手里的子里加减；手里的子打空仍可继续打，不设破产离场。</li>
       <li>8 局为一轮，顶栏显示第 N/8 局；一轮固定同桌 4 人、其他三家不换人，积分排行榜只统计这 4 人。</li>
-      <li>第 8 局结束弹出最终积分榜单，可开始下一轮；开始下一轮会清空本轮累计分，重新从第 1/8 局计起。</li>
-      <li>顶栏「战绩」随时可查每局输赢明细与四家累计总账，口径与结算一致（每局净分含杠分、单局封顶 50）。</li>
+      <li>第 8 局结束弹出最终积分榜单，可开始下一轮；开始下一轮会把手里的子重新回到 100 起底，重新从第 1/8 局计起。</li>
+      <li>顶栏「战绩」随时可查每局输赢明细与各家手里的子数，口径与结算一致（每局净分含杠分、单局封顶 50）。</li>
     </ol></div>
   </div>
 </div>
@@ -551,11 +552,11 @@ function buildHistHTML(){
       return '<td class="'+(v>0?'plus':v<0?'minus':'')+'">'+(v>0?'+':'')+v+'</td>';
     }).join('')+'</tr>';
   }
-  h+='<tr class="htSum"><td colspan="2">本轮累计</td>'+names.map(n=>{
-    const v=cumScore[n]||0;
-    return '<td class="'+(v>0?'plus':v<0?'minus':'')+'">'+(v>0?'+':'')+v+'</td>';
+  h+='<tr class="htSum"><td colspan="2">手里的子</td>'+names.map(n=>{
+    const v=cumScore[n]!=null?cumScore[n]:100;
+    return '<td class="'+(v>100?'plus':v<100?'minus':'')+'">'+v+'</td>';
   }).join('')+'</tr></table>';
-  return h+'<p class="histNote">每格为该局净分（含杠分，单局封顶 50）；末行为本轮 8 局累计。清零累计或换角色开新桌会重新记。</p>';
+  return h+'<p class="histNote">每格为该局净分（含杠分，单局封顶 50）；开局每人 100 子起底，末行为各家手里现有子数。清零累计或换角色开新桌会重新记。</p>';
 }
 const ROUND_MAX=8;
 let roundNum=1;
@@ -567,16 +568,16 @@ function addCum(d){
   saveCum();
 }
 function currentNames(){return [humanName,aiNames[0],aiNames[1],aiNames[2]];}
-// 把累计分重置为当前这一桌 4 人、各 0 分（换人或新一轮时调用，保证排行榜恒为 4 人）
-function resetCumForCurrent(){cumScore={};for(const nm of currentNames())cumScore[nm]=0;saveCum();hist=[];saveHist();}
+// 把累计分重置为当前这一桌 4 人、各 100 子起底（换人或新一轮时调用，保证排行榜恒为 4 人）
+function resetCumForCurrent(){cumScore={};for(const nm of currentNames())cumScore[nm]=100;saveCum();hist=[];saveHist();}
 function rankListHTML(){
-  const rows=currentNames().map(nm=>({nm,v:cumScore[nm]||0})).sort((a,b)=>b.v-a.v);
+  const rows=currentNames().map(nm=>({nm,v:cumScore[nm]!=null?cumScore[nm]:100})).sort((a,b)=>b.v-a.v);
   let h='<div class="rankGrid">';
-  rows.forEach((r,i)=>{const c=r.v>0?'plus':r.v<0?'minus':'';h+='<div class="row"><span>'+(i+1)+'. '+r.nm+'</span><span class="'+c+'">'+(r.v>0?'+':'')+r.v+'</span></div>';});
+  rows.forEach((r,i)=>{const c=r.v>100?'plus':r.v<100?'minus':'';h+='<div class="row"><span>'+(i+1)+'. '+r.nm+'</span><span class="'+c+'">'+r.v+' 子</span></div>';});
   return h+'</div>';
 }
 function cumRankHTML(){
-  return '<h3 style="margin-top:14px">累计分值排行</h3>'+rankListHTML();
+  return '<h3 style="margin-top:14px">各家手里的子（起底 100）</h3>'+rankListHTML();
 }
 function shuffleArr(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
 function buildRoleGrid(){

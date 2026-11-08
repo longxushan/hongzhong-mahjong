@@ -130,7 +130,7 @@ try {
     ];
     const html = buildHistHTML();
     const rows = (html.match(/<tr[\s>]/g) || []).length; // 表头1+明细2+累计1=4
-    const hasSum = html.includes('本轮累计');
+    const hasSum = html.includes('手里的子') && html.includes('100');
     const hasPlus = html.includes('plus');
     return { ok: shown && rows === 4 && hasSum && hasPlus, shown, emptyHint, rows, hasSum };
   });
@@ -144,12 +144,14 @@ try {
     const t = document.getElementById('rulesModal').textContent;
     const keys = ['112 张', '开局掷骰定庄', '为「东」', '以他为 1 数起', '谁赢谁坐庄', '红中可替代任意牌', '禁止胡牌',
       '不能吃牌', '只能自摸', '抢杠胡', '七对', '碰碰胡', '清一色', '豪华七对', '杠上花', '单局封顶 50',
-      '8 局为一轮', '战绩', '清空本轮累计分'];
+      '100 个子', '8 局为一轮', '战绩', '100 起底'];
     const miss = keys.filter(k => !t.includes(k));
-    return { ok: miss.length === 0, miss };
+    // 100 子起底：重置后四家各 100
+    const base = currentNames().every(nm => cumScore[nm] === 100);
+    return { ok: miss.length === 0 && base, miss, base };
   });
   assert('游戏规则弹窗与最新规则同步', rulesSync.ok,
-    rulesSync.ok ? '掷骰定庄/谁赢坐庄/红中/牌型/计分封顶/轮次/战绩等关键条款齐全' : '规则弹窗缺失：' + rulesSync.miss.join('、'));
+    rulesSync.ok ? '掷骰定庄/谁赢坐庄/红中/牌型/计分封顶/100子起底/轮次/战绩等关键条款齐全，四家100子起底' : (rulesSync.miss.length ? '规则弹窗缺失：' + rulesSync.miss.join('、') : '100子起底异常'));
 
   // 角色声音重设：7 个角色均含 female/rate/pitch/prefer，梅姐为女声
   const vp = await page.evaluate(() => {
