@@ -710,6 +710,11 @@ async function diceForDealer(token){
     cells[east].classList.add('east');
     diceSetVal(cells,east,scores[east],'东');
     const eastName=east===0?'你('+humanName+')':aiNames[east-1];
+    // 定东播报：点数最大者语音+屏显报坐东（2026-11-09 用户要求：掷完骰要报谁坐庄）
+    const eastSay=(east===0?'我':aiNames[east-1])+' 掷 '+scores[east]+' 点最大，坐东！';
+    try{speakText({name:east===0?humanName:aiNames[east-1],seat:east},eastSay);}catch(e){}
+    toast(eastName+' 掷 '+scores[east]+' 点最大，坐东');
+    await sleep(Math.max(80,CFG.diceHold));
     // 阶段二：东家掷骰定庄（以东为 1 数起，数到点数者坐庄）
     title.textContent='东家掷骰 · 定庄';
     note.textContent='以'+eastName+'为 1 数起（数到 5 绕回自己），掷出点数落谁家谁坐庄';
@@ -725,7 +730,10 @@ async function diceForDealer(token){
     diceResultText(eastName+' 掷出 '+s+' 点：以他为 1 数起 '+seq.join('，')+(s>8?'…绕回 ':'')+'—— '+dealerName+' 坐庄，先抓牌！');
     cells.forEach((c,k)=>c.classList.toggle('cur',k===dealer));
     diceSetVal(cells,dealer,undefined,'庄'); // 庄家格子加「庄」标：坐庄只是先抓牌的身份，不换角色
-    try{speakText({name:dealer===0?humanName:aiNames[dealer-1],seat:dealer},(dealer===0?'我坐庄':'坐庄')+'，先抓牌！');}catch(e){}
+    // 定庄播报：庄家语音+屏显报名（梅姐坐庄就报「梅姐坐庄」）
+    const dealerSay=(dealer===0?'我':aiNames[dealer-1])+'坐庄，先抓牌！';
+    try{speakText({name:dealer===0?humanName:aiNames[dealer-1],seat:dealer},dealerSay);}catch(e){}
+    toast(dealerName+' 坐庄，先抓牌');
     await sleep(Math.max(80,CFG.diceHold));
     window._diceResult={east,rolls:scores,s,dealer};
     ov.classList.remove('show');
