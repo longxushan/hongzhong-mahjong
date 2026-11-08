@@ -1084,8 +1084,9 @@ function teachPick(d){
   return {id:best.id,kou,rule:false,ting:null,effDraws:best.draws,effWeight:best.dw};
 }
 let teachOn=false;
-try{teachOn=localStorage.getItem('banshanTeach')==='1';}catch(e){teachOn=false;}
-function saveTeach(){try{localStorage.setItem('banshanTeach',teachOn?'1':'0');}catch(e){}}
+try{localStorage.removeItem('banshanTeach');}catch(e){}  // 2026-11-08：清除旧版竖屏自动开启教学的遗留状态；教学开关改用新键，各端默认关，手动开启后记忆
+try{teachOn=localStorage.getItem('banshanTeach2')==='1';}catch(e){teachOn=false;}
+function saveTeach(){try{localStorage.setItem('banshanTeach2',teachOn?'1':'0');}catch(e){}}
 let thinkOn=false;        // 讲思路视图（临时查看，不持久化）
 function refreshDock(){
   const dock=document.getElementById('bottomDock');

@@ -112,6 +112,17 @@ try {
       return { rot: st.classList.contains('rot'), pport: st.classList.contains('pport') };
     });
     assert('手机竖屏自动旋转横屏', land.rot && !land.pport, `rot=${land.rot}, pport=${land.pport}`);
+
+    // 手机横屏状态下进入牌局：教学模式默认不打开
+    await page2.click('#startBtn');
+    await page2.waitForSelector('#roleSelect.show .roleBtn', { timeout: 10000 });
+    await page2.locator('.roleBtn').first().click();
+    await page2.waitForFunction(
+      () => typeof G !== 'undefined' && !!G && typeof p === 'function' && !!p(0),
+      null, { timeout: 30000 }
+    );
+    const teach = await page2.evaluate(() => ({ teachOn }));
+    assert('手机横屏默认不开教学模式', teach.teachOn === false, `teachOn=${teach.teachOn}`);
   } finally {
     await page2.close();
   }
