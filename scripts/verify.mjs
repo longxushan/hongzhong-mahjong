@@ -183,6 +183,16 @@ try {
   });
   assert('打牌回合指示灯呼吸金光', glow.ok, '原尺寸 + turnPulse 呼吸动画');
 
+  // AI 座位（1/2/3）用小号光效 turnPulseS
+  const aiGlow = await page.evaluate(() => {
+    const w = document.querySelector('#seat1 .who');
+    w.classList.add('active');
+    const name = getComputedStyle(document.querySelector('#seat1 .who.active .turn')).animationName;
+    w.classList.remove('active');
+    return name;
+  });
+  assert('AI 座位指示灯用小号光效', aiGlow === 'turnPulseS', `animation=${aiGlow}`);
+
   // 谁赢谁坐庄：模拟上局座位3胡牌，开新局后庄家应为座位3且其手牌14张
   const dz = await page.evaluate(() => {
     lastWinner = 3; lastDealer = 1; hasPlayed = true;
