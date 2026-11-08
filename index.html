@@ -296,8 +296,6 @@
 <div id="topbar">
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
-  <span class="topTag" id="ruleTag">只能自摸（无红中可抢杠）</span>
-  <span class="topTag" id="infoTag">封顶 <b>50</b> · 当前 <b>-</b></span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
   <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="teachBtn">教学模式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
 </div>
@@ -1844,7 +1842,6 @@ function renderActions(o){const a=document.getElementById('actions');a.innerHTML
   else if(k==='confirmZ'){mk('确认打出',{yes:1},'danger');mk('取消',{no:1});}else if(k==='qiang'){mk('抢杠胡',{hu:'hu'},'primary');mk('放弃',{pass:1});}
   else if(k==='claim'){const id=o.id;if(canMingGang(p(0),id))mk('杠',{kind:'gang'},'danger');if(canPeng(p(0),id))mk('碰',{kind:'peng'},'primary');mk('过',{pass:1});}}
 function renderInfo(){const remain=G.wall.length-G.head-(G.wall.length-1-G.tail);document.getElementById('info').textContent='墙剩'+remain+'张 · 留底6 · 你的杠分'+p(0).gangScore;
-  document.getElementById('infoTag').innerHTML='封顶 <b>50</b> · 当前 <b>'+p(G.current).name+'</b>';
   document.getElementById('warnTag').style.display=blockedByZRule(p(0))?'inline-block':'none';
   updateRoundTag();}
 function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();renderInfo();renderActions({});if(teachOn)updateTeachPanel();}
