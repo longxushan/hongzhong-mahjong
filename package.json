@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "verify": "node scripts/verify.mjs",
+    "probe": "node scripts/probe-shanten.mjs",
     "publish": "node scripts/publish.mjs"
   },
   "devDependencies": {
