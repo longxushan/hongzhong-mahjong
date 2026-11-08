@@ -1,0 +1,14 @@
+{
+  "name": "hongzhong-mahjong",
+  "version": "1.0.0",
+  "private": true,
+  "description": "巢湖-金华红中 · 单文件教学型红中麻将 H5",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "verify": "node scripts/verify.mjs",
+    "publish": "node scripts/publish.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}
