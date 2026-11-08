@@ -114,7 +114,7 @@ try {
   assert('打法攻略弹窗可用', tipsOk.shown && tipsOk.secs >= 6 && tipsOk.tbls >= 3,
     `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张`);
 
-  // 对局账单（战绩）：顶栏按钮 → 弹窗展示每局输赢明细 + 本轮累计汇总
+  // 对局账单（战绩）：每局输赢明细 + 累计汇总 + 结果列牌型标注 + 末尾各局胡牌牌型图；赢红输绿
   const histOk = await page.evaluate(() => {
     const btn = document.getElementById('histBtn');
     const modal = document.getElementById('histModal');
@@ -123,19 +123,27 @@ try {
     const shown = modal.style.display === 'flex';
     const emptyHint = document.getElementById('histBody').textContent.includes('还没有打完的对局');
     modal.style.display = 'none';
-    // 数据功能：塞两局假记录，生成明细表与累计行
+    // 数据功能：塞两局记录（胡牌局带牌型+手牌快照、流局局无快照），生成明细表、累计行与牌型图区
     hist = [
-      { r: 1, t: '胡牌·测试A', d: currentNames().map((n, i) => ({ n, v: i === 0 ? 24 : -8, g: 0 })) },
+      { r: 1, t: '胡·测试A·清一色自摸', ht: '清一色自摸', d: currentNames().map((n, i) => ({ n, v: i === 0 ? 24 : -8, g: 0 })), hand: ['W1', 'W2', 'W3', 'W9', 'Z'], melds: [{ type: 'peng', base: 'W5' }] },
       { r: 2, t: '流局', d: currentNames().map(n => ({ n, v: 0, g: 0 })) },
     ];
     const html = buildHistHTML();
     const rows = (html.match(/<tr[\s>]/g) || []).length; // 表头1+明细2+累计1=4
     const hasSum = html.includes('手里的子') && html.includes('100');
-    const hasPlus = html.includes('plus');
-    return { ok: shown && rows === 4 && hasSum && hasPlus, shown, emptyHint, rows, hasSum };
+    const hasType = html.includes('清一色自摸'); // 结果列注明牌型
+    const hasHands = html.includes('histHandRow') && /tp-sm/.test(html); // 末尾牌型图区
+    // 赢红输绿：把生成的表格真正渲染出来，读明细单元格 computed color（防选择器优先级把颜色盖白）
+    document.getElementById('histBody').innerHTML = html;
+    const pe = document.querySelector('#histModal .histTable td.plus');
+    const me = document.querySelector('#histModal .histTable td.minus');
+    const pr = pe ? (getComputedStyle(pe).color.match(/\d+/g) || []).map(Number) : [];
+    const mr = me ? (getComputedStyle(me).color.match(/\d+/g) || []).map(Number) : [];
+    const redWin = pr.length === 3 && mr.length === 3 && pr[0] > pr[1] && mr[1] > mr[0];
+    return { ok: shown && rows === 4 && hasSum && hasType && hasHands && redWin, shown, emptyHint, rows, hasSum, hasType, hasHands, redWin };
   });
-  assert('对局账单：按钮弹出每局明细+累计汇总表', histOk.ok,
-    `弹窗=${histOk.shown}，空态提示=${histOk.emptyHint}，表格行=${histOk.rows}（表头+2明细+累计），累计行=${histOk.hasSum}`);
+  assert('对局账单：明细+牌型标注+牌型图+赢红输绿', histOk.ok,
+    `弹窗=${histOk.shown}，行=${histOk.rows}，牌型标注=${histOk.hasType}，牌型图=${histOk.hasHands}，赢红输绿=${histOk.redWin}`);
 
   // 游戏规则弹窗与最新规则同步（2026-11-09 用户要求：每次修改后自动检查规则、及时更新）：
   // 关键条款关键词清单——以后每次规则级变更，同步改 rulesModal 文本后必须在此清单加上新条款关键词，
