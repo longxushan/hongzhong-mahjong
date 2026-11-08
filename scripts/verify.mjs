@@ -152,16 +152,18 @@ try {
     const t = document.getElementById('rulesModal').textContent;
     const keys = ['112 张', '开局掷骰定庄', '为「东」', '以他为 1 数起', '谁赢谁坐庄', '红中可替代任意牌', '禁止胡牌',
       '不能吃牌', '只能自摸', '天胡', '地胡', '主动不胡', '抢杠胡', '七对', '碰碰胡', '清一色', '豪华七对', '杠上花', '单局封顶 50',
-      '100 个子', '8 局为一轮', '战绩', '100 起底', '四家摊牌'];
+      '100 个子', '8 局为一轮', '战绩', '100 起底', '四家摊牌', '资格作废', '连乘，单局仍封顶'];
     const miss = keys.filter(k => !t.includes(k));
     // 100 子起底：重置后四家各 100
     const base = currentNames().every(nm => cumScore[nm] === 100);
     // 天胡/地胡判定与番型逻辑在代码中齐备
     const bigWin = showWin.toString().includes("tianhu") && showWin.toString().includes("dihu");
-    return { ok: miss.length === 0 && base && bigWin, miss, base, bigWin };
+    // 裁决②的实现锚点：红中硬规则在胡牌判定函数内（≥2 红中未打 → 判非胡，天胡/地胡同样被拦）
+    const zGate = analyzeWin.toString().includes('blockedByZRule');
+    return { ok: miss.length === 0 && base && bigWin && zGate, miss, base, bigWin, zGate };
   });
   assert('游戏规则弹窗与最新规则同步', rulesSync.ok,
-    rulesSync.ok ? '掷骰/坐庄/天胡地胡/红中/牌型/计分封顶/100子/轮次/战绩条款齐全，天胡地胡番型逻辑在代码' : (rulesSync.miss.length ? '规则弹窗缺失：' + rulesSync.miss.join('、') : '基础分/天胡逻辑异常'));
+    rulesSync.ok ? '掷骰/坐庄/天胡地胡（含红中硬规则/封顶裁决）/红中/牌型/计分封顶/100子/轮次/战绩/摊牌条款齐全' : (rulesSync.miss.length ? '规则弹窗缺失：' + rulesSync.miss.join('、') : '基础分/天胡/红中闸逻辑异常'));
 
   // 语音包（彻底解决手机没人声）：108 条预生成台词 mp3 齐全 + 播放引擎工作
   const voiceFiles = [];
