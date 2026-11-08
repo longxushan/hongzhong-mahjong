@@ -511,6 +511,8 @@ function chooseRole(nm){
   roundNum=1;saveRound();resetCumForCurrent();
   const rs=document.getElementById('roleSelect');rs.classList.remove('show');
   sndClick();
+  try{initAudio();}catch(e){} // 选角色是第二个用户手势：再次确保音频通道在手势内解锁
+  primeSpeech();              // 同理再预热一次 TTS（iOS 双保险）
   layout();run();
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -527,7 +529,7 @@ function applyAppVolume(){
 }
 function ensureAudioPlaying(){
   if(!AC){initAudio();return;}
-  try{if(AC.state==='suspended')AC.resume();}catch(e){}
+  try{if(AC.state==='suspended'){const pr=AC.resume();if(pr&&pr.catch)pr.catch(function(){});}}catch(e){}
   if(masterGain){const target=soundOn?appVolume:0;if(Math.abs(masterGain.gain.value-target)>0.02)applyAppVolume();}
 }
 function initAudio(){
@@ -622,13 +624,13 @@ if('speechSynthesis' in window){
   // 防止部分浏览器队列长时间暂停，周期性 resume 唤醒
   setInterval(function(){try{if(!speechSynthesis.speaking&&speechSynthesis.paused)speechSynthesis.resume();}catch(e){}},5000);
 }
-// 在用户手势里预热，提升首次发声成功率
+// 在用户手势内预热语音引擎：iOS 必须用「非空文本的真实发声」解锁 TTS（空文本或零音量会被系统直接忽略，2026-11-08 修复手机无声）
 function primeSpeech(){
   if(!('speechSynthesis' in window))return;
   loadVoices();
   try{
-    const warm=new SpeechSynthesisUtterance('');
-    warm.lang='zh-CN';warm.volume=0;
+    const warm=new SpeechSynthesisUtterance('好');
+    warm.lang='zh-CN';warm.volume=0.01;warm.rate=2;
     speechSynthesis.speak(warm);
   }catch(e){}
 }
@@ -661,7 +663,7 @@ function speakText(pl,txt){
         try{speechSynthesis.resume();}catch(x){}
         if(attempts<3)setTimeout(fire,400);
       };
-      try{speechSynthesis.resume();speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){return;}
+      try{speechSynthesis.resume();if(speechSynthesis.speaking||speechSynthesis.pending)speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){return;}
       // 兜底：未真正开始则 resume 后重试，最多3次
       setTimeout(function(){
         if(!started&&!speechSynthesis.speaking&&attempts<3)fire();
@@ -1866,6 +1868,7 @@ document.getElementById('reviewBtn').onclick=function(){
 document.getElementById('reviewCloseBtn').onclick=function(){document.getElementById('reviewModal').style.display='none';};
 document.getElementById('reviewModal').onclick=function(e){if(e.target===this)this.style.display='none';};
 // 积分排行已并入底部教学列；清零入口放在底部列内，用事件委托适配面板重建
+document.addEventListener('click',function(){try{ensureAudioPlaying();}catch(e){}}); // 移动端：任意点击都尝试恢复音频通道（iOS 切后台后通道会被系统挂起）
 document.addEventListener('click',function(e){
   if(e.target&&e.target.id==='tRankReset'){
     resetCumForCurrent();

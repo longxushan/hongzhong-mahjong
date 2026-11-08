@@ -121,6 +121,15 @@ try {
   });
   assert('欢快麻将音效函数齐全', sfx.ok, 'sndDraw/Discard/Peng/Gang/Win/LiuJu/Click');
 
+  // 移动端声音修复：TTS 用非空文本预热（iOS 解锁）、报牌不再无条件 cancel（iOS 无声 bug）、任意点击恢复音频通道
+  const sndFix = await page.evaluate(() => ({
+    warm: /SpeechSynthesisUtterance\('好'\)/.test(primeSpeech.toString()),
+    noBlankCancel: /speaking\|\|speechSynthesis\.pending/.test(speakText.toString()),
+    clickRestore: typeof ensureAudioPlaying === 'function' && primeSpeech.toString().includes('chooseRole') === false,
+  }));
+  assert('移动端声音修复（非空预热+条件取消）', sndFix.warm && sndFix.noBlankCancel,
+    `warm=${sndFix.warm}, noBlankCancel=${sndFix.noBlankCancel}`);
+
   // 手机竖屏自动横屏：390×844 视口下舞台应为 rot（CSS 旋转 90°）而非 pport（上下分割）
   const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
