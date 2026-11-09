@@ -27,7 +27,15 @@ ROLE_VOICE = {
 }
 HOST_RATE = '-5%'
 
-CN_NUM = {2:'两',3:'三',4:'四',5:'五',6:'六',7:'七',8:'八',9:'九',10:'十',11:'十一',12:'十二'}
+# 数字 0-99（2 念「两」；10-19 「十X」；20+ 「X十Y」；n2-n12 为旧骰点词，内容一致自动 skip 复用）
+DIG = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九']
+def num_cn(n):
+    if n < 10:
+        return '两' if n == 2 else DIG[n]
+    if n < 20:
+        return '十' + ('' if n == 10 else DIG[n - 10])
+    return DIG[n // 10] + '十' + ('' if n % 10 == 0 else DIG[n % 10])
+CN_NUM = {n: num_cn(n) for n in range(0, 100)}
 RANK_CN = ['一','二','三','四','五','六','七','八','九']
 
 def tile_text(id_):
@@ -98,6 +106,15 @@ async def main():
     for k, t in {'zhi': '掷', 'dianzuida': '点最大，坐东！', 'zhuang': '坐庄，先抓牌！',
                  'qingdong': '请先定东', 'dongshi': '东是', 'dingzhuangjia': '定庄家',
                  'zhuangjiashi': '庄家是', 'jinru': '请进入游戏出牌'}.items():
+        jobs.append(('host/' + k, t, VOICE_HOST, HOST_RATE, '+0Hz'))
+    # ②b host 结算点评词库（2026-11-09 用户需求：胡牌/流局结算点评播报迁语音包，不依赖系统 TTS）
+    #     数字 0-99 已在 host/n{n}；此处为打法/牌型/框架词
+    for k, t in {'zimo2': '自摸', 'ganghua2': '杠上开花', 'qianggang': '抢杠胡', 'tianhu2': '天胡', 'dihu2': '地胡',
+                 'qidui': '七对', 'haohuaqidui': '豪华七对', 'quanpeng': '碰碰胡', 'qingyise': '清一色',
+                 'dacu': '打出', 'zhihongzhong': '只红中', 'fanbei': '翻倍',
+                 'paixing': '牌型：', 'dipai': '底牌', 'gezi': '个子', 'fanma': '翻码', 'zhang': '张', 'zhong': '中',
+                 'fanxing': '番型一共乘', 'bei': '倍', 'heji': '合计', 'fen': '分',
+                 'liuju': '留底六张，流局，只结杠分'}.items():
         jobs.append(('host/' + k, t, VOICE_HOST, HOST_RATE, '+0Hz'))
     # ③ 角色宣言（按 STANCE_SAY 解析结果 × 各角色音色）
     stance = parse_stance_say()

@@ -2427,35 +2427,32 @@ function buildWinPlan(pl,w,how){
   else lines.push('胡牌方式是自摸：他靠自己摸牌胡，三家都按最终分全额赔付。');
   return lines;
 }
-function buildWinSpeech(r){
-  const parts=[];
-  const winName=r.pl?r.pl.name:'';
-  const how=r.title.replace('！','');
-  parts.push(winName+how+(r.handTypes&&r.handTypes.length?'，牌型：'+r.handTypes.join('、'):''));
-  // 精简做牌思路（语音版，只讲方向与关键路径，避免过长）
-  if(r.pl){
-    const pl=r.pl,meldN=pl.melds.length;
-    const zH=pl.hand.filter(t=>t.id==='Z').length;
-    const zD=pl.discard.filter(t=>t.id==='Z').length;
-    let idea=(r.handTypes&&r.handTypes.length)?'他这局专心做'+r.handTypes.join('、'):'他按基本牌理，先清孤张再凑面子、留一对将';
-    idea+=meldN?('，靠'+meldN+'组副露快速成型'):'，全程不碰不杠、藏着做';
-    if(zH)idea+='，红中当癞子补位';
-    if(zD)idea+='，打出红中翻倍';
-    parts.push('做牌思路：'+idea);
+// 结算点评语素（host 播报员音色，按序拼接）：名字→(抢杠)→牌型→打出红中→底牌→翻码→倍数→合计
+function numKey(n){return (n>=0&&n<=99&&Number.isInteger(n))?('host/n'+n):null;}
+function buildWinSpeechKeys(r){
+  const keys=[];
+  const i=vpIdx(r.pl.name);if(i>=0)keys.push('host/names/'+i);
+  if(r.how==='qiang')keys.push('host/qianggang'); // 自摸/杠上开花/天胡/地胡已在动作词与牌型里体现，不重复播
+  if(r.handTypes&&r.handTypes.length){
+    keys.push('host/paixing');
+    const M={'天胡':'host/tianhu2','地胡':'host/dihu2','豪华七对':'host/haohuaqidui','七对':'host/qidui','全碰(碰碰胡)':'host/quanpeng','清一色':'host/qingyise','杠上开花':'host/ganghua2'};
+    for(const t of r.handTypes){if(M[t])keys.push(M[t]);}
   }
-  parts.push('底牌'+r.base+'个子');
-  if(r.ma){parts.push('翻码'+r.ma.tiles.length+'张，中'+r.ma.hit+'个子');}
-  let mult=1;if(r.fs&&r.fs.length){for(const f of r.fs)mult*=f.v;parts.push('番型一共乘'+mult+'倍');}
-  parts.push('合计'+r.total+'个字子');
-  return parts.join('，');
+  if(r.fs)for(const f of r.fs){
+    if(/^打出\d+只红中$/.test(f.n)){const k=numKey(parseInt(f.n.match(/\d+/)[0],10));if(k)keys.push('host/dacu',k,'host/zhihongzhong','host/fanbei');}
+  }
+  const kb=numKey(r.base);if(kb)keys.push('host/dipai',kb,'host/gezi');
+  if(r.ma){const kt=numKey(r.ma.tiles.length),kh=numKey(r.ma.hit);if(kt&&kh)keys.push('host/fanma',kt,'host/zhang','host/zhong',kh,'host/gezi');}
+  let mult=1;if(r.fs&&r.fs.length){for(const f of r.fs)mult*=f.v;const km=numKey(mult);if(km)keys.push('host/fanxing',km,'host/bei');}
+  const kt2=numKey(r.total);if(kt2)keys.push('host/heji',kt2,'host/fen');
+  return keys;
 }
-function buildLiuJuSpeech(){return '留底六张，流局，只结杠分';}
-function speakScore(pl,txt){
-  // 延迟到出牌语音与音效结束后再播，避免被连续 cancel 吞掉，并做一次重试
-  setTimeout(function(){
-    try{speakText(pl,txt);}catch(e){}
-    setTimeout(function(){try{if(soundOn&&speechSynthesis&&!speechSynthesis.speaking)speakText(pl,txt);}catch(e){}},900);
-  },450);
+function speakScore(keys){
+  // 2026-11-09 修复：结算点评播报迁语音包 host 播报员（原走系统 TTS，鸿蒙/微信内置浏览器
+  // TTS 静默失败时点评无声）；host/n{0-99} 数字 + 结算框架词拼接，缺词自动跳过
+  if(!soundOn||!keys||!keys.length)return;
+  // 延迟 600ms 让「胡了/自摸」动作喊声先落，排队自然衔接（不 flush 截断）
+  setTimeout(function(){try{vpPlay(keys,false);}catch(e){}},600);
 }
 async function showWin(seat,how,w,from){sndWin();const pl=p(seat);const hasZ=pl.hand.some(t=>t.id==='Z');const hasMeld=pl.melds.length>0;let base=3-(hasZ?1:0)-(hasMeld?1:0);if(base<1)base=1;const ma=flipMa(pl);const fs=[];
   // 天胡×4 / 地胡×2（2026-11-09 规则：起手胡总子数翻倍；起手无碰杠，基数=有红中2/无红中3）
@@ -2498,7 +2495,7 @@ function allHandsHTML(skipSeat){
 }
 function presentResult(r){return new Promise(res=>{
   if(!r._cumAdded){addCum(r.d);r._cumAdded=true;pushHist(r);}
-  if(!r._speechDone){r._speechDone=true;try{speakScore(r.pl||p(0),r.pl?buildWinSpeech(r):buildLiuJuSpeech());}catch(e){}}
+  if(!r._speechDone){r._speechDone=true;try{speakScore(r.pl?buildWinSpeechKeys(r):['host/liuju']);}catch(e){}}
   const isFinal=roundNum>=ROUND_MAX;
   const mk=document.createElement('div');mk.className='mask';let h='<div class="modal"><h3>'+(isFinal?'本轮最终结算榜单（第'+ROUND_MAX+'/'+ROUND_MAX+'局）':r.title)+'</h3>';
   if(r.pl){h+='<div class="row"><span>胡牌者</span><span>'+r.pl.name+'</span></div><div class="row"><span>胡牌牌型</span><span>'+((r.handTypes&&r.handTypes.length)?r.handTypes.join('、'):'基本胡牌')+'</span></div><div class="row"><span>赢家整副牌</span><span class="wtInline">手牌+副露如下</span></div>'+winnerWholeTiles(r.pl)+(r.winPlan&&r.winPlan.length?'<div class="winPlan"><div class="winPlanHead">师傅讲解 · 他的做牌思路</div>'+r.winPlan.map(x=>'<p>'+x+'</p>').join('')+'</div>':'')+'<div class="row"><span>基础分</span><span>'+r.base+'</span></div>';
@@ -2514,6 +2511,7 @@ function presentResult(r){return new Promise(res=>{
   const goNext=()=>{
     if(settled)return;settled=true;
     if(autoTimer)clearTimeout(autoTimer);
+    try{vpStop();}catch(e){} // 2026-11-09：结算点评播报不带到下一局
     mk.remove();
     if(isFinal){resetCumForCurrent();roundNum=1;saveRound();}
     else{roundNum++;saveRound();}

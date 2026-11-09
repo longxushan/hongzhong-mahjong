@@ -319,6 +319,33 @@ try {
   assert('谁赢谁坐庄（胡牌者下局当庄，非首局不再掷骰）', dz.dealer === 3 && dz.hand === 14 && !dz.reDice,
     `新局庄家=座位${dz.dealer}（座位3胡牌），庄家手牌 ${dz.hand} 张，重掷骰=${dz.reDice}`);
 
+  // 结算点评播报（2026-11-09 修复：迁语音包 host 播报员，不再依赖系统 TTS——
+  // 鸿蒙/微信内置浏览器 TTS 静默失败时点评照常有人声）
+  const winSay = await page.evaluate(() => {
+    const r = {
+      pl: { name: p(1).name }, how: 'zimo',
+      handTypes: ['七对', '清一色'],
+      fs: [{ n: '七对', v: 2 }, { n: '清一色', v: 2 }, { n: '打出1只红中', v: 2 }],
+      ma: { tiles: [0, 1, 2, 3, 4, 5], hit: 2, hasZ: false },
+      base: 2, total: 24
+    };
+    const keys = buildWinSpeechKeys(r);
+    return {
+      keys,
+      liuju: speakScore(['host/liuju']) === undefined, // 流局整句走 host/liuju
+      wiring: presentResult.toString().includes('buildWinSpeechKeys') && presentResult.toString().includes('host/liuju'),
+      noTTS: speakScore.toString().includes('vpPlay') && !speakScore.toString().includes('speakText'),
+      chainOk: keys.includes('host/names/' + vpIdx(p(1).name)) && keys.includes('host/qidui') && keys.includes('host/qingyise')
+        && keys.includes('host/dacu') && keys.includes('host/n1') && keys.includes('host/zhihongzhong')
+        && keys.includes('host/dipai') && keys.includes('host/n2') && keys.includes('host/gezi')
+        && keys.includes('host/fanma') && keys.includes('host/zhang') && keys.includes('host/zhong')
+        && keys.includes('host/fanxing') && keys.includes('host/n8') && keys.includes('host/bei')
+        && keys.includes('host/heji') && keys.includes('host/n24') && keys.includes('host/fen')
+    };
+  });
+  assert('结算点评播报走语音包 host（数字+框架词拼接）', winSay.noTTS && winSay.wiring && winSay.liuju && winSay.chainOk,
+    `语素 ${winSay.keys.length} 条：${winSay.keys.join(' → ')}`);
+
   // 托管加速（2026-11-09 用户要求：托管状态每人思考 0.4 秒，快速打完一轮 8 局拿总分）
   const hosted = await page.evaluate(async () => {
     const btn = document.getElementById('autoBtn');
