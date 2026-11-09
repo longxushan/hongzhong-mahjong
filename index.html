@@ -2578,9 +2578,12 @@ function renderSeat(i){
 }
 function renderDiscardPool(){
   const e=document.getElementById('discardPool');let h='';
+  // 2026-11-09 用户需求：行内牌按「万→条→筒→红中」花色 + 点数排序，弃牌整齐易查（打了什么一眼看清）
+  const orderOf=id=>({W:0,T:1,B:2,Z:3}[id[0]]*10+(id[1]?parseInt(id[1],10):9));
   for(let i=0;i<4;i++){
     const pl=p(i);
-    h+='<div class="poolRow"><span class="poolTag seatc'+i+'">'+pl.name[0]+'</span><span class="poolTiles">'+(pl.discard.map(t=>tileDiv(t,true)).join('')||'<span style="font-size:10px;color:#9bb8ab">—</span>')+'</span></div>';
+    const tiles=pl.discard.slice().sort((a,b)=>orderOf(a.id)-orderOf(b.id));
+    h+='<div class="poolRow"><span class="poolTag seatc'+i+'">'+pl.name[0]+'</span><span class="poolTiles">'+(tiles.map(t=>tileDiv(t,true)).join('')||'<span style="font-size:10px;color:#9bb8ab">—</span>')+'</span></div>';
   }
   e.innerHTML=h;
 }
