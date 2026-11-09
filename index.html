@@ -293,11 +293,11 @@
   #stage{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:#1c1c1c;}
   #stage.rot{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);}
   /* 手机竖屏原生上下布局 */
-  #stage.pport #topbar{flex-wrap:wrap;overflow:visible;row-gap:4px;column-gap:5px;padding:5px 8px;}
+  #stage.pport #topbar{flex-wrap:wrap;overflow:visible;row-gap:2px;column-gap:4px;padding:3px 6px;}
   #stage.pport #topbar .sp{display:none;}
-  #stage.pport #topbar b{flex-basis:100%;}
-  #stage.pport #topbar .topTag{font-size:10.5px;}
-  #stage.pport #topbar button{font-size:11.5px;padding:4px 7px;}
+  #stage.pport #topbar b{display:none;} /* 2026-11-09 用户需求：竖屏隐藏长标题省一行，留给牌桌 */
+  #stage.pport #topbar .topTag{font-size:9.5px;}
+  #stage.pport #topbar button{font-size:10.5px;padding:3px 5px;}
   #stage.pport #table{flex:1 1 auto;}
   #stage.pport #hSplitter{flex-basis:14px;}
   #stage.pport #bottomDock{flex:0 0 auto;}
@@ -308,7 +308,8 @@
   #stage.pport .colSplitWrap{display:none;}
   /* 手牌在上、出牌按钮在下方居中（听牌按钮已删除） */
   #stage.pport #handWrap{flex-direction:column;gap:4px;}
-  #stage.pport #hand{width:100%;flex:1 1 auto;justify-content:center;}
+  #stage.pport #hand{width:100%;flex:1 1 auto;justify-content:center;flex-wrap:wrap;row-gap:6px;overflow:visible;} /* 2026-11-09 用户需求：竖屏手牌两行（7+7），牌放大近一倍 */
+  #stage.pport #hand .tp-hand.sel{z-index:2;position:relative;} /* 两行时选中牌上移与上一行重叠，置顶显示 */
   #stage.pport #actions{width:100%;max-width:none;justify-content:center;flex:0 0 auto;}
   /* 启动页 */
   #splash{position:fixed;inset:0;z-index:80;background:linear-gradient(160deg,#13352a,#0a1f18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:28px;}
@@ -1793,7 +1794,12 @@ document.addEventListener('pointerdown',function(e){
   document.addEventListener('pointerup',up);
   document.addEventListener('pointercancel',up);
 });
-window.addEventListener('resize',function(){try{applyColWidths();}catch(e){}});
+let _rszT=null;
+window.addEventListener('resize',function(){
+  try{applyColWidths();}catch(e){}
+  // 2026-11-09 用户需求：手机旋转横竖屏自动切换布局（部分浏览器旋转只触发 resize 不触发 orientationchange，此处兜底）
+  if(_rszT)clearTimeout(_rszT);_rszT=setTimeout(function(){try{layout();}catch(e){}},120);
+});
 // ===== 牌桌/教学区水平分割线（鼠标/触摸上下拖拽）=====
 function isPhonePort(){
   // 2026-11-09 用户需求恢复：手机竖屏打开默认走竖屏版（原生上下分割布局，不旋转）
@@ -2650,12 +2656,15 @@ function fit(){
   // 牌桌可用高度：手机竖屏用实际 table 高度（下半区已让给教学），其余用舞台减顶栏
   const availH=pp?table.clientHeight:sh-document.getElementById('topbar').offsetHeight;
   const tableW=pp?table.clientWidth:sw;
-  let hand=availH*0.19;
-  const actReserve=large?210:(pp?56:140);  // 预留手牌右侧操作按钮区
-  const maxByW=(tableW*0.94-13*5-actReserve)/(14*0.75);
+  let hand=availH*0.22;
+  // 2026-11-09 用户需求：竖屏手牌两行（7+7），宽度按每行 7 张算——牌可放大近一倍；
+  // actions 竖屏独立成行（#handWrap column），仅需窄边距
+  const perRow=pp?7:14;
+  const actReserve=large?210:(pp?10:140);  // 预留手牌右侧操作按钮区
+  const maxByW=(tableW*0.94-perRow*5-actReserve)/(perRow*0.75);
   hand=Math.min(hand,maxByW);
-  const cap=large?80:(pp?40:54);  // 大屏放开牌面上限
-  hand=Math.max(pp?20:28,Math.min(cap,hand));
+  const cap=large?80:(pp?46:54);  // 大屏放开牌面上限；竖屏两行手牌上限同步放大
+  hand=Math.max(pp?24:28,Math.min(cap,hand));
   const sm=Math.max(pp?13:17,hand*0.5), disc=Math.max(pp?11:14,hand*0.4), back=Math.max(pp?12:15,hand*0.44);
   const gap=Math.max(2,Math.min(large?10:7,hand*0.09));
   let sideMin=large?130:96, sideMax=large?172:118;
@@ -2707,7 +2716,7 @@ function applyPhonePortDock(){
   if(!restoreDockH()){
     const stage=document.getElementById('stage');
     const avail=stage.clientHeight-document.getElementById('topbar').offsetHeight;
-    setDockHeightPx(avail*0.44);
+    setDockHeightPx(avail*0.30); // 2026-11-09 用户需求：教学区默认占比 0.44→0.30，牌桌空间让给牌与字
   }
 }
 let started=false;
@@ -2719,8 +2728,8 @@ function startGame(){
   const root=document.documentElement;
   const enterFs=root.requestFullscreen||root.webkitRequestFullscreen;
   if(enterFs){try{const pr=enterFs.call(root);if(pr&&pr.catch)pr.catch(()=>{});}catch(e){}}
-  // 2026-11-09 竖屏版需求：手机竖屏锁定竖屏（配合 pport 上下分割布局），其余仍锁横屏
-  try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock(isPhonePort()?'portrait':'landscape').catch(()=>{});}catch(e){}
+  // 2026-11-09 用户需求：不锁屏幕方向——竖屏打开默认竖屏版，旋转手机横过来时
+  // resize/orientationchange 触发 layout() 自动切换横屏布局，双向跟随
   const sp=document.getElementById('splash');if(sp)sp.remove();
   buildRoleGrid();
   const rs=document.getElementById('roleSelect');rs.classList.add('show');
