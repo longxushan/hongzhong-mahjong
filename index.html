@@ -698,6 +698,16 @@ async function rollDice(a,b,fast){
   return a+b;
 }
 // 玩家掷骰：显示按钮等点击；CFG.diceAuto 内不点自动掷。AI 自动。
+// 2026-11-09 用户需求：「我来掷」按钮开局即出现——台词播放期间可提前点击，轮到玩家时秒掷
+let _diceEarlyRes=null;
+function diceEarlyShow(){
+  const btn=document.getElementById('diceRollBtn');
+  if(!btn||_diceEarlyRes)return;
+  _diceEarlyRes=new Promise(res=>{
+    btn.onclick=()=>{sndClick();btn.style.display='none';btn.onclick=null;res();};
+    btn.style.display='inline-block';
+  });
+}
 function waitDiceClick(){
   return new Promise(res=>{
     const btn=document.getElementById('diceRollBtn');
@@ -742,6 +752,8 @@ async function diceForDealer(token){
   // 2026-11-09 流畅度：开局立即预加载本流程全部语音片段（5 句段 + 7 角色名），播放零网络等待
   vpPreload(['host/qingdong','host/dongshi','host/dingzhuangjia','host/zhuangjiashi','host/jinru',
              'host/names/0','host/names/1','host/names/2','host/names/3','host/names/4','host/names/5','host/names/6']);
+  // 2026-11-09 用户需求：「我来掷」按钮开局即出现，台词期间可提前点击排队
+  if(!humanAuto)diceEarlyShow();
   // 开局台词（2026-11-09 用户需求）：语音「请先定东」，说完即开始掷骰（120ms 平滑过渡，不死等）
   toast('请先定东');
   await vpSayQingDong();
@@ -759,7 +771,13 @@ async function diceForDealer(token){
       for(const i of participants){
         if(token!==runToken){ov.classList.remove('show');return -1;}
         cells.forEach((c,k)=>c.classList.toggle('cur',k===i));
-        if(i===0&&!humanAuto)await waitDiceClick();
+        if(i===0&&!humanAuto){
+          if(_diceEarlyRes){ // 已提前显示的按钮：优先消费提前点击（点击或超时都隐藏按钮）
+            const early=_diceEarlyRes;_diceEarlyRes=null;
+            await Promise.race([early,sleep(Math.max(30,CFG.diceAuto))]);
+            try{const b=document.getElementById('diceRollBtn');if(b){b.style.display='none';b.onclick=null;}}catch(e){}
+          }else await waitDiceClick();
+        }
         else await sleep(Math.max(30,dGap));
         if(token!==runToken){ov.classList.remove('show');return -1;}
         const a=1+randInt(6),b=1+randInt(6);
