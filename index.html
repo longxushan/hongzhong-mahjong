@@ -766,6 +766,12 @@ async function diceForDealer(token){
   diceResultText('');
   if(!ov||!cells)return 0;
   ov.classList.add('show');
+  // 2026-11-09 用户反馈修复：面板弹出时重置骰面——清掉上一局定格残留的点数（如 6+3），恢复空白「?」等待态
+  try{
+    const d1=document.getElementById('die1'),d2=document.getElementById('die2'),sm=document.getElementById('diceSum');
+    if(d1)d1.innerHTML='';if(d2)d2.innerHTML='';
+    if(sm)sm.textContent='?';
+  }catch(e){}
   // 2026-11-09 流畅度：开局立即预加载本流程全部语音片段（5 句段 + 7 角色名），播放零网络等待
   vpPreload(['host/qingdong','host/dongshi','host/dingzhuangjia','host/zhuangjiashi','host/jinru',
              'host/names/0','host/names/1','host/names/2','host/names/3','host/names/4','host/names/5','host/names/6']);
