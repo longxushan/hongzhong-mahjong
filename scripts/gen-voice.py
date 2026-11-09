@@ -82,7 +82,7 @@ async def main():
     jobs = []
     # ① 词库（男/女两声库）：28 牌名 + 动作词
     ids = [s + str(r) for s in 'WTB' for r in range(1, 10)] + ['Z']
-    actions = {'peng': '碰！', 'gang': '杠！', 'angang': '暗杠！', 'bugang': '补杠！', 'hu': '胡了！', 'tianhu': '天胡！', 'dihu': '地胡！'}
+    actions = {'peng': '碰！', 'gang': '杠！', 'angang': '暗杠！', 'bugang': '补杠！', 'hu': '胡了！', 'zimo': '自摸！', 'tianhu': '天胡！', 'dihu': '地胡！'}
     for id_ in ids:
         jobs.append(('w/' + id_, tile_text(id_), VOICE_W, '+0%', '+0Hz'))
         jobs.append(('wf/' + id_, tile_text(id_), VOICE_WF, '+0%', '+0Hz'))

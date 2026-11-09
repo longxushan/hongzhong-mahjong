@@ -1098,11 +1098,12 @@ function vpSayWait(files){
 // 播报员 host 开局台词（请先定东/东是X/X定庄家/庄家是X）仍保留语音。改回 true 即恢复角色语音。
 const ROLE_VOICE_ON=false;
 // 动作词字幕文本（与 gen-voice.py 词库一致）
-const ACTION_SAY={peng:'碰！',gang:'杠！',angang:'暗杠！',bugang:'补杠！',hu:'胡了！',tianhu:'天胡！',dihu:'地胡！'};
+const ACTION_SAY={peng:'碰！',gang:'杠！',angang:'暗杠！',bugang:'补杠！',hu:'胡了！',zimo:'自摸！',tianhu:'天胡！',dihu:'地胡！'};
 // 报牌：牌名词库（按角色性别选声库）——flush 插队：AI 出牌快于语音时长时丢旧播新，报牌不错位
 function vpSayTile(pl,t){if(ROLE_VOICE_ON)vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)],true);else chatBubble(pl.seat,tileName(t));}
-// 动作词：碰/杠/暗杠/补杠——字幕显示于该角色头像下方
-function vpSayAction(pl,key){if(ROLE_VOICE_ON)vpPlay([vpLib(pl)+key],true);else chatBubble(pl.seat,ACTION_SAY[key]||'');}
+// 动作词：碰/杠/自摸/胡了——2026-11-09 用户需求：关键动作提示音保留（语音+字幕双通道），
+// 与评价性闲聊（纯字幕）区分；flush 插队保证动作音永远播最新的
+function vpSayAction(pl,key){vpPlay([vpLib(pl)+key],true);chatBubble(pl.seat,ACTION_SAY[key]||'');}
 // 播报员句子（2026-11-09 台词改版）：
 // 开局「请先定东」→ 定东后「东是X」→ 东家掷骰前「X定庄家」→ 定庄后「庄家是X，请进入游戏出牌」
 // 各句 vpSayWait 等待整句播完再进下一步；托管模式只播不等
@@ -2255,9 +2256,12 @@ function masterClaim(pl,id,kind){
 }
 function aiWantClaim(pl,id,kind){return masterClaim(pl,id,kind);}
 const TIMED={claim:1,gangself:1,zimo:1,qiang:1};
+// 2026-11-09 用户需求：等待玩家决策（思考碰不碰/杠不杠/胡不胡）时轻响两音提示「到你了」
+function sndWait(){if(!soundOn)return;ensureAudioPlaying();tone(880,0.09,'sine',0.13);tone(1175,0.15,'sine',0.13,0.12);}
 function waitHuman(kind,opts){return new Promise(res=>{
   G.awaiting=kind;G.humanResolve=res;renderActions(opts);
   if(TIMED[kind]){
+    sndWait(); // 决策等待提示音
     let left=10;renderCountdown(left);
     G._cd=setInterval(()=>{left--;if(left<=0){clearCountdown();if(G.humanResolve)humanRespond({pass:1});}else renderCountdown(left);},1000);
   }
@@ -2410,7 +2414,10 @@ async function showWin(seat,how,w,from){sndWin();const pl=p(seat);const hasZ=pl.
   if(w.sevenPairs)handTypes.push(w.deluxeSeven?'豪华七对':'七对');else if(w.allPong)handTypes.push('全碰(碰碰胡)');
   if(w.qingyise)handTypes.push('清一色');
   if(how==='ganghua')handTypes.push('杠上开花');
+  // 2026-11-09 用户需求：胡牌关键动作提示音——天胡/地胡/自摸/杠上开花/抢杠各播对应词
   if(how==='tianhu'||how==='dihu')vpSayAction(pl,how);
+  else if(how==='zimo')vpSayAction(pl,'zimo');
+  else if(how==='ganghua'||how==='qiang')vpSayAction(pl,'hu');
   let mult=1;for(const f of fs)mult*=f.v;let total=(base+ma.hit)*mult;const cap=total>CFG.cap;if(cap)total=CFG.cap;
   const d=[];for(let i=0;i<4;i++){const x=p(i);let hu=0,pay=0;if(i===seat)hu=(how==='qiang'?total:total*3);if(how!=='qiang'){if(i!==seat)pay=-total;}else if(i===from)pay=-total;d.push({seat:i,hu,pay,gang:x.gangScore,net:hu+pay+x.gangScore});}
   lastWinner=seat;G.over=true;
