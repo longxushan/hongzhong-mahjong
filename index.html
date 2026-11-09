@@ -2194,10 +2194,55 @@ function aiChooseDiscard(pl){
   // 冒险大牌：牌型好且只有一只红中，按性格概率主动打掉、手里不留红中，走硬胡+翻倍
   const dump=shouldDumpSingleZ(pl);
   if(dump&&Math.random()<(DUMP_Z_RATE[style]!=null?DUMP_Z_RATE[style]:0.5))return pl.hand.find(t=>t.id==='Z');
+  // 2026-11-09 用户需求：大牌路线锁定——起手评估一次，花色集中/对子密集时按性格概率
+  // 锁定清一色或七对路线（弃牌沿路线走，让七对/清一色等大牌型有真实出现率，而非永远抢快胡平胡）
+  if(pl._plan===undefined)pl._plan=evalHandPlan(pl);
+  if(pl._plan){const pd=planDiscard(pl,pl._plan);if(pd)return pd;}
   // 统一高手精算：所有角色都逐张模拟向听、听牌宽度与有效进张，性格只影响大牌偏好
   const master=masterDiscard(pl);if(master)return master;
   const cand=pl.hand.filter(t=>t.id!=='Z');
   return cand.length?cand[0]:pl.hand[0];
+}
+// 大牌路线评估：仅起手（无副露、首巡前）评估一次；返回 null=走普通精算
+// 清一色：主花色+红中 ≥10 张；七对：对子+红中 ≥6 组；性格概率决定敢不敢走慢一步的大牌
+const PLAN_RATE={conservative:0.1,steady:0.2,aggressive:0.35,grand:0.5,academic:0.25,learning:0.3,flexible:0.3};
+function evalHandPlan(pl){
+  const style=pl.style||'flexible';
+  if(Math.random()>(PLAN_RATE[style]!=null?PLAN_RATE[style]:0.3))return null;
+  const hand=pl.hand;
+  if(!hand||hand.length<13||pl.melds.length>0)return null;
+  const suits={W:0,T:0,B:0},cnt={};let zc=0;
+  for(const t of hand){
+    if(t.id==='Z'){zc++;continue;}
+    suits[t.id[0]]++;cnt[t.id]=(cnt[t.id]||0)+1;
+  }
+  let pairs=0;for(const k in cnt){if(cnt[k]>=4)pairs+=2;else if(cnt[k]>=2)pairs+=1;}
+  const main=Object.keys(suits).sort((a,b)=>suits[b]-suits[a])[0];
+  if(suits[main]+zc>=10)return{kind:'qing',suit:main};
+  if(pairs+zc>=6)return{kind:'seven'};
+  return null;
+}
+// 路线弃牌：qing 弃非主花色（保红中百搭）；seven 弃非对孤张；候选里仍取向听最优，路线不盲打
+// 中期止损：弃过 ≥5 张且向听仍 ≥3 → 放弃路线回统一精算（防死磕卡流局）
+function planDiscard(pl,plan){
+  if(pl.discard.length>=5){
+    const sh=calcShanten(pl.hand,pl.melds);
+    if(sh>=3){pl._plan=null;return null;}
+  }
+  const hand=pl.hand;
+  let cand=[];
+  if(plan.kind==='qing')cand=hand.filter(t=>t.id!=='Z'&&t.id[0]!==plan.suit);
+  else if(plan.kind==='seven'){
+    const cnt={};for(const t of hand)cnt[t.id]=(cnt[t.id]||0)+1;
+    cand=hand.filter(t=>t.id!=='Z'&&(cnt[t.id]||0)===1);
+  }
+  if(!cand.length)return null;
+  let best=null,bestS=99;
+  for(const t of cand){
+    const s=calcShanten(hand.filter(x=>x.uid!==t.uid),pl.melds);
+    if(s<bestS){bestS=s;best=t;}
+  }
+  return best;
 }
 // 碰/杠精算：先做七对/清一色方向保护，再比较向听（不碰保持 vs 碰杠后最优出牌），持平再用性格概率
 const CLAIM_RATE={
