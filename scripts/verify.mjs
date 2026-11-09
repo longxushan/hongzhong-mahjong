@@ -335,15 +335,12 @@ try {
       liuju: speakScore(['host/liuju']) === undefined, // 流局整句走 host/liuju
       wiring: presentResult.toString().includes('buildWinSpeechKeys') && presentResult.toString().includes('host/liuju'),
       noTTS: speakScore.toString().includes('vpPlay') && !speakScore.toString().includes('speakText'),
-      chainOk: keys.includes('host/names/' + vpIdx(p(1).name)) && keys.includes('host/qidui') && keys.includes('host/qingyise')
-        && keys.includes('host/dacu') && keys.includes('host/n1') && keys.includes('host/zhihongzhong')
-        && keys.includes('host/dipai') && keys.includes('host/n2') && keys.includes('host/gezi')
-        && keys.includes('host/fanma') && keys.includes('host/zhang') && keys.includes('host/zhong')
-        && keys.includes('host/fanxing') && keys.includes('host/n8') && keys.includes('host/bei')
-        && keys.includes('host/heji') && keys.includes('host/n24') && keys.includes('host/fen')
+      chainOk: keys.includes('host/names/' + vpIdx(p(1).name)) && keys.includes('host/p_qidui') && keys.includes('host/qingyise')
+        && keys.includes('host/dz1') && keys.includes('host/db2') && keys.includes('host/fm6')
+        && keys.includes('host/z2') && keys.includes('host/fx8') && keys.includes('host/hj24')
     };
   });
-  assert('结算点评播报走语音包 host（数字+框架词拼接）', winSay.noTTS && winSay.wiring && winSay.liuju && winSay.chainOk,
+  assert('结算点评播报走语音包 host（自然短语拼接）', winSay.noTTS && winSay.wiring && winSay.liuju && winSay.chainOk && winSay.keys.length <= 10,
     `语素 ${winSay.keys.length} 条：${winSay.keys.join(' → ')}`);
 
   // 托管加速（2026-11-09 用户要求：托管状态每人思考 0.4 秒，快速打完一轮 8 局拿总分）

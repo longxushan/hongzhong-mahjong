@@ -310,6 +310,7 @@
   #stage.pport #handWrap{flex-direction:column;gap:4px;}
   #stage.pport #hand{width:100%;flex:1 1 auto;justify-content:center;flex-wrap:wrap;row-gap:6px;overflow:visible;} /* 2026-11-09 用户需求：竖屏手牌两行（7+7），牌放大近一倍 */
   #stage.pport #hand .tp-hand.sel{z-index:2;position:relative;} /* 两行时选中牌上移与上一行重叠，置顶显示 */
+  #stage.pport #discardPool{zoom:1;} /* 2026-11-09 用户需求：手机竖屏弃牌再小一点（撤销该场景下的 1.5 倍放大） */
   #stage.pport #actions{width:100%;max-width:none;justify-content:center;flex:0 0 auto;}
   /* 启动页 */
   #splash{position:fixed;inset:0;z-index:80;background:linear-gradient(160deg,#13352a,#0a1f18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:28px;}
@@ -2433,24 +2434,43 @@ function buildWinPlan(pl,w,how){
   else lines.push('胡牌方式是自摸：他靠自己摸牌胡，三家都按最终分全额赔付。');
   return lines;
 }
-// 结算点评语素（host 播报员音色，按序拼接）：名字→(抢杠)→牌型→打出红中→底牌→翻码→倍数→合计
+// 结算点评语素（host 播报员音色）：名字→(抢杠)→牌型→打出红中→底牌→翻码→中码→倍数→合计
+// 2026-11-09 用户需求「报牌分析不自然」：单字语素蹦出太碎，改用整条自然短语（约 9 条），
+// 听感连贯；超出短语词库范围的数字回退旧拼接词法
 function numKey(n){return (n>=0&&n<=99&&Number.isInteger(n))?('host/n'+n):null;}
 function buildWinSpeechKeys(r){
   const keys=[];
   const i=vpIdx(r.pl.name);if(i>=0)keys.push('host/names/'+i);
-  if(r.how==='qiang')keys.push('host/qianggang'); // 自摸/杠上开花/天胡/地胡已在动作词与牌型里体现，不重复播
+  if(r.how==='qiang')keys.push('host/qianggang'); // 抢杠胡无牌型条目，单独播
   if(r.handTypes&&r.handTypes.length){
-    keys.push('host/paixing');
-    const M={'天胡':'host/tianhu2','地胡':'host/dihu2','豪华七对':'host/haohuaqidui','七对':'host/qidui','全碰(碰碰胡)':'host/quanpeng','清一色':'host/qingyise','杠上开花':'host/ganghua2'};
-    for(const t of r.handTypes){if(M[t])keys.push(M[t]);}
+    const P={'天胡':'host/p_tianhu','地胡':'host/p_dihu','豪华七对':'host/p_haohuaqidui','七对':'host/p_qidui','全碰(碰碰胡)':'host/p_quanpeng','清一色':'host/p_qingyise','杠上开花':'host/p_ganghua'};
+    const S={'天胡':'host/tianhu2','地胡':'host/dihu2','豪华七对':'host/haohuaqidui','七对':'host/qidui','全碰(碰碰胡)':'host/quanpeng','清一色':'host/qingyise','杠上开花':'host/ganghua2'};
+    r.handTypes.forEach((t,idx)=>{keys.push(idx===0?(P[t]||S[t]):S[t]);}); // 首条带「牌型」前缀
   }
   if(r.fs)for(const f of r.fs){
-    if(/^打出\d+只红中$/.test(f.n)){const k=numKey(parseInt(f.n.match(/\d+/)[0],10));if(k)keys.push('host/dacu',k,'host/zhihongzhong','host/fanbei');}
+    const m=f.n.match(/^打出(\d+)只红中$/);
+    if(m){const n=parseInt(m[1],10);
+      if(n===1||n===2)keys.push('host/dz'+n);
+      else{const k=numKey(n);if(k)keys.push('host/dacu',k,'host/zhihongzhong','host/fanbei');}
+    }
   }
-  const kb=numKey(r.base);if(kb)keys.push('host/dipai',kb,'host/gezi');
-  if(r.ma){const kt=numKey(r.ma.tiles.length),kh=numKey(r.ma.hit);if(kt&&kh)keys.push('host/fanma',kt,'host/zhang','host/zhong',kh,'host/gezi');}
-  let mult=1;if(r.fs&&r.fs.length){for(const f of r.fs)mult*=f.v;const km=numKey(mult);if(km)keys.push('host/fanxing',km,'host/bei');}
-  const kt2=numKey(r.total);if(kt2)keys.push('host/heji',kt2,'host/fen');
+  if(r.base>=1&&r.base<=3)keys.push('host/db'+r.base);
+  else{const kb=numKey(r.base);if(kb)keys.push('host/dipai',kb,'host/gezi');}
+  if(r.ma){
+    const tn=r.ma.tiles.length;
+    if(tn===4||tn===6)keys.push('host/fm'+tn);
+    else{const kt=numKey(tn);if(kt)keys.push('host/fanma',kt,'host/zhang');}
+    if(r.ma.hit>=0&&r.ma.hit<=6)keys.push('host/z'+r.ma.hit);
+    else{const kh=numKey(r.ma.hit);if(kh)keys.push('host/zhong',kh,'host/gezi');}
+  }
+  let mult=1;if(r.fs)for(const f of r.fs)mult*=f.v;
+  if(r.fs&&r.fs.length){
+    const FX={2:'host/fx2',4:'host/fx4',8:'host/fx8',16:'host/fx16',32:'host/fx32',64:'host/fx64'};
+    if(FX[mult])keys.push(FX[mult]);
+    else{const km=numKey(mult);if(km)keys.push('host/fanxing',km,'host/bei');}
+  }
+  if(r.total>=1&&r.total<=50)keys.push('host/hj'+r.total);
+  else{const kt2=numKey(r.total);if(kt2)keys.push('host/heji',kt2,'host/fen');}
   return keys;
 }
 function speakScore(keys){
@@ -2756,6 +2776,8 @@ addEventListener('resize',layout);
 addEventListener('orientationchange',()=>setTimeout(layout,120));
 
 /* 牌桌双指缩放 + 单指拖动 */
+/* 2026-11-09 用户需求：牌桌调成不可移动、不可缩放——手势系统整体停用（保留代码备查，改回 true 即恢复） */
+const TABLE_PAN=false;
 const view={s:1,x:0,y:0};
 const ptrs=new Map();
 let pinchD0=0, view0=null, pan0=null;
@@ -2771,6 +2793,7 @@ function clampView(){
 }
 function applyView(){tableEl.style.transformOrigin='center';tableEl.style.transform='translate('+view.x+'px,'+view.y+'px) scale('+view.s+')';}
 tableEl.addEventListener('touchstart',e=>{
+  if(!TABLE_PAN)return;
   for(const t of e.changedTouches)ptrs.set(t.identifier,{x:t.clientX,y:t.clientY});
   let gesture=false;
   if(ptrs.size===2){const p=[...ptrs.values()];pinchD0=pDist(p[0],p[1]);view0={...view};pan0=null;gesture=true;}
@@ -2778,6 +2801,7 @@ tableEl.addEventListener('touchstart',e=>{
   if(gesture)e.preventDefault();
 },{passive:false});
 tableEl.addEventListener('touchmove',e=>{
+  if(!TABLE_PAN)return;
   if(ptrs.size>=2){
     for(const t of e.changedTouches)if(ptrs.has(t.identifier))ptrs.set(t.identifier,{x:t.clientX,y:t.clientY});
     const p=[...ptrs.values()];

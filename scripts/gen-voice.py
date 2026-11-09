@@ -131,6 +131,26 @@ async def main():
                  'fanxing': '番型一共乘', 'bei': '倍', 'heji': '合计', 'fen': '分',
                  'liuju': '留底六张，流局，只结杠分'}.items():
         jobs.append(('host/' + k, t, VOICE_HOST, HOST_RATE, '+0Hz'))
+    # ②c host 结算自然短语（2026-11-09 用户需求「报牌分析不自然」：单字语素蹦出太碎，
+    #     合并为完整短语，条数 23→9，听感连贯；超范围数字回退旧拼接词库）
+    phrase = {}
+    for pk, pt in {'tianhu': '天胡', 'dihu': '地胡', 'haohuaqidui': '豪华七对', 'qidui': '七对',
+                   'quanpeng': '碰碰胡', 'qingyise': '清一色', 'ganghua': '杠上开花'}.items():
+        phrase['p_' + pk] = '牌型' + pt          # 首条牌型带「牌型」前缀
+    phrase['dz1'] = '打了一只红中，翻倍'
+    phrase['dz2'] = '打了两只红中，翻倍'
+    for n in (1, 2, 3):
+        phrase['db' + str(n)] = '底牌' + CN_NUM[n] + '个子'
+    for n in (4, 6):
+        phrase['fm' + str(n)] = '翻码' + CN_NUM[n] + '张'
+    for n in range(0, 7):
+        phrase['z' + str(n)] = ('没中' if n == 0 else '中' + CN_NUM[n] + '个子')
+    for n, txt in {2: '二', 4: '四', 8: '八', 16: '十六', 32: '三十二', 64: '六十四'}.items():
+        phrase['fx' + str(n)] = '一共乘' + txt + '倍'
+    for n in range(1, 51):
+        phrase['hj' + str(n)] = '合计' + CN_NUM[n] + '分'
+    for k, t in phrase.items():
+        jobs.append(('host/' + k, t, VOICE_HOST, HOST_RATE, '+0Hz'))
     # ③ 角色宣言（按 STANCE_SAY 解析结果 × 各角色音色）
     stance = parse_stance_say()
     for i, name in enumerate(ROLES):
