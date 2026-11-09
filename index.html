@@ -1031,9 +1031,12 @@ function vpUnlock(){ // 用户手势内解锁音频元素（iOS/安卓自动播�
     const pr=vpAudio.play();if(pr&&pr.catch)pr.catch(()=>{});
   }catch(e){}
 }
-function vpPlay(files){ // 依序播放语音包（files 为 voice/ 下相对路径，不含扩展名）
+function vpPlay(files,flush){ // 依序播放语音包（flush=true 时清空积压未播的旧条——报牌/动作永远贴近当前牌局，不滞后错位）
   if(!soundOn)return;
-  try{vpQueue=vpQueue.concat(files);}catch(e){return;}
+  try{
+    if(flush)vpQueue=[];
+    vpQueue=vpQueue.concat(files);
+  }catch(e){return;}
   if(!vpBusy)vpNext();
 }
 function vpNext(){
@@ -1085,10 +1088,10 @@ function vpSayWait(files){
   if(humanAuto){vpPlay(files);return Promise.resolve();}
   return vpPlayWait(files,8000);
 }
-// 报牌：牌名词库（按角色性别选声库）
-function vpSayTile(pl,t){vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)]);}
-// 动作词：碰/杠/暗杠/补杠
-function vpSayAction(pl,key){vpPlay([vpLib(pl)+key]);}
+// 报牌：牌名词库（按角色性别选声库）——flush 插队：AI 出牌快于语音时长时丢旧播新，报牌不错位
+function vpSayTile(pl,t){vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)],true);}
+// 动作词：碰/杠/暗杠/补杠——flush 插队，永远播最新动作
+function vpSayAction(pl,key){vpPlay([vpLib(pl)+key],true);}
 // 播报员句子（2026-11-09 台词改版）：
 // 开局「请先定东」→ 定东后「东是X」→ 东家掷骰前「X定庄家」→ 定庄后「庄家是X，请进入游戏出牌」
 // 各句 vpSayWait 等待整句播完再进下一步；托管模式只播不等
