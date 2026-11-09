@@ -806,8 +806,8 @@ async function diceForDealer(token){
     await vpSayDingZhuang(east);
     toast(eastName+' 掷骰定庄家');
     note.textContent='以'+eastName+'为 1 数起（数到 5 绕回自己），掷出点数落谁家谁坐庄';
-    if(east===0&&!humanAuto)await waitDiceClick();
-    else await sleep(Math.max(30,dGap));
+    // 2026-11-09 用户需求：选出东后由东自动掷骰定庄——东为玩家时也不再手动点按钮，直接掷
+    await sleep(Math.max(30,dGap));
     if(token!==runToken){ov.classList.remove('show');return -1;}
     const a=1+randInt(6),b=1+randInt(6);
     const s=await rollDice(a,b,dFast);
