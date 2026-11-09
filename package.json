@@ -11,7 +11,8 @@
     "test-stance": "node scripts/test-stance.mjs",
     "voice": "python scripts/gen-voice.py",
     "test-tianhu": "node scripts/test-tianhu.mjs",
-    "test-draw-order": "node scripts/test-draw-order.mjs"
+    "test-draw-order": "node scripts/test-draw-order.mjs",
+    "test-me-draw": "node scripts/test-me-draw.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.49.0"
