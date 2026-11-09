@@ -10,18 +10,18 @@ OUT = os.path.join(ROOT, 'voice')
 import edge_tts
 
 # 角色池（与 ROLE_POOL 一致；索引即 host/names/{i} 与 role/{i} 的文件名）
-ROLES = ['龙须山人', '福星道人', '曹大师', '僧大兴', '许华少', '梅姐', '厨建国']
+ROLES = ['龙须山人', '福星道人', '曹大师', '僧大兴', '华少', '梅姐', '厨建国']
 
 # 音色配置（按角色年龄/性别/性格）
 VOICE_HOST = 'zh-CN-YunyangNeural'   # 播报员：掷骰/坐庄播报
-VOICE_W = 'zh-CN-YunxiNeural'        # 男声词库：报牌/动作（龙须山人、福星道人、曹大师、僧大兴、许华少、厨建国）
+VOICE_W = 'zh-CN-YunxiNeural'        # 男声词库：报牌/动作（龙须山人、福星道人、曹大师、僧大兴、华少、厨建国）
 VOICE_WF = 'zh-CN-XiaoxiaoNeural'    # 女声词库：梅姐报牌/动作
 ROLE_VOICE = {
     0: ('zh-CN-YunjianNeural', '-10%', '-20Hz'),   # 龙须山人：进修型老者，低沉
     1: ('zh-CN-YunjianNeural', '+0%', '-5Hz'),     # 福星道人：大牌型，豪朗
     2: ('zh-CN-YunyangNeural', '-5%', '+0Hz'),     # 曹大师：学院派，专业
     3: ('zh-CN-YunjianNeural', '-15%', '-25Hz'),   # 僧大兴：保守型，沉稳低缓
-    4: ('zh-CN-YunxiaNeural', '+5%', '+5Hz'),      # 许华少：激进少爷，明快
+    4: ('zh-CN-YunxiaNeural', '+5%', '+5Hz'),      # 华少：激进少爷，明快
     5: ('zh-CN-XiaoxiaoNeural', '-5%', '+0Hz'),    # 梅姐：女声沉稳
     6: ('zh-CN-YunxiNeural', '+0%', '+0Hz'),       # 厨建国：灵活通用
 }
