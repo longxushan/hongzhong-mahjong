@@ -175,15 +175,17 @@ try {
   const vpTest = await page.evaluate(() => {
     const me = p(0);
     const okFn = ['vpPlay','vpSayTile','vpSayAction','vpSayEastDong','vpSayZhuang','vpSayStance','vpUnlock','vpStop'].every(f => typeof window[f] === 'function');
-    // 实测播放：报一张牌，Audio 元素 src 应指向语音包文件
+    // 2026-11-09 角色语音改字幕：vpSayTile 应在 #table 生成头像锚定字幕气泡（ROLE_VOICE_ON=false）
     vpStop(); vpQueue = [];
-    try { vpSayTile(me, { id: 'W5' }); } catch (e) {}
-    const src = vpAudio ? String(vpAudio.src) : '';
-    vpStop();
-    return { okFn, srcHasVoice: /voice\/(w|wf)\/W5\.mp3/.test(src) };
+    document.querySelectorAll('#table .chatBox').forEach(b => b.remove());
+    try { vpSayTile(me, { id: 'W5', rank: 5, suit: 'W' }); } catch (e) {}
+    const cb = document.querySelector('#table .chatBox');
+    const subOk = !!cb && /五万/.test(cb.textContent);
+    if (cb) cb.remove();
+    return { okFn, subOk, roleVoiceOff: typeof ROLE_VOICE_ON !== 'undefined' && ROLE_VOICE_ON === false };
   });
-  assert('语音包：108 条台词齐全 + 播放引擎直放 mp3', missVoice.length === 0 && vpTest.okFn && vpTest.srcHasVoice,
-    missVoice.length ? '缺文件：' + missVoice.slice(0, 3).join(',') + ` 共${missVoice.length}个` : (vpTest.srcHasVoice ? '引擎正常，报牌指向 voice/w|wf 词库' : `函数=${vpTest.okFn}，src=${vpTest.src}`));
+  assert('语音包：108 条台词齐全 + 报牌转字幕引擎', missVoice.length === 0 && vpTest.okFn && vpTest.subOk && vpTest.roleVoiceOff,
+    missVoice.length ? '缺文件：' + missVoice.slice(0, 3).join(',') + ` 共${missVoice.length}个` : '引擎正常，报牌以字幕显示于头像下（角色语音关闭，host 台词保留）');
 
   // 牌桌闲聊（2026-11-09 用户需求：打牌过程中每人说话/弹字幕表达感想）：七风格×六情境台词 + 座位气泡 + 84 条角色音色语音
   const chatOk = await page.evaluate(() => {
@@ -193,7 +195,7 @@ try {
     const okFn = ['chatMaybe', 'chatBubble', 'chatAfterDiscard'].every(f => typeof window[f] === 'function');
     chatBubble(2, '冒烟测试');
     let bubble = false, bubblePos = null;
-    const bb = document.querySelector('#table .chatBox');
+    const bb = document.querySelector('#table .chatBox[data-cb="2"]'); // 精确取本次创建的 seat2 气泡，避免被报牌字幕干扰
     if (bb) {
       const tb = document.getElementById('table').getBoundingClientRect();
       const r = bb.getBoundingClientRect();

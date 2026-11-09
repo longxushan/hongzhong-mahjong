@@ -1088,10 +1088,15 @@ function vpSayWait(files){
   if(humanAuto){vpPlay(files);return Promise.resolve();}
   return vpPlayWait(files,8000);
 }
+// 2026-11-09 用户需求：对局中角色说话声音全部去掉，改为字幕出现在头像下（chatBubble 气泡）；
+// 播报员 host 开局台词（请先定东/东是X/X定庄家/庄家是X）仍保留语音。改回 true 即恢复角色语音。
+const ROLE_VOICE_ON=false;
+// 动作词字幕文本（与 gen-voice.py 词库一致）
+const ACTION_SAY={peng:'碰！',gang:'杠！',angang:'暗杠！',bugang:'补杠！',hu:'胡了！',tianhu:'天胡！',dihu:'地胡！'};
 // 报牌：牌名词库（按角色性别选声库）——flush 插队：AI 出牌快于语音时长时丢旧播新，报牌不错位
-function vpSayTile(pl,t){vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)],true);}
-// 动作词：碰/杠/暗杠/补杠——flush 插队，永远播最新动作
-function vpSayAction(pl,key){vpPlay([vpLib(pl)+key],true);}
+function vpSayTile(pl,t){if(ROLE_VOICE_ON)vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)],true);else chatBubble(pl.seat,tileName(t));}
+// 动作词：碰/杠/暗杠/补杠——字幕显示于该角色头像下方
+function vpSayAction(pl,key){if(ROLE_VOICE_ON)vpPlay([vpLib(pl)+key],true);else chatBubble(pl.seat,ACTION_SAY[key]||'');}
 // 播报员句子（2026-11-09 台词改版）：
 // 开局「请先定东」→ 定东后「东是X」→ 东家掷骰前「X定庄家」→ 定庄后「庄家是X，请进入游戏出牌」
 // 各句 vpSayWait 等待整句播完再进下一步；托管模式只播不等
@@ -1112,8 +1117,9 @@ function vpSayZhuang(seat){
   const i=vpHostIdx(seat);if(i<0)return Promise.resolve();
   return vpSayWait(['host/zhuangjiashi','host/names/'+i,'host/jinru']);
 }
-// 角色宣言（大牌姿态）
+// 角色宣言（大牌姿态）——语音已关（ROLE_VOICE_ON），字幕走调用处 toast
 function vpSayStance(pl,kind){
+  if(!ROLE_VOICE_ON)return;
   const i=vpIdx(pl.name);if(i<0)return;
   vpPlay(['role/'+i+'/'+kind]);
 }
@@ -1162,8 +1168,7 @@ function chatMaybe(seat,event,prob){
     const k=Math.floor(Math.random()*lines.length);
     G._chatT[seat]=now;G._chatGT=now;
     chatBubble(seat,lines[k]);
-    const vi=vpIdx(pl.name);
-    if(vi>=0)vpPlay(['role/'+vi+'/chat-'+event+'-'+k]);
+    if(ROLE_VOICE_ON){const vi=vpIdx(pl.name);if(vi>=0)vpPlay(['role/'+vi+'/chat-'+event+'-'+k]);}
   }catch(e){}
 }
 // 出牌后感想：向听下降→得意；刚听牌→报喜（每家每局一次）；久无进展→小牢骚
