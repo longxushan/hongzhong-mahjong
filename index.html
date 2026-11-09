@@ -819,15 +819,11 @@ async function diceForDealer(token){
     cells[east].classList.add('east');
     diceSetVal(cells,east,scores[east],'东');
     const eastName=east===0?'你('+humanName+')':aiNames[east-1];
-    // 定东播报（2026-11-09 台词改版）：语音「东是X」说完紧接定庄台词（120ms 过渡），播报连贯
-    await vpSayEastDong(east);
-    toast('东是'+eastName+'（掷 '+scores[east]+' 点最大）');
-    await sleep(Math.max(80,humanAuto?30:120));
+    // 2026-11-09 用户需求：选出东后头像直接标「东」角标（上行 diceSetVal），不再播报台词，
+    // 短停顿让「东」角标看清后直接掷骰定庄（「东是X」「X定庄家」播报移除；结尾「庄家是X」播报保留）
+    await sleep(Math.max(80,humanAuto?30:520));
     // 阶段二：东家掷骰定庄（以东为 1 数起，数到点数者坐庄）
     title.textContent='东家掷骰 · 定庄';
-    // 东家定庄提示（2026-11-09 台词改版）：语音「X定庄家」，说完即掷骰
-    await vpSayDingZhuang(east);
-    toast(eastName+' 掷骰定庄家');
     note.textContent='以'+eastName+'为 1 数起（数到 5 绕回自己），掷出点数落谁家谁坐庄';
     // 2026-11-09 用户需求：选出东后由东自动掷骰定庄——东为玩家时也不再手动点按钮，直接掷
     await sleep(Math.max(30,dGap));
