@@ -16,16 +16,19 @@ ROLES = ['龙须山人', '福星道人', '曹大师', '僧大兴', '华少', '�
 VOICE_HOST = 'zh-CN-YunyangNeural'   # 播报员：掷骰/坐庄播报
 VOICE_W = 'zh-CN-YunxiNeural'        # 男声词库：报牌/动作（龙须山人、福星道人、曹大师、僧大兴、华少、厨建国）
 VOICE_WF = 'zh-CN-XiaoxiaoNeural'    # 女声词库：梅姐报牌/动作
-ROLE_VOICE = {
-    0: ('zh-CN-YunjianNeural', '-10%', '-20Hz'),   # 龙须山人：进修型老者，低沉
-    1: ('zh-CN-YunjianNeural', '+0%', '-5Hz'),     # 福星道人：大牌型，豪朗
-    2: ('zh-CN-YunyangNeural', '-5%', '+0Hz'),     # 曹大师：学院派，专业
-    3: ('zh-CN-YunjianNeural', '-15%', '-25Hz'),   # 僧大兴：保守型，沉稳低缓
-    4: ('zh-CN-YunxiaNeural', '+5%', '+5Hz'),      # 华少：激进少爷，明快
-    5: ('zh-CN-XiaoxiaoNeural', '-5%', '+0Hz'),    # 梅姐：女声沉稳
-    6: ('zh-CN-YunxiNeural', '+0%', '+0Hz'),       # 厨建国：灵活通用
+ROLE_VOICE = {  # 2026-11-09 整体提速 5%：更干脆，保留各角色相对性格差异
+    0: ('zh-CN-YunjianNeural', '-5%', '-20Hz'),   # 龙须山人：进修型老者，低沉（原-10%）
+    1: ('zh-CN-YunjianNeural', '+5%', '-5Hz'),    # 福星道人：大牌型，豪朗（原+0%）
+    2: ('zh-CN-YunyangNeural', '+0%', '+0Hz'),    # 曹大师：学院派，专业（原-5%）
+    3: ('zh-CN-YunjianNeural', '-10%', '-25Hz'),  # 僧大兴：保守型，沉稳低缓（原-15%）
+    4: ('zh-CN-YunxiaNeural', '+10%', '+5Hz'),    # 华少：激进少爷，明快（原+5%）
+    5: ('zh-CN-XiaoxiaoNeural', '+0%', '+0Hz'),   # 梅姐：女声沉稳（原-5%）
+    6: ('zh-CN-YunxiNeural', '+5%', '+0Hz'),      # 厨建国：灵活通用（原+0%）
 }
-HOST_RATE = '-5%'
+HOST_RATE = '+8%'    # 2026-11-09 用户需求「干脆响亮」：播报员提速（原 -5% 偏慢拖沓）
+WORD_RATE = '+5%'    # 报牌/动作词库：干脆利落（原 +0%）
+VOL = '+30%'         # 全部人声音量整体提升
+FORCE = True         # 调参后全量重生成（先写临时文件，成功才覆盖，失败保留旧文件不丢语音）
 
 # 数字 0-99（2 念「两」；10-19 「十X」；20+ 「X十Y」；n2-n12 为旧骰点词，内容一致自动 skip 复用）
 DIG = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九']
@@ -76,12 +79,24 @@ STYLE_OF_ROLE = {0:'learning',1:'grand',2:'academic',3:'conservative',4:'aggress
 async def gen_one(sem, path, text, voice, rate='0%', pitch='+0Hz'):
     async with sem:
         full = os.path.join(OUT, path + '.mp3')
-        if os.path.exists(full) and os.path.getsize(full) > 400:
+        if not FORCE and os.path.exists(full) and os.path.getsize(full) > 400:
             return path, 'skip'
         os.makedirs(os.path.dirname(full), exist_ok=True)
-        tts = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
-        await tts.save(full)
-        return path, 'ok'
+        tmp = full + '.tmp.mp3'
+        try:
+            tts = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch, volume=VOL)
+            await tts.save(tmp)
+            if os.path.exists(tmp) and os.path.getsize(tmp) > 400:
+                os.replace(tmp, full)
+                return path, 'ok'
+            return path, 'keep'   # 生成异常小：保留旧文件
+        except Exception:
+            try:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+            except OSError:
+                pass
+            return path, 'keep' if os.path.exists(full) else 'fail'
 
 async def main():
     os.makedirs(os.path.join(OUT, 'w'), exist_ok=True)
@@ -92,11 +107,11 @@ async def main():
     ids = [s + str(r) for s in 'WTB' for r in range(1, 10)] + ['Z']
     actions = {'peng': '碰！', 'gang': '杠！', 'angang': '暗杠！', 'bugang': '补杠！', 'hu': '胡了！', 'zimo': '自摸！', 'tianhu': '天胡！', 'dihu': '地胡！'}
     for id_ in ids:
-        jobs.append(('w/' + id_, tile_text(id_), VOICE_W, '+0%', '+0Hz'))
-        jobs.append(('wf/' + id_, tile_text(id_), VOICE_WF, '+0%', '+0Hz'))
+        jobs.append(('w/' + id_, tile_text(id_), VOICE_W, WORD_RATE, '+0Hz'))
+        jobs.append(('wf/' + id_, tile_text(id_), VOICE_WF, WORD_RATE, '+0Hz'))
     for k, t in actions.items():
-        jobs.append(('w/' + k, t, VOICE_W, '+0%', '+0Hz'))
-        jobs.append(('wf/' + k, t, VOICE_WF, '+0%', '+0Hz'))
+        jobs.append(('w/' + k, t, VOICE_W, WORD_RATE, '+0Hz'))
+        jobs.append(('wf/' + k, t, VOICE_WF, WORD_RATE, '+0Hz'))
     # ② host 播报库：角色名 + 骰点数字 + 句段
     #    2026-11-09 台词改版新增：qingdong 请先定东 / dongshi 东是 / dingzhuangjia 定庄家 / zhuangjiashi 庄家是 / jinru 请进入游戏出牌
     for i, name in enumerate(ROLES):
@@ -132,10 +147,10 @@ async def main():
     sem = asyncio.Semaphore(8)
     results = await asyncio.gather(*(gen_one(sem, a, b, c, d, e) for a, b, c, d, e in jobs))
     ok = sum(1 for _, s in results if s == 'ok')
-    skip = sum(1 for _, s in results if s == 'skip')
-    fails = [p for p, s in results if s not in ('ok', 'skip')]
-    print(f'语音包生成完成：新增 {ok} 条，跳过已存在 {skip} 条，共 {len(jobs)} 条计划')
-    if fails: print('失败：', fails)
+    keep = sum(1 for _, s in results if s == 'keep')
+    fails = [p for p, s in results if s == 'fail']
+    print(f'语音包生成完成：重生成 {ok} 条，保留旧文件 {keep} 条，共 {len(jobs)} 条计划')
+    if fails: print('失败（且无旧文件可保留）：', fails)
 
 if __name__ == '__main__':
     asyncio.run(main())
