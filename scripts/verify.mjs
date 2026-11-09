@@ -251,6 +251,14 @@ try {
   const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
     await page2.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
+    // 与 page1 同等的加速+静音：掷骰/思考提速、跳过语音播放等待，防止开局流程（含 host 台词语音）超 30s 超时线
+    await page2.evaluate(() => {
+      if (typeof CFG !== 'undefined') {
+        CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0;
+        CFG.diceMs = 40; CFG.diceGap = 20; CFG.diceAuto = 30; CFG.diceHold = 40;
+      }
+      try { if (typeof soundOn !== 'undefined') soundOn = false; } catch (e) {}
+    });
     const land = await page2.evaluate(() => {
       const st = document.getElementById('stage');
       return { rot: st.classList.contains('rot'), pport: st.classList.contains('pport') };

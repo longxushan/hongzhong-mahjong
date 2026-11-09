@@ -1095,8 +1095,9 @@ function vpSayWait(files){
 const ROLE_VOICE_ON=false;
 // 动作词字幕文本（与 gen-voice.py 词库一致）
 const ACTION_SAY={peng:'碰！',gang:'杠！',angang:'暗杠！',bugang:'补杠！',hu:'胡了！',zimo:'自摸！',tianhu:'天胡！',dihu:'地胡！'};
-// 报牌：牌名词库（按角色性别选声库）——flush 插队：AI 出牌快于语音时长时丢旧播新，报牌不错位
-function vpSayTile(pl,t){if(ROLE_VOICE_ON)vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)],true);else chatBubble(pl.seat,tileName(t));}
+// 报牌：出牌报牌名——2026-11-09 用户需求：报牌人声保留（语音+字幕双通道）；
+// flush 插队：AI 出牌快于语音时长时丢旧播新，报牌不错位
+function vpSayTile(pl,t){vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)],true);chatBubble(pl.seat,tileName(t));}
 // 动作词：碰/杠/自摸/胡了——2026-11-09 用户需求：关键动作提示音保留（语音+字幕双通道），
 // 与评价性闲聊（纯字幕）区分；flush 插队保证动作音永远播最新的
 function vpSayAction(pl,key){vpPlay([vpLib(pl)+key],true);chatBubble(pl.seat,ACTION_SAY[key]||'');}
