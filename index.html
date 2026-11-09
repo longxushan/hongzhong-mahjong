@@ -739,6 +739,10 @@ async function diceForDealer(token){
   diceResultText('');
   if(!ov||!cells)return 0;
   ov.classList.add('show');
+  // 开局台词（2026-11-09 用户需求）：语音「请先定东」，说完再开始掷骰
+  toast('请先定东');
+  await vpSayQingDong();
+  await sleep(Math.max(80,humanAuto?30:300));
   // 2026-11-09 托管加速：托管状态下掷骰动画同比例提速（流程与播报不变）
   const dGap=humanAuto?30:CFG.diceGap,dHold=humanAuto?150:CFG.diceHold,dFast=humanAuto;
   window._diceResult=null;
@@ -771,13 +775,15 @@ async function diceForDealer(token){
     cells[east].classList.add('east');
     diceSetVal(cells,east,scores[east],'东');
     const eastName=east===0?'你('+humanName+')':aiNames[east-1];
-    // 定东播报：点数最大者语音+屏显报坐东（2026-11-09 用户要求：掷完骰要报谁坐庄）
-    const eastSay=(east===0?'我':aiNames[east-1])+' 掷 '+scores[east]+' 点最大，坐东！';
-    vpSayEastDong(east,scores[east]);
-    toast(eastName+' 掷 '+scores[east]+' 点最大，坐东');
-    await sleep(Math.max(80,dHold));
+    // 定东播报（2026-11-09 台词改版）：语音「东是X」说完再进下一步；屏显保留点数详情
+    await vpSayEastDong(east);
+    toast('东是'+eastName+'（掷 '+scores[east]+' 点最大）');
+    await sleep(Math.max(80,humanAuto?dHold:420));
     // 阶段二：东家掷骰定庄（以东为 1 数起，数到点数者坐庄）
     title.textContent='东家掷骰 · 定庄';
+    // 东家定庄提示（2026-11-09 台词改版）：语音「X定庄家」，说完再掷骰
+    await vpSayDingZhuang(east);
+    toast(eastName+' 掷骰定庄家');
     note.textContent='以'+eastName+'为 1 数起（数到 5 绕回自己），掷出点数落谁家谁坐庄';
     if(east===0&&!humanAuto)await waitDiceClick();
     else await sleep(Math.max(30,dGap));
@@ -791,11 +797,10 @@ async function diceForDealer(token){
     diceResultText(eastName+' 掷出 '+s+' 点：以他为 1 数起 '+seq.join('，')+(s>8?'…绕回 ':'')+'—— '+dealerName+' 坐庄，先抓牌！');
     cells.forEach((c,k)=>c.classList.toggle('cur',k===dealer));
     diceSetVal(cells,dealer,undefined,'庄'); // 庄家格子加「庄」标：坐庄只是先抓牌的身份，不换角色
-    // 定庄播报：庄家语音+屏显报名（梅姐坐庄就报「梅姐坐庄」）
-    const dealerSay=(dealer===0?'我':aiNames[dealer-1])+'坐庄，先抓牌！';
-    vpSayZhuang(dealer);
-    toast(dealerName+' 坐庄，先抓牌');
-    await sleep(Math.max(80,dHold));
+    // 定庄播报（2026-11-09 台词改版）：语音「庄家是X，请进入游戏出牌」，说完再收起掷骰面板进入出牌
+    await vpSayZhuang(dealer);
+    toast('庄家是'+dealerName+'，请进入游戏出牌');
+    await sleep(Math.max(80,humanAuto?dHold:600));
     window._diceResult={east,rolls:scores,s,dealer};
     ov.classList.remove('show');
     return dealer;
@@ -974,7 +979,7 @@ function speakText(pl,txt){
 function speakName(pl,t){vpSayTile(pl,t);/*牌名统一走语音包；TTS 仅用于动态长句*/}
 // ===== 语音包（2026-11-09：彻底解决手机没人声——Edge 神经音色预生成 108 条台词 mp3 于 voice/ 目录，
 // 直接播放音频文件，不依赖各手机系统的 TTS 引擎；鸿蒙/国产浏览器 TTS 静默失败时人声照常）=====
-// 目录约定（与 scripts/gen-voice.py 一致）：w|wf/{牌id|动作}.mp3（男/女声词库）、host/{names/i|n2~n12|zhi|dianzuida|zhuang}.mp3（播报员）、role/{i}/{qing|seven|pong}.mp3（角色宣言）
+// 目录约定（与 scripts/gen-voice.py 一致）：w|wf/{牌id|动作}.mp3（男/女声词库）、host/{names/i|n2~n12|zhi|dianzuida|zhuang|qingdong|dongshi|dingzhuangjia|zhuangjiashi|jinru}.mp3（播报员）、role/{i}/{qing|seven|pong}.mp3（角色宣言）
 const ROLE_ORDER=['龙须山人','福星道人','曹大师','僧大兴','许华少','梅姐','厨建国'];
 function vpIdx(name){return ROLE_ORDER.indexOf(name);}
 function vpLib(pl){return (ROLE_VOICE_PROFILE[pl.name]&&ROLE_VOICE_PROFILE[pl.name].female)?'wf/':'w/';}
@@ -1008,20 +1013,48 @@ function vpNext(){
   }catch(e){vpBusy=false;}
 }
 function vpStop(){vpQueue=[];try{if(vpAudio){vpAudio.pause();vpAudio.onended=null;vpAudio.onerror=null;}}catch(e){}vpBusy=false;}
+// 播放并等待整句播完（2026-11-09 用户需求：定东定庄台词要留足时间说完再进下一步）。
+// 轮询队列空闲即 resolve；带超时兜底（缺文件 onerror 跳过 / 网络慢都不会卡死流程）；静音直接过。
+function vpPlayWait(files,timeoutMs){
+  return new Promise(res=>{
+    if(!soundOn){res();return;}
+    try{vpQueue=vpQueue.concat(files);}catch(e){res();return;}
+    if(!vpBusy)vpNext();
+    const t0=Date.now(),limit=timeoutMs||8000;
+    const iv=setInterval(()=>{
+      if(!vpBusy&&vpQueue.length===0){clearInterval(iv);res();}
+      else if(Date.now()-t0>limit){vpStop();clearInterval(iv);res();}
+    },100);
+  });
+}
+// 播报台词：正常模式等说完再走；托管加速模式只播不等（保持托管提速特性）
+function vpSayWait(files){
+  if(humanAuto){vpPlay(files);return Promise.resolve();}
+  return vpPlayWait(files,8000);
+}
 // 报牌：牌名词库（按角色性别选声库）
 function vpSayTile(pl,t){vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)]);}
 // 动作词：碰/杠/暗杠/补杠
 function vpSayAction(pl,key){vpPlay([vpLib(pl)+key]);}
-// 播报员句子：掷骰定东（X 掷 N 点最大坐东）、定庄（X 坐庄先抓牌）
-function vpSayEastDong(seat,sum){
+// 播报员句子（2026-11-09 台词改版）：
+// 开局「请先定东」→ 定东后「东是X」→ 东家掷骰前「X定庄家」→ 定庄后「庄家是X，请进入游戏出牌」
+// 各句 vpSayWait 等待整句播完再进下一步；托管模式只播不等
+function vpHostIdx(seat){
   const nm=seat===0?humanName:aiNames[seat-1];
-  const i=vpIdx(nm);if(i<0)return;
-  vpPlay(['host/names/'+i,'host/zhi','host/n'+sum,'host/dianzuida']);
+  return vpIdx(nm);
+}
+function vpSayQingDong(){return vpSayWait(['host/qingdong']);}
+function vpSayEastDong(seat){
+  const i=vpHostIdx(seat);if(i<0)return Promise.resolve();
+  return vpSayWait(['host/dongshi','host/names/'+i]);
+}
+function vpSayDingZhuang(seat){
+  const i=vpHostIdx(seat);if(i<0)return Promise.resolve();
+  return vpSayWait(['host/names/'+i,'host/dingzhuangjia']);
 }
 function vpSayZhuang(seat){
-  const nm=seat===0?humanName:aiNames[seat-1];
-  const i=vpIdx(nm);if(i<0)return;
-  vpPlay(['host/names/'+i,'host/zhuang']);
+  const i=vpHostIdx(seat);if(i<0)return Promise.resolve();
+  return vpSayWait(['host/zhuangjiashi','host/names/'+i,'host/jinru']);
 }
 // 角色宣言（大牌姿态）
 function vpSayStance(pl,kind){

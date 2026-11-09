@@ -55,7 +55,7 @@ def parse_chat_say():
     m = re.search(r'const CHAT_SAY=\{(.*?)\n\};', html, re.S)
     if not m: sys.exit('未找到 CHAT_SAY')
     out = {}
-    for style, inner in re.findall(r"(\w+):\{(.*?)\}\s*,?", m.group(1)):
+    for style, inner in re.findall(r"(\w+):\{(.*?)\}", m.group(1)):
         ev = {}
         for k, arr in re.findall(r"(good|bad|peng|lost|ting|low):\[([^\]]*)\]", inner):
             lines = re.findall(r"'([^']*)'", arr)
@@ -90,11 +90,14 @@ async def main():
         jobs.append(('w/' + k, t, VOICE_W, '+0%', '+0Hz'))
         jobs.append(('wf/' + k, t, VOICE_WF, '+0%', '+0Hz'))
     # ② host 播报库：角色名 + 骰点数字 + 句段
+    #    2026-11-09 台词改版新增：qingdong 请先定东 / dongshi 东是 / dingzhuangjia 定庄家 / zhuangjiashi 庄家是 / jinru 请进入游戏出牌
     for i, name in enumerate(ROLES):
         jobs.append(('host/names/' + str(i), name, VOICE_HOST, HOST_RATE, '+0Hz'))
     for n, txt in CN_NUM.items():
         jobs.append(('host/n' + str(n), txt, VOICE_HOST, HOST_RATE, '+0Hz'))
-    for k, t in {'zhi': '掷', 'dianzuida': '点最大，坐东！', 'zhuang': '坐庄，先抓牌！'}.items():
+    for k, t in {'zhi': '掷', 'dianzuida': '点最大，坐东！', 'zhuang': '坐庄，先抓牌！',
+                 'qingdong': '请先定东', 'dongshi': '东是', 'dingzhuangjia': '定庄家',
+                 'zhuangjiashi': '庄家是', 'jinru': '请进入游戏出牌'}.items():
         jobs.append(('host/' + k, t, VOICE_HOST, HOST_RATE, '+0Hz'))
     # ③ 角色宣言（按 STANCE_SAY 解析结果 × 各角色音色）
     stance = parse_stance_say()
