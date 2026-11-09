@@ -247,7 +247,7 @@ try {
   assert('TTS 可用性自动检测与兜底', ttsProbe.hasFlag && ttsProbe.probe && ttsProbe.shortCircuit,
     `flag=${ttsProbe.hasFlag}, probe=${ttsProbe.probe}, shortCircuit=${ttsProbe.shortCircuit}`);
 
-  // 手机竖屏自动横屏：390×844 视口下舞台应为 rot（CSS 旋转 90°）而非 pport（上下分割）
+  // 手机竖屏默认竖屏版：390×844 视口下舞台应为 pport（原生上下分割）而非 rot（旋转强制横屏）
   const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
     await page2.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
@@ -263,9 +263,9 @@ try {
       const st = document.getElementById('stage');
       return { rot: st.classList.contains('rot'), pport: st.classList.contains('pport') };
     });
-    assert('手机竖屏自动旋转横屏', land.rot && !land.pport, `rot=${land.rot}, pport=${land.pport}`);
+    assert('手机竖屏默认竖屏版（上下分割）', land.pport && !land.rot, `rot=${land.rot}, pport=${land.pport}`);
 
-    // 手机横屏状态下进入牌局：教学模式默认不打开
+    // 竖屏版进入牌局：教学模式默认打开（applyPhonePortDock 默认开教学、下半区默认高度）
     await page2.click('#startBtn');
     await page2.waitForSelector('#roleSelect.show .roleBtn', { timeout: 10000 });
     await page2.locator('.roleBtn').first().click();
@@ -274,7 +274,7 @@ try {
       null, { timeout: 30000 }
     );
     const teach = await page2.evaluate(() => ({ teachOn }));
-    assert('手机横屏默认不开教学模式', teach.teachOn === false, `teachOn=${teach.teachOn}`);
+    assert('手机竖屏默认开启教学模式', teach.teachOn === true, `teachOn=${teach.teachOn}`);
   } finally {
     await page2.close();
   }

@@ -1795,7 +1795,11 @@ document.addEventListener('pointerdown',function(e){
 });
 window.addEventListener('resize',function(){try{applyColWidths();}catch(e){}});
 // ===== 牌桌/教学区水平分割线（鼠标/触摸上下拖拽）=====
-function isPhonePort(){return false;}// 2026-11-08 应用户要求：手机竖屏打开也自动旋转强制横屏（原为上下分割布局，pport 样式保留备用）
+function isPhonePort(){
+  // 2026-11-09 用户需求恢复：手机竖屏打开默认走竖屏版（原生上下分割布局，不旋转）
+  // 判定：窄屏（≤560px，覆盖主流手机）且竖屏（高>宽）；平板竖屏（≥600px 宽）仍走旋转横屏
+  return innerWidth<=560&&innerHeight>innerWidth;
+}
 function dockKey(){return isPhonePort()?'banshanDockHPort':'banshanDockH';}
 function syncSplitter(){
   const sp=document.getElementById('hSplitter'),dock=document.getElementById('bottomDock'),stage=document.getElementById('stage');
@@ -2717,7 +2721,8 @@ function startGame(){
   const root=document.documentElement;
   const enterFs=root.requestFullscreen||root.webkitRequestFullscreen;
   if(enterFs){try{const pr=enterFs.call(root);if(pr&&pr.catch)pr.catch(()=>{});}catch(e){}}
-  try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});}catch(e){}
+  // 2026-11-09 竖屏版需求：手机竖屏锁定竖屏（配合 pport 上下分割布局），其余仍锁横屏
+  try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock(isPhonePort()?'portrait':'landscape').catch(()=>{});}catch(e){}
   const sp=document.getElementById('splash');if(sp)sp.remove();
   buildRoleGrid();
   const rs=document.getElementById('roleSelect');rs.classList.add('show');
