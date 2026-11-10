@@ -1015,24 +1015,13 @@ if('speechSynthesis' in window){
 }
 // TTS 可用性检测：null=未检测，true=可用，false=本机浏览器静默失败（部分华为鸿蒙/国产浏览器不支持网页语音合成）
 let ttsAvailable=null;
-// 在用户手势内预热语音引擎：iOS 必须用「非空文本的真实发声」解锁 TTS（空文本或零音量会被系统直接忽略，2026-11-08 修复手机无声）
-// 鸿蒙/安卓：借这次发声探测 TTS 是否真的能用，2 秒内没开始也没报错则判定不可用，提示并改用音效兜底
+// 2026-11-10 用户需求：开始不要有杂音——TTS 播报内容已全部迁语音包 mp3（speakText 无调用方），
+// 原预热探测的「好」短促发声（点开始/选角色各一次）属纯杂音，移除；
+// ttsAvailable 直接视为可用（仅 speakText 兜底路径引用，实际不触发）。
 function primeSpeech(){
   if(!('speechSynthesis' in window)){ttsAvailable=false;return;}
   loadVoices();
-  try{
-    const warm=new SpeechSynthesisUtterance('好');
-    warm.lang='zh-CN';warm.volume=0.01;warm.rate=2;
-    warm.onstart=function(){ttsAvailable=true;};
-    warm.onerror=function(){if(ttsAvailable===null)ttsAvailable=false;};
-    speechSynthesis.speak(warm);
-    setTimeout(function(){
-      if(ttsAvailable===null){
-        ttsAvailable=false;
-        toast('本机浏览器不支持报牌语音，已用音效提示代替');
-      }
-    },2000);
-  }catch(e){ttsAvailable=false;}
+  ttsAvailable=true;
 }
 // 多音字读音修正：仅改传给 TTS 的文本，不影响屏幕显示。
 // “华少”的“少”读第四声 shào（少爷的少），用同音字“绍”引导，避免 TTS 误读成第三声 shǎo。

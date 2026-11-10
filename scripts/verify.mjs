@@ -229,23 +229,24 @@ try {
   });
   assert('欢快麻将音效函数齐全', sfx.ok, 'sndDraw/Discard/Peng/Gang/Win/LiuJu/Click');
 
-  // 移动端声音修复：TTS 用非空文本预热（iOS 解锁）、报牌不再无条件 cancel（iOS 无声 bug）、任意点击恢复音频通道
+  // 2026-11-10 用户需求：开始不要有杂音——TTS 预热探测的「好」发声已移除（TTS 内容全走语音包 mp3）；
+  // 保留：报牌条件取消（iOS 无声 bug 修复）、任意点击恢复音频通道
   const sndFix = await page.evaluate(() => ({
-    warm: /SpeechSynthesisUtterance\('好'\)/.test(primeSpeech.toString()),
+    noWarmNoise: !primeSpeech.toString().includes('speechSynthesis.speak'),
     noBlankCancel: /speaking\|\|speechSynthesis\.pending/.test(speakText.toString()),
-    clickRestore: typeof ensureAudioPlaying === 'function' && primeSpeech.toString().includes('chooseRole') === false,
+    clickRestore: typeof ensureAudioPlaying === 'function',
   }));
-  assert('移动端声音修复（非空预热+条件取消）', sndFix.warm && sndFix.noBlankCancel,
-    `warm=${sndFix.warm}, noBlankCancel=${sndFix.noBlankCancel}`);
+  assert('开局无杂音（TTS 预热不发声）+ 条件取消修复', sndFix.noWarmNoise && sndFix.noBlankCancel,
+    `noWarmNoise=${sndFix.noWarmNoise}, noBlankCancel=${sndFix.noBlankCancel}`);
 
-  // TTS 可用性自动检测：不可用（如部分鸿蒙/国产浏览器）时短路报牌、提示并用音效兜底
+  // TTS 可用性兜底：speakText（动态长句兜底通道）不可用时短路报牌
   const ttsProbe = await page.evaluate(() => ({
     hasFlag: typeof ttsAvailable !== 'undefined',
-    probe: primeSpeech.toString().includes('onstart') && primeSpeech.toString().includes('2000'),
+    ready: primeSpeech.toString().includes('ttsAvailable=true'),
     shortCircuit: speakText.toString().includes('ttsAvailable===false'),
   }));
-  assert('TTS 可用性自动检测与兜底', ttsProbe.hasFlag && ttsProbe.probe && ttsProbe.shortCircuit,
-    `flag=${ttsProbe.hasFlag}, probe=${ttsProbe.probe}, shortCircuit=${ttsProbe.shortCircuit}`);
+  assert('TTS 可用性兜底（语音包为主，TTS 仅兜底）', ttsProbe.hasFlag && ttsProbe.ready && ttsProbe.shortCircuit,
+    `flag=${ttsProbe.hasFlag}, ready=${ttsProbe.ready}, shortCircuit=${ttsProbe.shortCircuit}`);
 
   // 手机竖屏默认竖屏版：390×844 视口下舞台应为 pport（原生上下分割）而非 rot（旋转强制横屏）
   const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
