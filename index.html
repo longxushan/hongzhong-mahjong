@@ -116,7 +116,7 @@
   /* 顶栏弹性：标签/按钮按内容完整显示，sp 与 info 收缩，空间不足时只省略 info，不挤压牌桌 */
   #topbar #info{flex:0 1 auto;min-width:40px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #topbar button{flex:0 0 auto;}
-  #discardPool{display:flex;flex-direction:column;gap:3px;width:100%;flex:0 0 auto;min-height:0;overflow:hidden;padding:4px 10px 0;justify-content:flex-start;zoom:1.5; /* 2026-11-09 用户要求：弃牌池区域放大 1.5 倍 */}
+  #discardPool{display:flex;flex-direction:column;gap:3px;width:100%;flex:0 0 auto;min-height:0;overflow:hidden;padding:4px 10px 0;justify-content:flex-start;zoom:1.5;transform:translateY(-16px); /* 2026-11-10 用户要求：弃牌池上移一些（放大后原本偏下、贴近手牌） */}
   .poolRow{display:flex;align-items:flex-start;gap:6px;justify-content:center;min-width:0;width:100%;}
   .poolTag{flex:0 0 auto;width:22px;height:22px;margin-top:2px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
   .poolTiles{display:flex;flex-wrap:wrap;gap:3px;min-width:0;justify-content:flex-start;flex:0 1 auto;max-width:92%;}
