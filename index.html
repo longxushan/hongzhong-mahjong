@@ -891,10 +891,10 @@ async function diceForDealer(token){
     diceResultText(eastName+' 掷出 '+s+' 点：以他为 1 数起 '+seq.join('，')+(s>8?'…绕回 ':'')+'—— '+dealerName+' 坐庄，先抓牌！');
     cells.forEach((c,k)=>c.classList.toggle('cur',k===dealer));
     diceSetVal(cells,dealer,undefined,'庄'); // 庄家格子加「庄」标：坐庄只是先抓牌的身份，不换角色
-    // 定庄播报（2026-11-09 台词改版）：语音「庄家是X，请进入游戏出牌」，播完 220ms 收面板进入出牌
-    await vpSayZhuang(dealer);
-    toast('庄家是'+dealerName+'，请进入游戏出牌');
-    await sleep(Math.max(80,humanAuto?dFast?60:150:220));
+    // 2026-11-10 用户需求：定完庄直接进入牌局——「庄家是X」语音并行播放不等待，
+    // 面板立即收起发牌（toast 同步提示）；「请进入游戏出牌」台词移除（牌局已在进行）
+    const zi=vpHostIdx(dealer);if(zi>=0){try{vpPlay(['host/zhuangjiashi','host/names/'+zi],false);}catch(e){}}
+    toast('庄家是'+dealerName+'，开始牌局');
     window._diceResult={east,rolls:scores,s,dealer};
     ov.classList.remove('show');
     return dealer;
