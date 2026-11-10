@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>巢湖-金华红中 · 横屏</title>
 <style>
-  :root{--gold:#d9a441;--red:#c0392b;--felt:#0e6b4f;--felt2:#0a543e;--hand:54px;--sm:30px;--disc:24px;--back:26px;--seatgap:6px;--sideMin:96px;--sideMax:118px;
+  :root{--gold:#d9a441;--red:#c0392b;--felt:#0e6b4f;--felt2:#0a543e;--hand:54px;--hand2:43px;--sm:30px;--disc:24px;--back:26px;--seatgap:6px;--sideMin:96px;--sideMax:118px;
     --topfs:13px;--tagfs:11px;--topgap:10px;--btnpad:8px 14px;--btnfs:14px;--volw:88px;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;height:100%;width:100%;overflow:hidden;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
@@ -19,7 +19,7 @@
   button{border:none;border-radius:8px;padding:var(--btnpad);font-size:var(--btnfs);font-weight:600;background:#333;color:#fff;cursor:pointer;white-space:nowrap;flex:0 0 auto;}
   button.primary{background:var(--gold);color:#1a1a1a;} button:disabled{opacity:.35;}
   /* 2026-11-10 用户需求：牌桌主操作（出牌/胡牌）圆形、黄底红字（覆盖上方通用 primary） */
-  #actions button.primary{background:linear-gradient(180deg,#ffd85e,#f2b200);color:#c0392b;border-radius:50%;min-width:var(--hand);padding:0;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 -3px 0 rgba(120,60,0,.18);text-shadow:0 1px 0 rgba(255,255,255,.35);}
+  #actions button.primary{background:linear-gradient(180deg,#ffd85e,#f2b200);color:#c0392b;border-radius:50%;min-width:var(--hand2);padding:0;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 -3px 0 rgba(120,60,0,.18);text-shadow:0 1px 0 rgba(255,255,255,.35);}
   button.btnActive{background:#2e9e5b;color:#fff;box-shadow:inset 0 2px 5px rgba(0,0,0,.28);}
   /* 2026-11-10 用户需求：天鹅绒牌桌质感（同色系）——绒毛噪点纹理 × 灯光高光 × 深暗角压边 */
   #table{position:relative;flex:1;min-height:0;
@@ -83,7 +83,7 @@
   .tile-photo img{width:100%;height:100%;object-fit:contain;user-select:none;display:block;border:1px solid rgba(180,172,155,.55);border-radius:6px;
     background:linear-gradient(150deg,#fcfbf7 0%,#f1eee6 55%,#e2ddd1 100%);
     box-shadow:inset 0 1px 2px rgba(255,255,255,.85),inset 0 -2px 4px rgba(180,170,150,.25),0 1px 3px rgba(0,0,0,.35);}
-  .tp-hand{width:calc(var(--hand)*0.75);height:var(--hand);cursor:pointer;}
+  .tp-hand{width:calc(var(--hand2)*0.75);height:var(--hand2);cursor:pointer;} /* 2026-11-10 用户要求：手牌区的牌缩小到 4/5（--hand2=hand×0.8，只缩自己的手牌与配套操作按钮） */
   .tp-sm{width:calc(var(--sm)*0.75);height:var(--sm);}
   .discard .tp-sm{width:calc(var(--disc)*0.75);height:var(--disc);}
   .tp-back{width:calc(var(--back)*0.75);height:var(--back);}
@@ -106,7 +106,7 @@
   #hand{display:flex;gap:5px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;min-width:0;flex:1 1 auto;padding:3px 4px 2px;}
   #actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto;align-items:center;max-width:48%;}
   #actions:empty{min-height:0;}
-  #actions button{height:var(--hand);min-height:var(--hand);padding:0 16px;font-size:calc(var(--hand)*0.32);border-radius:6px;display:flex;align-items:center;justify-content:center;line-height:1;white-space:nowrap;}
+  #actions button{height:var(--hand2);min-height:var(--hand2);padding:0 16px;font-size:calc(var(--hand2)*0.32);border-radius:6px;display:flex;align-items:center;justify-content:center;line-height:1;white-space:nowrap;}
   #actions #cd{height:auto;min-height:0;}
   #cd{width:100%;text-align:center;font-size:12px;color:#ffd98a;margin-bottom:2px;flex:0 0 100%;}
   .topTag{background:rgba(217,164,65,.16);border:1px solid rgba(217,164,65,.55);color:#f3d9a4;border-radius:9px;padding:3px 9px;font-size:var(--tagfs);white-space:nowrap;flex:0 0 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
@@ -2941,7 +2941,7 @@ function fit(){
   let sideMin=large?130:96, sideMax=large?172:118;
   if(pp){sideMin=58;sideMax=80;}
   const rs=document.documentElement.style;
-  rs.setProperty('--hand',hand+'px');rs.setProperty('--sm',sm+'px');rs.setProperty('--disc',disc+'px');rs.setProperty('--back',back+'px');rs.setProperty('--seatgap',gap+'px');
+  rs.setProperty('--hand',hand+'px');rs.setProperty('--hand2',(hand*0.8)+'px');rs.setProperty('--sm',sm+'px');rs.setProperty('--disc',disc+'px');rs.setProperty('--back',back+'px');rs.setProperty('--seatgap',gap+'px');
   rs.setProperty('--sideMin',sideMin+'px');rs.setProperty('--sideMax',sideMax+'px');
   if(large){
     rs.setProperty('--topfs','13px');rs.setProperty('--tagfs','11.5px');rs.setProperty('--btnfs','13px');
