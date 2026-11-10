@@ -21,8 +21,20 @@
   /* 2026-11-10 用户需求：牌桌主操作（出牌/胡牌）圆形、黄底红字（覆盖上方通用 primary） */
   #actions button.primary{background:linear-gradient(180deg,#ffd85e,#f2b200);color:#c0392b;border-radius:50%;min-width:var(--hand);padding:0;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 -3px 0 rgba(120,60,0,.18);text-shadow:0 1px 0 rgba(255,255,255,.35);}
   button.btnActive{background:#2e9e5b;color:#fff;box-shadow:inset 0 2px 5px rgba(0,0,0,.28);}
+  /* 2026-11-10 用户需求：天鹅绒牌桌质感（同色系）——绒毛噪点纹理 × 灯光高光 × 深暗角压边 */
   #table{position:relative;flex:1;min-height:0;
-    background:radial-gradient(circle at 50% 45%,var(--felt),var(--felt2));
+    background:
+      /* 绒毛噪点：feTurbulence 分形噪声平铺，布面细绒颗粒感 */
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"),
+      /* 斜向绒毛光泽：两向极细明暗条纹交错（绒毛反光丝理） */
+      repeating-linear-gradient(58deg, rgba(255,255,255,.018) 0 2px, rgba(0,0,0,.022) 2px 5px),
+      repeating-linear-gradient(-62deg, rgba(255,255,255,.012) 0 2px, rgba(0,0,0,.018) 2px 5px),
+      /* 灯光打在天鹅绒上：中央柔和高光晕 */
+      radial-gradient(ellipse 62% 55% at 50% 44%, rgba(190,255,225,.13), transparent 68%),
+      /* 同色系基础：中央亮绿向四周深绿 */
+      radial-gradient(circle at 50% 45%, var(--felt), var(--felt2));
+    /* 天鹅绒厚实压边：四周深暗角（绒布凹进桌沿的光影） */
+    box-shadow:inset 0 0 46px 18px rgba(0,0,0,.42), inset 0 0 110px 30px rgba(0,0,0,.18);
     display:grid;grid-template-columns:minmax(var(--sideMin),var(--sideMax)) 1fr minmax(var(--sideMin),var(--sideMax));grid-template-rows:minmax(0,1fr) minmax(0,1.05fr) minmax(0,1.25fr);gap:var(--seatgap);padding:6px;}
   .seat{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;min-height:0;overflow:hidden;}
   #seat2{grid-column:1/4;grid-row:1;} #seat1{grid-column:3;grid-row:2;}
@@ -2894,7 +2906,8 @@ for(const ev of ['gesturestart','gesturechange','gestureupdate','gestureend'])
 document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
 tableEl.addEventListener('touchcancel',endTouch,{passive:false});
 // 桌面滚轮缩放（以中心缩放）
-tableEl.addEventListener('wheel',e=>{view.s=Math.max(0.6,Math.min(3,view.s+(e.deltaY<0?0.12:-0.12)));clampView();applyView();e.preventDefault();},{passive:false});
+// 2026-11-10 用户需求：鼠标滚轮不再缩放牌桌（与触摸手势同步禁用，TABLE_PAN 统一开关）
+tableEl.addEventListener('wheel',e=>{if(TABLE_PAN){/* 备查：原滚轮缩放逻辑 */}e.preventDefault();},{passive:false});
 
 layout();
 </script>
