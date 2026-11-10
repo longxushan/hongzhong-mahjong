@@ -426,7 +426,7 @@
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="bgmBtn">音乐:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -1003,6 +1003,69 @@ function sndGang(){if(!soundOn)return;ensureAudioPlaying();noise(0.1,1600,0.2);t
 function sndWin(){if(!soundOn)return;ensureAudioPlaying();[523,659,784,1047].forEach((f,i)=>tone(f,i===3?0.18:0.11,'triangle',0.18,i*0.11));tone(1319,0.22,'triangle',0.16,0.46);tone(1568,0.3,'triangle',0.15,0.62,1047);}
 function sndLiuJu(){if(!soundOn)return;ensureAudioPlaying();tone(660,0.18,'sine',0.11,0,590);tone(494,0.24,'sine',0.10,0.14,440);}
 function sndClick(){if(!soundOn)return;ensureAudioPlaying();tone(620,0.04,'sine',0.08,0,900);}
+// ===== 欢快麻将背景音乐（2026-11-10 用户要求：默认开启） =====
+// WebAudio 程序化合成：C 宫五声音阶欢快小曲（扬琴式拨弦音色 + 低音根音 + 轻木鱼节拍），
+// 8 小节 ~15 秒循环；独立增益通道挂 masterGain 下（受全局声音开关/音量控制），语音播报时自动压低（ducking）。
+// 零文件依赖（单文件架构不变），切后台自动重同步防恢复时音符挤成一团。
+let bgmOn=true,bgmTimer=null,bgmGainNode=null;
+try{if(localStorage.getItem('banshanBgm')==='0')bgmOn=false;}catch(e){}
+const mf=m=>440*Math.pow(2,(m-69)/12); // MIDI → 频率
+const BGM_MELODY=[ // 8 小节 × 8 个八分音位（0=休止）；C 宫五声：C D E G A
+  [72,69,67,69,72,0,69,67],[64,67,69,67,64,62,60,0],
+  [67,69,72,74,76,74,72,69],[72,69,67,69,67,0,64,0],
+  [69,72,74,76,79,76,74,72],[74,72,69,72,69,67,69,0],
+  [72,74,76,79,81,79,76,74],[76,74,72,69,67,0,72,0]
+];
+const BGM_BASS=[48,43,45,52,48,45,43,48]; // 每小节低音根音（宫/徵/羽轮换）
+const BGM_BPM=126,BGM_E8=60/BGM_BPM/2;    // 八分音符时长
+function bgmPluck(m,when,gain,decay){ // 扬琴/琵琶式拨弦：主音三角波 + 倍频泛音，快速指数衰减
+  if(!AC||!bgmGainNode)return;
+  const t=AC.currentTime+when,f=mf(m);
+  const o=AC.createOscillator();o.type='triangle';o.frequency.value=f;
+  const o2=AC.createOscillator();o2.type='sine';o2.frequency.value=f*2;
+  const g=AC.createGain(),g2=AC.createGain();
+  g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(0.0008,t+decay);
+  g2.gain.setValueAtTime(gain*0.35,t);g2.gain.exponentialRampToValueAtTime(0.0006,t+decay*0.7);
+  o.connect(g);g.connect(bgmGainNode);o2.connect(g2);g2.connect(bgmGainNode);
+  o.start(t);o.stop(t+decay+0.05);o2.start(t);o2.stop(t+decay+0.05);
+}
+function bgmTick(when,gain){ // 轻木鱼嗒：短促带通噪声
+  if(!AC||!bgmGainNode)return;
+  const t=AC.currentTime+when,len=Math.max(1,Math.floor(AC.sampleRate*0.05));
+  const buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+  const src=AC.createBufferSource();src.buffer=buf;
+  const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1900;f.Q.value=2.5;
+  const g=AC.createGain();g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(0.0006,t+0.05);
+  src.connect(f);f.connect(g);g.connect(bgmGainNode);src.start(t);
+}
+function bgmSchedule(){ // 一次排完整 8 小节（~15 秒），段末 setTimeout 无缝接下一段
+  if(!AC||!bgmOn)return;
+  if(!bgmGainNode){bgmGainNode=AC.createGain();bgmGainNode.gain.value=0.9;bgmGainNode.connect(masterGain);}
+  for(let bar=0;bar<BGM_MELODY.length;bar++){
+    const base=bar*BGM_E8*8;
+    for(let k=0;k<8;k++)if(BGM_MELODY[bar][k])bgmPluck(BGM_MELODY[bar][k],base+k*BGM_E8,0.13,0.42);
+    bgmPluck(BGM_BASS[bar],base,0.085,0.6);          // 低音正拍
+    bgmPluck(BGM_BASS[bar],base+4*BGM_E8,0.06,0.5);  // 低音第三拍（轻）
+    for(let k=0;k<4;k++)bgmTick(base+k*2*BGM_E8,0.045); // 木鱼每拍
+  }
+  bgmTimer=setTimeout(bgmSchedule,BGM_MELODY.length*8*BGM_E8*1000-60);
+}
+function bgmStart(){initAudio();if(!AC||!bgmOn||bgmTimer)return;bgmSchedule();}
+function bgmStop(){if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;}if(bgmGainNode){try{bgmGainNode.disconnect();}catch(e){}bgmGainNode=null;}}
+function bgmResync(){ // 切后台回来：丢弃旧排程（断开旧增益即静音），从段头重新起
+  if(!bgmOn)return;
+  if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;}
+  if(bgmGainNode){try{bgmGainNode.disconnect();}catch(e){}bgmGainNode=null;}
+  bgmSchedule();
+}
+function bgmDuck(on){ // 语音播报时压低 BGM 至 ~1/3，播完缓慢回升
+  if(!bgmGainNode||!AC)return;
+  try{
+    bgmGainNode.gain.cancelScheduledValues(AC.currentTime);
+    bgmGainNode.gain.setTargetAtTime(on?0.3:0.9,AC.currentTime,on?0.08:0.6);
+  }catch(e){}
+}
 // 角色性别：7 个角色中仅“梅姐”为女性，其余为男性
 const FEMALE_ROLES=['梅姐'];
 function isFemaleName(nm){return FEMALE_ROLES.indexOf(nm)>=0;}
@@ -1133,8 +1196,8 @@ function vpPlay(files,flush){ // 依序播放语音包（flush=true 时清空积
   if(!vpBusy)vpNext();
 }
 function vpNext(){
-  if(!vpQueue.length){vpBusy=false;return;}
-  vpBusy=true;
+  if(!vpQueue.length){vpBusy=false;bgmDuck(false);return;} // 队列空：BGM 缓升回正常音量
+  vpBusy=true;bgmDuck(true);
   const f=vpQueue.shift();
   try{
     if(!vpAudio)vpAudio=new Audio();
@@ -1161,7 +1224,7 @@ function vpPreload(files){
     try{a.load();}catch(e){}
   }}catch(e){}
 }
-function vpStop(){vpQueue=[];try{if(vpAudio){vpAudio.pause();vpAudio.onended=null;vpAudio.onerror=null;}}catch(e){}vpBusy=false;}
+function vpStop(){vpQueue=[];try{if(vpAudio){vpAudio.pause();vpAudio.onended=null;vpAudio.onerror=null;}}catch(e){}vpBusy=false;bgmDuck(false);}
 // 播放并等待整句播完（2026-11-09 用户需求：定东定庄台词要留足时间说完再进下一步）。
 // 轮询队列空闲即 resolve；带超时兜底（缺文件 onerror 跳过 / 网络慢都不会卡死流程）；静音直接过。
 function vpPlayWait(files,timeoutMs){
@@ -2935,6 +2998,7 @@ let started=false;
 function startGame(){
   if(started)return;started=true;
   initAudio();
+  if(bgmOn)bgmStart(); // 2026-11-10 默认欢快背景音乐（在此手势内启动，规避手机自动播放限制）
   primeSpeech();
   vpUnlock(); // 语音包音频元素在此手势内解锁（手机自动播放限制）
   const root=document.documentElement;
@@ -2957,12 +3021,23 @@ soundBtn.addEventListener('click',function(){
   }else soundOn=false;
   initAudio();applyAppVolume();syncSoundUI();
   try{localStorage.setItem('banshanVol',String(appVolume));}catch(e){}
-  if(soundOn)sndClick();else{try{speechSynthesis.cancel();}catch(e){}vpStop();}
+  if(soundOn){sndClick();if(bgmOn)bgmStart();}else{try{speechSynthesis.cancel();}catch(e){}vpStop();bgmStop();}
 });
 syncSoundUI();
+// 背景音乐开关（2026-11-10：默认开，独立于声音总开关，偏好存 localStorage）
+const bgmBtn=document.getElementById('bgmBtn');
+function syncBgmUI(){bgmBtn.textContent='音乐:'+(bgmOn?'开':'关');bgmBtn.classList.toggle('btnActive',bgmOn);}
+bgmBtn.addEventListener('click',function(){
+  bgmOn=!bgmOn;
+  if(bgmOn)bgmStart();else bgmStop();
+  syncBgmUI();
+  try{localStorage.setItem('banshanBgm',bgmOn?'1':'0');}catch(e){}
+  if(bgmOn)sndClick();
+});
+syncBgmUI();
 // 保持 AudioContext 活跃：系统据此识别为媒体播放，音量键控制游戏声音
 ['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(AC&&AC.state==='suspended')AC.resume();},{passive:true}));
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume();if(!document.hidden&&bgmTimer)bgmResync();});
 if(AC)AC.addEventListener('statechange',()=>{if(AC.state==='suspended')AC.resume();});
 addEventListener('resize',layout);
 addEventListener('orientationchange',()=>setTimeout(layout,120));

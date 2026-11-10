@@ -251,6 +251,21 @@ try {
   });
   assert('欢快麻将音效函数齐全', sfx.ok, 'sndDraw/Discard/Peng/Gang/Win/LiuJu/Click');
 
+  // 背景音乐（2026-11-10 用户需求：默认欢快麻将 BGM，程序化合成民乐小调、独立开关、语音播报自动压低）
+  const bgm = await page.evaluate(() => {
+    const defOn = bgmOn === true;
+    const running = bgmTimer !== null && !!bgmGainNode;
+    const wired = BGM_MELODY.length === 8 && bgmSchedule.toString().includes('BGM_MELODY')
+      && vpNext.toString().includes('bgmDuck') && startGame.toString().includes('bgmStart');
+    const btn = document.getElementById('bgmBtn');
+    const off = (() => { btn.click(); return bgmOn === false && bgmTimer === null; })();
+    const back = (() => { btn.click(); return bgmOn === true && bgmTimer !== null && !!bgmGainNode; })();
+    const btnTxt = btn.textContent;
+    return { defOn, running, wired, off, back, btnTxt };
+  });
+  assert('默认欢快背景音乐：民乐拨弦 BGM 运转 + 独立开关 + 播报压低', bgm.defOn && bgm.running && bgm.wired && bgm.off && bgm.back,
+    `默认开=${bgm.defOn}，运行中=${bgm.running}，8 小节五声旋律=${bgm.wired}，开关往返=${bgm.off && bgm.back}（按钮「${bgm.btnTxt}」）`);
+
   // 2026-11-10 用户需求：开始不要有杂音——TTS 预热探测的「好」发声已移除（TTS 内容全走语音包 mp3）；
   // 保留：报牌条件取消（iOS 无声 bug 修复）、任意点击恢复音频通道
   const sndFix = await page.evaluate(() => ({
