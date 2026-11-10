@@ -343,6 +343,22 @@ try {
   assert('结算点评播报走语音包 host（自然短语拼接）', winSay.noTTS && winSay.wiring && winSay.liuju && winSay.chainOk && winSay.keys.length <= 10,
     `语素 ${winSay.keys.length} 条：${winSay.keys.join(' → ')}`);
 
+  // AI 观察与应对机制（2026-11-10 用户需求：眼观六路耳听八方——读牌/威胁评估/防守/抢节奏/路线修正）
+  const tactic = await page.evaluate(() => {
+    const live = (() => { try { const ob = observeTable(p(0)); return !!(ob && ob.threat && ob.threat.length === 4 && ob.seen && ob.suitOut); } catch (e) { return false; } })();
+    const md = masterDiscard.toString(), mc = masterClaim.toString(), pd = planDiscard.toString();
+    return {
+      hasOb: typeof observeTable === 'function',
+      discardWired: md.includes('observeTable') && md.includes('foeThreat') && md.includes('defending'),
+      claimRush: mc.includes('observeTable') && mc.includes('rush'),
+      planAdapt: pd.includes('id[0]') && pd.includes('>=12'),
+      guardSay: !!(CHAT_SAY.conservative && Array.isArray(CHAT_SAY.conservative.guard) && CHAT_SAY.conservative.guard.length > 0),
+      live,
+    };
+  });
+  assert('AI 观察与应对机制（读牌/威胁/防守/抢节奏）', tactic.hasOb && tactic.discardWired && tactic.claimRush && tactic.planAdapt && tactic.guardSay && tactic.live,
+    `观察引擎=${tactic.hasOb}，出牌应对=${tactic.discardWired}，碰杠抢节奏=${tactic.claimRush}，路线拥挤修正=${tactic.planAdapt}，防守台词=${tactic.guardSay}，实时情报=${tactic.live}`);
+
   // 托管加速（2026-11-09 用户要求：托管状态每人思考 0.4 秒，快速打完一轮 8 局拿总分）
   const hosted = await page.evaluate(async () => {
     const btn = document.getElementById('autoBtn');

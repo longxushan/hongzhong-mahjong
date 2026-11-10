@@ -68,7 +68,7 @@ def parse_chat_say():
     out = {}
     for style, inner in re.findall(r"(\w+):\{(.*?)\}", m.group(1)):
         ev = {}
-        for k, arr in re.findall(r"(good|bad|peng|lost|ting|low):\[([^\]]*)\]", inner):
+        for k, arr in re.findall(r"(good|bad|peng|lost|ting|low|guard):\[([^\]]*)\]", inner):
             lines = re.findall(r"'([^']*)'", arr)
             if lines: ev[k] = lines
         if ev: out[style] = ev

@@ -1,0 +1,491 @@
+{
+  "gameCount": 8,
+  "games": [
+    {
+      "n": 1,
+      "seat": 3,
+      "name": "华少",
+      "how": "zimo",
+      "sevenPairs": false,
+      "deluxeSeven": false,
+      "allPong": false,
+      "qingyise": false,
+      "zDiscard": 1,
+      "dealer": 0,
+      "isDealerWin": false
+    },
+    {
+      "n": 2,
+      "seat": 1,
+      "name": "厨建国",
+      "how": "zimo",
+      "sevenPairs": false,
+      "deluxeSeven": false,
+      "allPong": false,
+      "qingyise": false,
+      "zDiscard": 0,
+      "dealer": 3,
+      "isDealerWin": false
+    },
+    {
+      "n": 3,
+      "seat": 2,
+      "name": "僧大兴",
+      "how": "zimo",
+      "sevenPairs": false,
+      "deluxeSeven": false,
+      "allPong": true,
+      "qingyise": false,
+      "zDiscard": 0,
+      "dealer": 1,
+      "isDealerWin": false
+    },
+    {
+      "n": 4,
+      "seat": 2,
+      "name": "僧大兴",
+      "how": "zimo",
+      "sevenPairs": false,
+      "deluxeSeven": false,
+      "allPong": false,
+      "qingyise": false,
+      "zDiscard": 0,
+      "dealer": 2,
+      "isDealerWin": true
+    },
+    {
+      "n": 5,
+      "seat": 1,
+      "name": "厨建国",
+      "how": "zimo",
+      "sevenPairs": false,
+      "deluxeSeven": false,
+      "allPong": false,
+      "qingyise": false,
+      "zDiscard": 1,
+      "dealer": 2,
+      "isDealerWin": false
+    },
+    {
+      "n": 6,
+      "seat": 2,
+      "name": "僧大兴",
+      "how": "zimo",
+      "sevenPairs": false,
+      "deluxeSeven": false,
+      "allPong": false,
+      "qingyise": false,
+      "zDiscard": 1,
+      "dealer": 1,
+      "isDealerWin": false
+    },
+    {
+      "n": 7,
+      "seat": 2,
+      "name": "僧大兴",
+      "how": "zimo",
+      "sevenPairs": false,
+      "deluxeSeven": false,
+      "allPong": false,
+      "qingyise": false,
+      "zDiscard": 0,
+      "dealer": 2,
+      "isDealerWin": true
+    },
+    {
+      "n": 8,
+      "seat": 3,
+      "name": "华少",
+      "how": "zimo",
+      "sevenPairs": false,
+      "deluxeSeven": false,
+      "allPong": false,
+      "qingyise": false,
+      "zDiscard": 1,
+      "dealer": 2,
+      "isDealerWin": false
+    }
+  ],
+  "issues": [],
+  "evtCount": 562,
+  "zTotal": 9,
+  "draws": 237,
+  "pengs": 32,
+  "gangs": 8,
+  "histRecent": [
+    {
+      "r": 1,
+      "t": "胡·华少·自摸",
+      "ht": "自摸",
+      "d": [
+        {
+          "n": "龙须山人",
+          "v": -6,
+          "g": 0
+        },
+        {
+          "n": "厨建国",
+          "v": -6,
+          "g": 0
+        },
+        {
+          "n": "僧大兴",
+          "v": -6,
+          "g": 0
+        },
+        {
+          "n": "华少",
+          "v": 18,
+          "g": 0
+        }
+      ],
+      "hand": [
+        "W6",
+        "W7",
+        "T2",
+        "T2",
+        "T6",
+        "T7",
+        "T8",
+        "B1",
+        "B2",
+        "B3",
+        "B6",
+        "B8",
+        "Z",
+        "Z"
+      ],
+      "melds": []
+    },
+    {
+      "r": 2,
+      "t": "胡·厨建国·自摸",
+      "ht": "自摸",
+      "d": [
+        {
+          "n": "龙须山人",
+          "v": -6,
+          "g": 0
+        },
+        {
+          "n": "厨建国",
+          "v": 18,
+          "g": 0
+        },
+        {
+          "n": "僧大兴",
+          "v": -6,
+          "g": 0
+        },
+        {
+          "n": "华少",
+          "v": -6,
+          "g": 0
+        }
+      ],
+      "hand": [
+        "W5",
+        "W5",
+        "W6",
+        "W6",
+        "W7",
+        "W7",
+        "T2",
+        "T2",
+        "T5",
+        "T6",
+        "T7",
+        "T8",
+        "T8",
+        "Z"
+      ],
+      "melds": []
+    },
+    {
+      "r": 3,
+      "t": "胡·僧大兴·碰碰胡自摸",
+      "ht": "碰碰胡自摸",
+      "d": [
+        {
+          "n": "龙须山人",
+          "v": -16,
+          "g": 0
+        },
+        {
+          "n": "厨建国",
+          "v": -16,
+          "g": 0
+        },
+        {
+          "n": "僧大兴",
+          "v": 48,
+          "g": 0
+        },
+        {
+          "n": "华少",
+          "v": -16,
+          "g": 0
+        }
+      ],
+      "hand": [
+        "W2",
+        "W2",
+        "W2",
+        "B4",
+        "B4"
+      ],
+      "melds": [
+        {
+          "type": "peng",
+          "base": "B1"
+        },
+        {
+          "type": "peng",
+          "base": "T8"
+        },
+        {
+          "type": "peng",
+          "base": "B6"
+        }
+      ]
+    },
+    {
+      "r": 4,
+      "t": "胡·僧大兴·自摸",
+      "ht": "自摸",
+      "d": [
+        {
+          "n": "龙须山人",
+          "v": -5,
+          "g": 0
+        },
+        {
+          "n": "厨建国",
+          "v": -7,
+          "g": -2
+        },
+        {
+          "n": "僧大兴",
+          "v": 15,
+          "g": 0
+        },
+        {
+          "n": "华少",
+          "v": -3,
+          "g": 2
+        }
+      ],
+      "hand": [
+        "W9",
+        "W9",
+        "W9",
+        "T1",
+        "T2",
+        "T3",
+        "B1",
+        "B2",
+        "B3",
+        "B7",
+        "B7"
+      ],
+      "melds": [
+        {
+          "type": "peng",
+          "base": "B4"
+        }
+      ]
+    },
+    {
+      "r": 5,
+      "t": "胡·厨建国·自摸",
+      "ht": "自摸",
+      "d": [
+        {
+          "n": "龙须山人",
+          "v": -2,
+          "g": 2
+        },
+        {
+          "n": "厨建国",
+          "v": 10,
+          "g": -2
+        },
+        {
+          "n": "僧大兴",
+          "v": -4,
+          "g": 0
+        },
+        {
+          "n": "华少",
+          "v": -4,
+          "g": 0
+        }
+      ],
+      "hand": [
+        "W9",
+        "T5",
+        "T6",
+        "T7",
+        "Z"
+      ],
+      "melds": [
+        {
+          "type": "peng",
+          "base": "W8"
+        },
+        {
+          "type": "peng",
+          "base": "B8"
+        },
+        {
+          "type": "peng",
+          "base": "B1"
+        }
+      ]
+    },
+    {
+      "r": 6,
+      "t": "胡·僧大兴·自摸",
+      "ht": "自摸",
+      "d": [
+        {
+          "n": "龙须山人",
+          "v": -4,
+          "g": 0
+        },
+        {
+          "n": "厨建国",
+          "v": -4,
+          "g": 0
+        },
+        {
+          "n": "僧大兴",
+          "v": 12,
+          "g": 0
+        },
+        {
+          "n": "华少",
+          "v": -4,
+          "g": 0
+        }
+      ],
+      "hand": [
+        "W3",
+        "W4",
+        "W4",
+        "W5",
+        "W6",
+        "W7",
+        "W7",
+        "B4",
+        "B5",
+        "B6",
+        "Z"
+      ],
+      "melds": [
+        {
+          "type": "peng",
+          "base": "T6"
+        }
+      ]
+    },
+    {
+      "r": 7,
+      "t": "胡·僧大兴·自摸",
+      "ht": "自摸",
+      "d": [
+        {
+          "n": "龙须山人",
+          "v": -6,
+          "g": -2
+        },
+        {
+          "n": "厨建国",
+          "v": -2,
+          "g": 2
+        },
+        {
+          "n": "僧大兴",
+          "v": 12,
+          "g": 0
+        },
+        {
+          "n": "华少",
+          "v": -4,
+          "g": 0
+        }
+      ],
+      "hand": [
+        "T2",
+        "T3",
+        "T4",
+        "T6",
+        "T7",
+        "T8",
+        "B4",
+        "B5",
+        "B6",
+        "B8",
+        "B8"
+      ],
+      "melds": [
+        {
+          "type": "peng",
+          "base": "B2"
+        }
+      ]
+    },
+    {
+      "r": 8,
+      "t": "胡·华少·自摸",
+      "ht": "自摸",
+      "d": [
+        {
+          "n": "龙须山人",
+          "v": -4,
+          "g": 0
+        },
+        {
+          "n": "厨建国",
+          "v": -6,
+          "g": -2
+        },
+        {
+          "n": "僧大兴",
+          "v": -2,
+          "g": 2
+        },
+        {
+          "n": "华少",
+          "v": 12,
+          "g": 0
+        }
+      ],
+      "hand": [
+        "W7",
+        "W8",
+        "W9",
+        "T4",
+        "T4",
+        "T5",
+        "T6",
+        "T6",
+        "T7",
+        "T7",
+        "Z"
+      ],
+      "melds": [
+        {
+          "type": "peng",
+          "base": "T2"
+        }
+      ]
+    }
+  ],
+  "cum": {
+    "龙须山人": 51,
+    "厨建国": 87,
+    "僧大兴": 169,
+    "华少": 93
+  }
+}
