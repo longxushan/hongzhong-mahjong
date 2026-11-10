@@ -942,8 +942,8 @@ async function diceForDealer(token){
     const zi=vpHostIdx(dealer);if(zi>=0){try{vpPlay(['host/zhuangjiashi','host/names/'+zi],false);}catch(e){}}
     toast('庄家是'+dealerName+'，开始牌局');
     window._diceResult={east,rolls:scores,s,dealer};
-    // 2026-11-10 用户需求：定完庄在结果面板停留 1 秒（看清数位过程与「庄」角标）再进牌局
-    await sleep(humanAuto?30:1000);
+    // 2026-11-11 用户需求：定完庄在结果面板停留 1.5 秒（看清数位过程与「庄」角标）再进牌局
+    await sleep(humanAuto?30:1500);
     ov.classList.remove('show');
     return dealer;
   }catch(e){

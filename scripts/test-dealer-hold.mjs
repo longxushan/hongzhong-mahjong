@@ -1,4 +1,4 @@
-// 2026-11-10 实测：定庄后在结果面板停留 1 秒再进牌局
+// 2026-11-11 实测：定庄后在结果面板停留 1.5 秒再进牌局（2026-11-10 为 1 秒，用户要求加长）
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -53,8 +53,8 @@ const result = await page.evaluate(async () => {
 
 console.log(`定庄(_diceResult 置位) → 面板收起: ${result.hold.toFixed(2)}s`);
 console.log(`发牌进入牌局: ${result.dealt}，庄家=座位${result.dice?.dealer}`);
-const pass = result.hold >= 0.9 && result.hold <= 1.2 && result.dealt;
-console.log(pass ? 'PASS: 定庄后停留约 1 秒再进局' : 'FAIL: 需检查');
+const pass = result.hold >= 1.4 && result.hold <= 1.75 && result.dealt;
+console.log(pass ? 'PASS: 定庄后停留约 1.5 秒再进局' : 'FAIL: 需检查');
 
 await browser.close();
 process.exit(pass ? 0 : 1);
