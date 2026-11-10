@@ -9,6 +9,9 @@
     --topfs:13px;--tagfs:11px;--topgap:10px;--btnpad:8px 14px;--btnfs:14px;--volw:88px;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;height:100%;width:100%;overflow:hidden;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+  /* 2026-11-10 用户需求：彻底禁缩放——禁双击放大（manipulation 仅允许滚动/单指操作），牌桌触摸动作全锁 */
+  html,body{touch-action:manipulation;}
+  #table{touch-action:none;}
   body{background:#1c1c1c;color:#fff;display:flex;flex-direction:column;}
   #topbar{display:flex;align-items:center;gap:var(--topgap);padding:5px 10px;background:#111;font-size:var(--topfs);flex:0 0 auto;z-index:5;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;}
   #topbar::-webkit-scrollbar{display:none;height:0;width:0;}
@@ -2764,6 +2767,9 @@ function fit(){
   document.documentElement.classList.toggle('large',large);
 }
 function layout(){
+  // 2026-11-10 牌桌锁定（用户需求：不可移动不可缩放）：每次布局重算都归位——
+  // transform 恒 identity，杜绝旧会话/旧版本残留在牌桌上的平移与缩放
+  try{if(typeof view!=='undefined'&&typeof tableEl!=='undefined'){view.s=1;view.x=0;view.y=0;tableEl.style.transform='none';}}catch(e){}
   const stage=document.getElementById('stage');
   const pp=isPhonePort();
   stage.classList.toggle('pport',pp);
@@ -2881,6 +2887,11 @@ function endTouch(e){
   else if(ptrs.size===1){const[one]=ptrs.values();pan0={x:one.x,y:one.y,v:{...view}};}
 }
 tableEl.addEventListener('touchend',endTouch,{passive:false});
+// 2026-11-10 用户需求：彻底禁缩放（补充防御）——iOS Safari 无视 meta 的 user-scalable=no，
+// 需在手势事件级拦截捏合；双指 touchmove 一并拦（页面捏合与双指拖选都禁）
+for(const ev of ['gesturestart','gesturechange','gestureupdate','gestureend'])
+  document.addEventListener(ev,e=>e.preventDefault(),{passive:false});
+document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
 tableEl.addEventListener('touchcancel',endTouch,{passive:false});
 // 桌面滚轮缩放（以中心缩放）
 tableEl.addEventListener('wheel',e=>{view.s=Math.max(0.6,Math.min(3,view.s+(e.deltaY<0?0.12:-0.12)));clampView();applyView();e.preventDefault();},{passive:false});
