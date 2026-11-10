@@ -101,6 +101,28 @@ try {
   assert('28 种牌的 tileRemaining 与牌墙真实数一致', r.mismatch.length === 0,
     r.mismatch.length ? '不一致：' + r.mismatch.join(',') : '28/28 全部一致');
 
+  // 听牌一览剩余张数=玩家可见口径（2026-11-09 用户定义：4 − 废牌区该牌数 − 自己手里该牌数，副露一并扣除）
+  const html = fs.readFileSync(FILE, 'utf8');
+  const visAnchor = html.includes('visibleLeft') && html.includes('废牌区已打出的') && !html.includes("· 墙剩");
+  const vis = await page.evaluate(() => {
+    const ids = ['W1', 'W9', 'T3', 'T7', 'B2', 'B8', 'Z'];
+    const out = [];
+    for (const id of ids) {
+      let used = 0;
+      for (const pl of G.players) {
+        used += (pl.discard || []).filter(t => t.id === id).length;
+        for (const m of pl.melds)
+          used += (m.type === 'angang' && pl.seat !== 0) ? (m.tiles[0].id === id ? 1 : 0)
+            : m.tiles.filter(t => t.id === id).length;
+      }
+      used += p(0).hand.filter(t => t.id === id).length;
+      out.push(visibleLeft(id) === Math.max(0, 4 - used));
+    }
+    return { okFn: typeof visibleLeft === 'function', all: out.every(x => x), n: out.filter(x => x).length };
+  });
+  assert('听牌一览剩余=可见口径 4−废牌区−副露−自己手牌', visAnchor && vis.okFn && vis.all,
+    `公式自洽 ${vis.n}/7 项（别家暗杠只扣明张；AI 精算仍走牌墙口径 tileRemaining 不受影响）`);
+
   // 打法攻略弹窗：打开、检查分节与表格、关闭
   const tipsOk = await page.evaluate(() => {
     document.getElementById('tipsBtn').click();

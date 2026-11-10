@@ -554,7 +554,7 @@
       <li>反过来，你自己手里无红中时，盯紧别人的补杠提示，能抢就抢（硬胡路线的你天然有抢杠资格）。</li>
     </ol></div>
     <div class="ruleSec"><h4>五、听牌与节奏</h4><ol>
-      <li>自摸麻将看<b>牌墙剩余</b>，不看牌河安全：两面/三面听、所听牌在牌墙里剩余多的组合优先；单吊最差。直接用底部「听牌一览」栏的剩余张数做决策。</li>
+      <li>自摸麻将看<b>所听牌的可见剩余</b>，不看牌河安全：两面/三面听、所听牌可见剩余（废牌区已打出的越少）多的组合优先；单吊最差。直接用底部「听牌一览」栏的剩余张数做决策。</li>
       <li>留底 6 张是硬终点：牌墙剩 ~10 张就停止一切抓牌杠补——<b>想杠趁早，补杠别拖到残局</b>。</li>
       <li>牌墙 &lt;20 且向听 ≥3：转收杠分模式，求暗杠、求流局，别恋战。</li>
       <li>别人先听牌你防不了（无点炮）——这套规则里<b>唯一的防守，就是比对手更快自摸</b>。</li>
@@ -1475,6 +1475,20 @@ function countAppeared(id){
   return n;
 }
 function tileRemaining(id){let n=0;for(let i=G.head;i<=G.tail;i++)if(G.wall[i].id===id)n++;return n;}
+// 玩家可见口径的剩余张数：4 − 全桌废牌区已打出的 − 全桌副露亮出的 − 自己手里已有的
+// （别家暗杠只亮第一张，只扣第一张；别家暗手牌看不见，按仍在场上计，即可能略偏多）
+function visibleLeft(id){
+  let used=0;
+  for(const pl of G.players){
+    used+=(pl.discard||[]).filter(t=>t.id===id).length;
+    for(const m of pl.melds){
+      if(m.type==='angang'&&pl.seat!==0){if(m.tiles[0].id===id)used+=1;}
+      else used+=m.tiles.filter(t=>t.id===id).length;
+    }
+  }
+  used+=p(0).hand.filter(t=>t.id===id).length;
+  return Math.max(0,4-used);
+}
 function suitRemaining(suit){let n=0;for(let r=1;r<=9;r++)n+=tileRemaining(suit+r);return n;}
 function teachingAdvice(){
   const me=p(0),hand=me.hand;
@@ -1980,9 +1994,10 @@ function updateTeachPanel(){
   }else{
     h+='<div class="tTingHead tTingNone">当前还没听牌，先按牌型方向把搭子凑齐。</div>';
     if(pick.effDraws&&pick.effDraws.length){
-      h+='<div class="tTingHead">这样打，再摸到以下 <b>'+pick.effDraws.length+'</b> 种牌即可听牌（共 '+pick.effWeight+' 张）</div><div class="teachTings">';
+      let eVis=0;for(const id of pick.effDraws)eVis+=visibleLeft(id);
+      h+='<div class="tTingHead">这样打，再摸到以下 <b>'+pick.effDraws.length+'</b> 种牌即可听牌（可见 '+eVis+' 张）</div><div class="teachTings">';
       for(const id of pick.effDraws){
-        h+='<span class="teachTile">'+tileDiv(tileFromId(id),true)+'<span>'+tileName(tileFromId(id))+' · 剩'+tileRemaining(id)+'</span></span>';
+        h+='<span class="teachTile">'+tileDiv(tileFromId(id),true)+'<span>'+tileName(tileFromId(id))+' · 剩'+visibleLeft(id)+'</span></span>';
       }
       h+='</div>';
     }
@@ -1994,11 +2009,11 @@ function updateTeachPanel(){
   if(!curTing.length){
     h+='<div class="tTingHead tTingNone">当前还没听牌，先按牌型方向把搭子凑齐。</div>';
   }else{
-    let totalLeft=0;for(const id of curTing)totalLeft+=tileRemaining(id);
+    let totalLeft=0;for(const id of curTing)totalLeft+=visibleLeft(id);
     h+='<div class="tTingHead">当前听 <b>'+curTing.length+'</b> 种、共 <b>'+totalLeft+'</b> 张可胡</div>';
-    h+='<div class="tWallNote">剩余＝牌墙里还没摸出来的张数，别家手里拿的、副露和弃牌都已扣除，不会算成可摸。</div><div class="teachTings">';
+    h+='<div class="tWallNote">剩余＝4 −（废牌区已打出的＋自己手里已有的）；副露亮出的也一并扣除。别家手里暗牌看不见，按仍在场上计，故为可见上限。</div><div class="teachTings">';
     for(const id of curTing){
-      h+='<span class="teachTile">'+tileDiv(tileFromId(id),true)+'<span>'+tileName(tileFromId(id))+' · 墙剩'+tileRemaining(id)+'</span></span>';
+      h+='<span class="teachTile">'+tileDiv(tileFromId(id),true)+'<span>'+tileName(tileFromId(id))+' · 剩'+visibleLeft(id)+'</span></span>';
     }
     h+='</div>';
   }
