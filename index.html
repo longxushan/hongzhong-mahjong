@@ -2345,6 +2345,63 @@ function observeTable(pl){
   }
   return {seen,suitOut,threat};
 }
+// ===== 郑太顺技巧层（2026-11-11 用户需求：让牌局机器人学会《郑太顺麻将经典技巧》，九篇五十七节精华算法化）=====
+// ①金三银七孤张价值（3/7 尖张联络最强要多留、2/8 次之早处理、1/9 边张靠搭仅 3 张最先打）
+// ②同线加减一猜牌（对手同筋线小到大打出→需要 +1 牌；大到小→需要 -1 牌）+ 反常对信号（先六后八必有对九、先四后二必有对一）
+// ③跟线半熟（对手打过线牌→同筋线其余牌他大概率不要，可跟着打——「打四别防一七」的防守面）
+// ④两圈不见一和九：中后期河里 0 张的 1/9 大概率在别家成对/单吊，点炮风险抬升
+// ⑤碰牌五不碰闸（顺子带搭/大肚子复合型不碰、已听牌不贪碰、第 4 副露后仅确定进听才碰）
+const ztsJinGroup=r=>r%3===0?2:(r%3===1?0:1); // 筋线分组：147=0、258=1、369=2
+function ztsKeepBonus(id){ // ① 摸进打出同权小偏置，做等向听等进张时的 tie-break
+  if(id==='Z')return 0;const r=parseInt(id[1],10);
+  if(r===3||r===7)return 1.2;   // 金三银七：联络 1-2、4-6、8-9 共 7 门
+  if(r===2||r===8)return -0.8;  // 2/8 靠搭仅中张单侧，能早打就早打
+  if(r===1||r===9)return -1.2;  // 1/9 靠搭只有 3 门，最优先处理
+  return 0;
+}
+function ztsDanger(pl){ // ②③④ 读牌危险牌与跟线半熟（只用牌河公开信息，AI 不偷看手牌）
+  const danger={},half={};
+  if(!G)return{danger,half};
+  const total=G.players.reduce((s,x)=>s+x.discard.length,0);
+  const late=total>=40; // 中后期：总弃牌 40+ 张
+  for(let i=0;i<4;i++){
+    if(i===pl.seat)continue;
+    const ds=p(i).discard.filter(t=>t.id!=='Z');
+    for(let a=0;a<ds.length-1;a++)for(let b=a+1;b<ds.length;b++){
+      const A=ds[a],B=ds[b];
+      if(A.id[0]!==B.id[0])continue; // 同花色才有信号
+      const ra=parseInt(A.id[1],10),rb=parseInt(B.id[1],10);
+      if(ztsJinGroup(ra)===ztsJinGroup(rb)){ // 同筋线：加减一猜牌法
+        if(rb>ra){for(const r of[ra+1,rb+1])if(r>=1&&r<=9)danger[A.id[0]+r]=(danger[A.id[0]+r]||0)+2;} // 先打一后打四需要二五
+        else if(rb<ra){for(const r of[ra-1,rb-1])if(r>=1&&r<=9)danger[A.id[0]+r]=(danger[A.id[0]+r]||0)+2;} // 先打九后打六需要五八
+      }
+      if(Math.abs(rb-ra)===2){ // 反常对信号：先六后八必有对九、先四后二必有对一（不要求同线）
+        const rr=rb>ra?rb+1:rb-1;
+        if(rr>=1&&rr<=9)danger[A.id[0]+rr]=(danger[A.id[0]+rr]||0)+3;
+      }
+    }
+    for(const t of ds.slice(-6)){ // ③ 跟线半熟：对手近 6 弃牌的同线牌大概率也不要
+      const r=parseInt(t.id[1],10),g=ztsJinGroup(r);
+      for(let rr=1;rr<=9;rr++)if(ztsJinGroup(rr)===g&&rr!==r)half[t.id[0]+rr]=(half[t.id[0]+rr]||0)+1;
+    }
+  }
+  if(late)for(const s of CFG.suits)for(const r of[1,9]){ // ④ 两圈不见一和九
+    let seen=0;for(let k=0;k<4;k++)seen+=p(k).discard.filter(t=>t.id===s+r).length;
+    if(seen===0)danger[s+r]=(danger[s+r]||0)+2;
+  }
+  return{danger,half};
+}
+function ztsClaimGate(pl,id,after,before){ // ⑤ 碰牌五不碰（郑太顺高阶碰牌心法的防守面；杠不拦，杠分+杠上花另有账）
+  if(id==='Z')return true;
+  const s=id[0],r=parseInt(id[1],10);
+  const near=pl.hand.filter(t=>t.id[0]===s&&t.id!==id&&Math.abs(parseInt(t.id[1],10)-r)<=2).length;
+  if(near>=3)return false;                  // 顺子带搭复合型（如 67789）不碰：碰 7 丢两面搭还多两张废牌
+  const hasL=pl.hand.some(t=>t.id===s+(r-1)),hasR=pl.hand.some(t=>t.id===s+(r+1));
+  if(hasL&&hasR)return false;               // 大肚子（45x6）不碰：四万六万直接废掉
+  if(before<=0&&after>=before)return false; // 已听牌不碰：听口不动，贪碰换听得不偿失
+  if(pl.melds.length>=3&&after>=before)return false; // 防守碰原则：第 4 副露后手牌过短，仅确定进听才碰
+  return true;
+}
 function masterDiscard(pl){
   const style=pl.style||'flexible';
   const mp=MASTER_PROFILE[style]||MASTER_PROFILE.flexible;
@@ -2383,6 +2440,7 @@ function masterDiscard(pl){
   let shMin=99;for(const c of cands)shMin=Math.min(shMin,c.sh);
   // 2026-11-10 观察与应对（眼观六路）：对手威胁评估 → 生张避让；威胁高且自己离听远 → 弃攻转守
   const ob=observeTable(pl);
+  const zts=ztsDanger(pl); // 郑太顺技巧层：同线猜牌/反常对/中后期 1-9 预警的危险牌与跟线半熟表
   const foeThreat=Math.max(0,...ob.threat.filter((v,i)=>i!==pl.seat));
   const mySh=calcShanten(pl.hand,pl.melds);
   const defending=foeThreat>=5&&mySh>=2;
@@ -2415,6 +2473,10 @@ function masterDiscard(pl){
     // 2026-11-10 生张避让：对手越危险，未见过的生张惩罚越重（威胁×生张度，峰值近 1 级向听）；熟张安全奖励
     c.score-=foeThreat*1.4*((4-(ob.seen[c.id]||0))/4)*10;
     c.score+=(ob.seen[c.id]||0)*1.2;
+    // 2026-11-11 郑太顺技巧层：金三银七保留偏好 + 同线猜牌危险牌避让 + 跟线半熟奖励（幅度小，等精算 tie-break 级）
+    c.score+=ztsKeepBonus(c.id);
+    c.score-=Math.min(6,zts.danger[c.id]||0)*6;
+    c.score+=Math.min(3,zts.half[c.id]||0)*1.0;
   }
   cands.sort((a,b)=>b.score-a.score);
   return pl.hand.find(t=>t.id===cands[0].id);
@@ -2534,6 +2596,7 @@ function masterClaim(pl,id,kind){
   // 姿态加速容忍：做碰碰胡/清一色时为抢速度，激进/豪/闯/活型敢让碰后向听退一步，保守/沉稳型严格不退
   const tol=(stance&&(stance.kind==='pong'||stance.kind==='qing'))?rk.pengTol:0;
   if(after>before+tol)return false;
+  if(!ztsClaimGate(pl,id,after,before))return false; // 2026-11-11 郑太顺五不碰：复合型/大肚子/已听贪碰/短牌防守
   if(after<before)return true;
   return Math.random()<Math.min(1,rate.peng+boost+rush);
 }

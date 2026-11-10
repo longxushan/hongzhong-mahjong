@@ -427,6 +427,36 @@ try {
   assert('AI 观察与应对机制（读牌/威胁/防守/抢节奏）', tactic.hasOb && tactic.discardWired && tactic.claimRush && tactic.planAdapt && tactic.guardSay && tactic.live,
     `观察引擎=${tactic.hasOb}，出牌应对=${tactic.discardWired}，碰杠抢节奏=${tactic.claimRush}，路线拥挤修正=${tactic.planAdapt}，防守台词=${tactic.guardSay}，实时情报=${tactic.live}`);
 
+  // 郑太顺技巧层（2026-11-11 用户需求：机器人学会《郑太顺麻将经典技巧》九篇五十七节精华）
+  const ztsOk = await page.evaluate(() => {
+    const okFn = ['ztsJinGroup', 'ztsKeepBonus', 'ztsDanger', 'ztsClaimGate'].every(f => typeof eval(f) === 'function'); // 顶层 const 不挂 window，直接引用
+    const jin = ztsJinGroup(1) === 0 && ztsJinGroup(4) === 0 && ztsJinGroup(5) === 1 && ztsJinGroup(8) === 1 && ztsJinGroup(6) === 2 && ztsJinGroup(9) === 2;
+    const keep = ztsKeepBonus('T3') > 0 && ztsKeepBonus('B7') > 0 && ztsKeepBonus('W2') < 0 && ztsKeepBonus('W9') < 0 && ztsKeepBonus('Z') === 0;
+    // 反常对信号：向对手弃牌塞 6、8（先六后八）→ 必有对九，T9 应成危险牌；测完还原
+    const foe = p(1), me = p(0);
+    const t6 = { id: 'T6', suit: 'T', rank: 6, uid: 900001 }, t8 = { id: 'T8', suit: 'T', rank: 8, uid: 900002 };
+    foe.discard.push(t6, t8);
+    const dz = ztsDanger(me);
+    const dPair = (dz.danger['T9'] || 0) >= 3;
+    // 同线加减一：再塞 T4（与已有 T6、T8 同色；4 与 6、8 均不同组，4 与 1/7 同组）——改用 T1、T4 验证 +1 线
+    const t1 = { id: 'T1', suit: 'T', rank: 1, uid: 900003 }, t4 = { id: 'T4', suit: 'T', rank: 4, uid: 900004 };
+    foe.discard.pop(); foe.discard.pop(); // 先撤 6、8
+    foe.discard.push(t1, t4); // 先打一后打四（同线 147 小到大）→ 需要 T2、T5
+    const dz2 = ztsDanger(me);
+    const dLine = (dz2.danger['T2'] || 0) >= 2 && (dz2.danger['T5'] || 0) >= 2;
+    foe.discard.pop(); foe.discard.pop();
+    // 大肚子碰闸：手里 4、5、5、6 → 碰 5 拒绝（四万六万直接废掉）；测完还原
+    const bak = me.hand.slice();
+    me.hand = ['B4', 'B5', 'B5', 'B6', 'W1', 'W2', 'W3', 'W7', 'W8', 'W9', 'T1', 'T2', 'T3'].map((x, k) => ({ id: x, suit: x[0], rank: x === 'Z' ? 0 : parseInt(x[1], 10), uid: 910000 + k }));
+    const gateBad = ztsClaimGate(me, 'B5', 1, 1) === false;
+    me.hand = bak;
+    // 接线锚点：masterDiscard 用 ztsDanger 加权、masterClaim 用 ztsClaimGate 拦碰
+    const wired = masterDiscard.toString().includes('ztsDanger') && masterClaim.toString().includes('ztsClaimGate');
+    return { okFn, jin, keep, dPair, dLine, gateBad, wired };
+  });
+  assert('郑太顺技巧层：金三银七/同线加减一/反常对/五不碰', ztsOk.okFn && ztsOk.jin && ztsOk.keep && ztsOk.dPair && ztsOk.dLine && ztsOk.gateBad && ztsOk.wired,
+    `函数=${ztsOk.okFn}，筋线=${ztsOk.jin}，金三银七=${ztsOk.keep}，先六后八防九=${ztsOk.dPair}，先一后四防二五=${ztsOk.dLine}，大肚子不碰=${ztsOk.gateBad}，决策链接入=${ztsOk.wired}`);
+
   // 托管加速（2026-11-10 用户要求：托管状态每人思考不超过 0.2 秒，快速打完一轮 8 局拿总分）
   const hosted = await page.evaluate(async () => {
     const btn = document.getElementById('autoBtn');
