@@ -225,13 +225,34 @@ try {
       bubble = bb.offsetWidth >= 60; // 气泡有足够宽度显示文字（防被窄列压扁）
       bb.remove();
     }
-    return { okStyles, okFn, bubble, n: styles.length };
+    // 2026-11-10 用户要求：左右两侧（seat1/seat3）气泡出现在头像上方、对家（seat2）在头像下方、我（seat0）在头像上方
+    const sideAbove = [1, 3].every(sd => {
+      chatBubble(sd, '位置测试');
+      const b = document.querySelector('#table .chatBox[data-cb="' + sd + '"]');
+      const w = document.querySelector('#seat' + sd + ' .who');
+      if (!b || !w) { if (b) b.remove(); return false; }
+      const br = b.getBoundingClientRect(), wr = w.getBoundingClientRect();
+      const ok = br.bottom <= wr.top + 10; // 气泡底在头像顶上方（留 10px 容差）
+      b.remove();
+      return ok;
+    });
+    const oppBelow = (() => {
+      chatBubble(2, '位置测试');
+      const b = document.querySelector('#table .chatBox[data-cb="2"]');
+      const w = document.querySelector('#seat2 .who');
+      if (!b || !w) { if (b) b.remove(); return false; }
+      const br = b.getBoundingClientRect(), wr = w.getBoundingClientRect();
+      const ok = br.top >= wr.bottom - 10; // 对家气泡在头像下方
+      b.remove();
+      return ok;
+    })();
+    return { okStyles, okFn, bubble, sideAbove, oppBelow, n: styles.length };
   });
   const chatFiles = [];
   for (let i = 0; i < 7; i++) for (const e of ['good', 'bad', 'peng', 'lost', 'ting', 'low']) for (let k = 0; k < 2; k++) chatFiles.push(`role/${i}/chat-${e}-${k}.mp3`);
   const missChat = chatFiles.filter(f => !fs.existsSync(path.join(ROOT, 'voice', f)));
-  assert('牌桌闲聊：七风格×六情境台词+座位气泡+84条语音', chatOk.okStyles && chatOk.okFn && chatOk.bubble && missChat.length === 0,
-    chatOk.okStyles && chatOk.bubble ? '台词/气泡/引擎在位，' + (missChat.length ? '缺语音：' + missChat.slice(0, 3).join(',') : '84 条角色音色闲聊语音齐全') : `台词=${chatOk.okStyles}，气泡=${chatOk.bubble}，引擎=${chatOk.okFn}，缺语音 ${missChat.length} 条`);
+  assert('牌桌闲聊：七风格×六情境台词+座位气泡+84条语音', chatOk.okStyles && chatOk.okFn && chatOk.bubble && chatOk.sideAbove && chatOk.oppBelow && missChat.length === 0,
+    chatOk.okStyles && chatOk.bubble ? '台词/气泡/引擎在位（左右家气泡在头像上方=' + chatOk.sideAbove + '，对家在下方=' + chatOk.oppBelow + '），' + (missChat.length ? '缺语音：' + missChat.slice(0, 3).join(',') : '84 条角色音色闲聊语音齐全') : `台词=${chatOk.okStyles}，气泡=${chatOk.bubble}，引擎=${chatOk.okFn}，缺语音 ${missChat.length} 条`);
 
   // 角色声音重设：7 个角色均含 female/rate/pitch/prefer，梅姐为女声
   const vp = await page.evaluate(() => {

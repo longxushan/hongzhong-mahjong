@@ -1306,8 +1306,8 @@ function chatBubble(seat,text){
     const x=who.offsetLeft,y=who.offsetTop,ww=who.offsetWidth,wh=who.offsetHeight;
     if(seat===0){b.style.left=Math.min(Math.max(4,x+ww/2-bw/2),Math.max(4,W-bw-4))+'px';b.style.bottom=(H-y+6)+'px';}
     else if(seat===2){b.style.left=Math.min(Math.max(4,x+ww/2-bw/2),Math.max(4,W-bw-4))+'px';b.style.top=(y+wh+6)+'px';}
-    else if(seat===1){b.style.left=Math.max(4,x-bw-8)+'px';b.style.top=Math.min(Math.max(4,y+wh/2-bh/2),Math.max(4,H-bh-4))+'px';}
-    else{b.style.left=Math.min(x+ww+8,Math.max(4,W-bw-4))+'px';b.style.top=Math.min(Math.max(4,y+wh/2-bh/2),Math.max(4,H-bh-4))+'px';}
+    // 2026-11-10 用户要求：左右两侧玩家的气泡出现在头像上方（原为左右侧）；水平居中于头像、垂直贴头像顶
+    else if(seat===1||seat===3){b.style.left=Math.min(Math.max(4,x+ww/2-bw/2),Math.max(4,W-bw-4))+'px';b.style.top=Math.max(4,y-bh-6)+'px';}
     setTimeout(()=>{if(b.parentNode){b.classList.add('out');setTimeout(()=>{try{b.remove();}catch(x2){}},320);}},2600);
   }catch(e){}
 }
