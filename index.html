@@ -1852,7 +1852,9 @@ function syncSplitter(){
 }
 function clampDockH(h){
   const stage=document.getElementById('stage'),top=document.getElementById('topbar').offsetHeight;
-  const total=stage.clientHeight,minDock=70,minTable=110,max=total-top-minTable-12;
+  // 2026-11-10 用户需求：手机竖屏牌桌保底更高——极端拖拽下留足手牌两行+操作行空间，不遮挡
+  const minTable=isPhonePort()?150:110;
+  const total=stage.clientHeight,minDock=70,max=total-top-minTable-12;
   return Math.max(minDock,Math.min(max,h));
 }
 function setDockHeightPx(h){
@@ -1873,12 +1875,15 @@ document.addEventListener('pointerdown',function(e){
   const dock=document.getElementById('bottomDock');
   const startY=e.clientY,startH=dock.getBoundingClientRect().height;
   sp.classList.add('dragging');document.body.classList.add('rowResizing');e.preventDefault();
-  function move(ev){setDockHeightPx(startH-(ev.clientY-startY));}
+  function move(ev){setDockHeightPx(startH-(ev.clientY-startY));
+    // 2026-11-10 用户需求：手机版顶部自适应——拖教学区时牌桌区实时重算牌面尺寸，不溢出不遮挡
+    requestAnimationFrame(fit);}
   function up(){
     document.removeEventListener('pointermove',move);
     document.removeEventListener('pointerup',up);
     document.removeEventListener('pointercancel',up);
     sp.classList.remove('dragging');document.body.classList.remove('rowResizing');saveDockH();
+    requestAnimationFrame(fit); // 拖完终态再对齐一次
   }
   document.addEventListener('pointermove',move);
   document.addEventListener('pointerup',up);
@@ -2785,7 +2790,15 @@ function fit(){
   const maxByW=(tableW*0.94-perRow*5-actReserve)/(perRow*0.75);
   hand=Math.min(hand,maxByW);
   const cap=large?80:(pp?46:54);  // 大屏放开牌面上限；竖屏两行手牌上限同步放大
-  hand=Math.max(pp?24:28,Math.min(cap,hand));
+  if(pp){
+    // 2026-11-10 用户需求：手机竖屏牌桌自适应教学区拖动——
+    // seat0 行（约 38% 桌高）要装下：头像条+副露+手牌两行+操作行 ≈ 3×hand+装饰高度；
+    // 手牌按该预算收缩，教学区拖得越高手牌越小，保证不溢出、不遮挡弃牌区
+    const tH=table.clientHeight||0;
+    const budget=(tH*0.38-48)/3;
+    hand=Math.min(hand,budget);
+  }
+  hand=Math.max(pp?18:28,Math.min(cap,hand));
   const sm=Math.max(pp?13:17,hand*0.5), disc=Math.max(pp?11:14,hand*0.4), back=Math.max(pp?12:15,hand*0.44);
   const gap=Math.max(2,Math.min(large?10:7,hand*0.09));
   let sideMin=large?130:96, sideMax=large?172:118;
