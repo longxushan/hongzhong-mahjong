@@ -264,6 +264,15 @@ try {
       const st = document.getElementById('stage');
       return { rot: st.classList.contains('rot'), pport: st.classList.contains('pport') };
     });
+    // 玩家思考时限（2026-11-10 用户需求：自己胡牌思考 2 分钟、打牌 10 分钟；碰/杠维持 10 秒）
+    const humanTime = await page2.evaluate(() => ({
+      zimo: HUMAN_TIME.zimo, qiang: HUMAN_TIME.qiang, discard: HUMAN_TIME.discard, claim: HUMAN_TIME.claim,
+      discardTimed: TIMED.discard === 1, fmt2m: fmtCountdown(120), fmt10m: fmtCountdown(600), fmtShort: fmtCountdown(45),
+    }));
+    assert('玩家思考时限：胡牌 2 分钟、打牌 10 分钟',
+      humanTime.zimo === 120 && humanTime.qiang === 120 && humanTime.discard === 600 && humanTime.claim === 10 && humanTime.discardTimed
+        && /2 分 00 秒/.test(humanTime.fmt2m) && /9 分 60 秒|10 分 00 秒/.test(humanTime.fmt10m) && humanTime.fmtShort === '45 秒',
+      `胡牌 ${humanTime.zimo}s/打牌 ${humanTime.discard}s/碰杠 ${humanTime.claim}s，倒计时格式「${humanTime.fmt2m}」/「${humanTime.fmtShort}」`);
     assert('手机竖屏默认竖屏版（上下分割）', land.pport && !land.rot, `rot=${land.rot}, pport=${land.pport}`);
 
     // 竖屏版进入牌局：教学模式默认打开（applyPhonePortDock 默认开教学、下半区默认高度）

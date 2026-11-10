@@ -30,7 +30,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 
 await page.goto(pathToFileURL(FILE).href, { waitUntil: 'load' });
-await page.evaluate(() => { CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0; CFG.diceMs = 40; CFG.diceGap = 20; CFG.diceAuto = 30; CFG.diceHold = 40; });
+await page.evaluate(() => { CFG.aiDelay = 0; CFG.thinkMin = 0; CFG.thinkMax = 0; CFG.diceMs = 40; CFG.diceGap = 20; CFG.diceAuto = 30; CFG.diceHold = 40; HUMAN_TIME.zimo = 1; HUMAN_TIME.qiang = 1; HUMAN_TIME.discard = 2; HUMAN_TIME.claim = 1; HUMAN_TIME.gangself = 1; });
 await page.click('#startBtn');
 await page.waitForSelector('#roleSelect.show .roleBtn', { timeout: 10000 });
 await page.locator('.roleBtn').first().click();

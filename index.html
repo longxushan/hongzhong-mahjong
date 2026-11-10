@@ -2460,21 +2460,30 @@ function masterClaim(pl,id,kind){
   return Math.random()<Math.min(1,rate.peng+boost+rush);
 }
 function aiWantClaim(pl,id,kind){return masterClaim(pl,id,kind);}
-const TIMED={claim:1,gangself:1,zimo:1,qiang:1};
+const TIMED={claim:1,gangself:1,zimo:1,qiang:1,discard:1};
+// 2026-11-10 用户需求：自己胡牌思考 2 分钟、打牌 10 分钟（碰/杠询问维持 10 秒）；
+// 出牌超时自动打出最优牌，其余超时自动过；测试脚本可临时改小本表加速
+const HUMAN_TIME={zimo:120,qiang:120,discard:600,claim:10,gangself:10};
 // 2026-11-09 用户需求：等待玩家决策（思考碰不碰/杠不杠/胡不胡）时轻响两音提示「到你了」
 function sndWait(){if(!soundOn)return;ensureAudioPlaying();tone(880,0.09,'sine',0.13);tone(1175,0.15,'sine',0.13,0.12);}
 function waitHuman(kind,opts){return new Promise(res=>{
   G.awaiting=kind;G.humanResolve=res;renderActions(opts);
   if(TIMED[kind]){
     sndWait(); // 决策等待提示音
-    let left=10;renderCountdown(left);
-    G._cd=setInterval(()=>{left--;if(left<=0){clearCountdown();if(G.humanResolve)humanRespond({pass:1});}else renderCountdown(left);},1000);
+    let left=HUMAN_TIME[kind]!=null?HUMAN_TIME[kind]:10;renderCountdown(left);
+    G._cd=setInterval(()=>{left--;if(left<=0){clearCountdown();
+      if(G.humanResolve){
+        // 出牌超时：AI 代打最优牌；其余决策超时：自动过
+        humanRespond(kind==='discard'?aiChooseDiscard(p(0)):{pass:1});
+      }
+    }else renderCountdown(left);},1000);
   }
 });}
+function fmtCountdown(n){return n>90?Math.floor(n/60)+' 分 '+String(n%60).padStart(2,'0')+' 秒':n+' 秒';}
 function renderCountdown(n){
   let c=document.getElementById('cd');
   if(!c){c=document.createElement('div');c.id='cd';document.getElementById('actions').prepend(c);}
-  c.textContent='剩余思考时间 '+n+' 秒';
+  c.textContent='剩余思考时间 '+fmtCountdown(n);
 }
 function clearCountdown(){if(G._cd){clearInterval(G._cd);G._cd=null;}const c=document.getElementById('cd');if(c)c.remove();}
 function humanRespond(v){clearCountdown();if(G.humanResolve){const r=G.humanResolve;G.humanResolve=null;G.awaiting=null;r(v);}}
