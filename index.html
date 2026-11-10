@@ -611,7 +611,7 @@
 <script>
 const RULESET_ID='hongzhong-v1';
 const CFG={suits:['W','T','B'],suitName:{W:'万',T:'条',B:'筒'},keepTiles:6,cap:50,aiDelay:600,thinkMin:300,thinkMax:1500,diceMs:650,diceGap:480,diceAuto:6000,diceHold:1100};
-function think(){/* 2026-11-09 托管加速：托管状态下每人思考固定 0.4 秒，快速打完一轮 8 局拿总分 */if(humanAuto)return sleep(400);return thinkVoiceSync();}
+function think(){/* 2026-11-10 托管加速：托管状态下每人思考固定 0.18 秒（不超过 0.2s），快速打完一轮 8 局拿总分 */if(humanAuto)return sleep(180);return thinkVoiceSync();}
 // 2026-11-10 用户需求：出牌提速——摸牌后 0.3 秒即可出牌，
 // 语音队列仍在播时再等一会儿，总时长 1.5 秒封顶（0.3-1.5 秒区间）
 async function thinkVoiceSync(){

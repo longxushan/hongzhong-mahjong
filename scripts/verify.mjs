@@ -391,7 +391,7 @@ try {
   assert('AI 观察与应对机制（读牌/威胁/防守/抢节奏）', tactic.hasOb && tactic.discardWired && tactic.claimRush && tactic.planAdapt && tactic.guardSay && tactic.live,
     `观察引擎=${tactic.hasOb}，出牌应对=${tactic.discardWired}，碰杠抢节奏=${tactic.claimRush}，路线拥挤修正=${tactic.planAdapt}，防守台词=${tactic.guardSay}，实时情报=${tactic.live}`);
 
-  // 托管加速（2026-11-09 用户要求：托管状态每人思考 0.4 秒，快速打完一轮 8 局拿总分）
+  // 托管加速（2026-11-10 用户要求：托管状态每人思考不超过 0.2 秒，快速打完一轮 8 局拿总分）
   const hosted = await page.evaluate(async () => {
     const btn = document.getElementById('autoBtn');
     btn.click();
@@ -405,8 +405,8 @@ try {
     const off = humanAuto === false && p(0).auto === false && btn.textContent === '托管';
     return { on, ms, nextFast, diceFast, off };
   });
-  assert('托管加速：思考 0.4 秒 + 结算 2.6 秒自动连开', hosted.on && hosted.off && hosted.ms >= 380 && hosted.ms < 1500 && hosted.nextFast && hosted.diceFast,
-    `托管思考实测 ${hosted.ms}ms（目标 400），结算 2.6s 自动下一局=${hosted.nextFast}，掷骰提速=${hosted.diceFast}，开关往返正常`);
+  assert('托管加速：思考 ≤0.2 秒 + 结算 2.6 秒自动连开', hosted.on && hosted.off && hosted.ms >= 100 && hosted.ms <= 200 && hosted.nextFast && hosted.diceFast,
+    `托管思考实测 ${hosted.ms}ms（目标 180，上限 200），结算 2.6s 自动下一局=${hosted.nextFast}，掷骰提速=${hosted.diceFast}，开关往返正常`);
 
   // 四家摊牌（2026-11-09 用户需求：每局结束各家手牌摊开给大家看再进下一局）
   const reveal = await page.evaluate(() => {
