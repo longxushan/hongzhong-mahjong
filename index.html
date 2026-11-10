@@ -1966,7 +1966,11 @@ function isPhonePort(){
   // 判定：窄屏（≤560px，覆盖主流手机）且竖屏（高>宽）；平板竖屏（≥600px 宽）仍走旋转横屏
   return innerWidth<=560&&innerHeight>innerWidth;
 }
-function dockKey(){return isPhonePort()?'banshanDockHPort':'banshanDockH';}
+function dockKey(){
+  // 2026-11-11 用户需求：竖屏打牌提醒露出更多——换新存储键 V2，让上调后的默认高度生效
+  // （旧键 banshanDockHPort 里拖拽保存的小高度不再覆盖新默认；此后手动拖拽仍照常记忆）
+  return isPhonePort()?'banshanDockHPortV2':'banshanDockH';
+}
 function syncSplitter(){
   const sp=document.getElementById('hSplitter'),dock=document.getElementById('bottomDock'),stage=document.getElementById('stage');
   if(!sp||!dock)return;
@@ -3054,7 +3058,7 @@ function applyPhonePortDock(){
   if(!restoreDockH()){
     const stage=document.getElementById('stage');
     const avail=stage.clientHeight-document.getElementById('topbar').offsetHeight;
-    setDockHeightPx(avail*0.30); // 2026-11-09 用户需求：教学区默认占比 0.44→0.30，牌桌空间让给牌与字
+    setDockHeightPx(avail*0.36); // 2026-11-11 用户需求：手机竖屏底牌区域上移，打牌提醒（教学区）露出更多——默认占比 0.30→0.36
   }
 }
 let started=false;
