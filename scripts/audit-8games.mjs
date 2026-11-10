@@ -135,7 +135,8 @@ try {
 } catch (e) { console.log('（达到时间上限）'); }
 
 // 采集 + 事后分析（在页面里分析事件流）
-const report = await page.evaluate(() => {
+const N_GAMES_R = N_GAMES;
+const report = await page.evaluate((N_GAMES_R) => {
   const A = window.__audit;
   const evts = A.evts;
   // ① 抓牌时序检查
@@ -184,8 +185,11 @@ const report = await page.evaluate(() => {
     draws: evts.filter(e => e[0] === 'draw' && e[2] === '普通').length,
     pengs: evts.filter(e => e[0] === 'peng').length,
     gangs: evts.filter(e => e[0] === 'gang').length,
+    // 2026-11-10 用户需求：自检报告附记分牌——每局四家净分（含杠分）与累计
+    histRecent: (typeof hist !== 'undefined' && Array.isArray(hist)) ? hist.slice(-N_GAMES_R) : [],
+    cum: (typeof cumScore === 'undefined') ? {} : JSON.parse(JSON.stringify(cumScore)),
   };
-});
+}, N_GAMES_R);
 
 console.log('===== 红中麻将 8 局规则审计报表 =====');
 console.log(`完成局数: ${report.gameCount}/${N_GAMES}，用时 ${Math.round((Date.now() - t0) / 1000)}s`);
@@ -213,5 +217,22 @@ if (report.issues.length === 0) {
   if (report.issues.length > 20) console.log(`  …另有 ${report.issues.length - 20} 条`);
 }
 console.log('\nJS 报错: ' + (errors.length ? errors.slice(0, 5).join(' | ') : '0 条'));
+
+// --- 记分牌（2026-11-10 用户需求）：每局四家净分 + 累计排名 ---
+if (report.histRecent && report.histRecent.length) {
+  const names = report.histRecent[0].d.map(x => x.n);
+  console.log('\n--- 记分牌（每局净分，含杠分） ---');
+  console.log('  局 | ' + names.map(n => String(n).padEnd(6)).join(' | ') + ' | 结果');
+  for (const h of report.histRecent) {
+    const cells = names.map(n => { const c = h.d.find(x => x.n === n); const v = c ? c.v : 0; return (v > 0 ? '+' + v : String(v)).padEnd(6); });
+    console.log('  ' + String(h.r).padStart(2) + ' | ' + cells.join(' | ') + ' | ' + h.t);
+  }
+  // 累计（对 histRecent 求和；杠分已含在净分里）
+  const cum = {};
+  for (const h of report.histRecent) for (const x of h.d) cum[x.n] = (cum[x.n] || 0) + x.v;
+  const rank = Object.entries(cum).sort((a, b) => b[1] - a[1]);
+  console.log('\n--- 一轮累计排名 ---');
+  rank.forEach(([n, v], i) => console.log(`  第${i + 1}名  ${n}  ${v >= 0 ? '+' : ''}${v} 分`));
+}
 await browser.close();
 fs.writeFileSync(path.join(ROOT, '_audit8.txt'), JSON.stringify(report, null, 2));
