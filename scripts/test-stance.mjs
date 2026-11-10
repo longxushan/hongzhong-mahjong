@@ -129,21 +129,20 @@ const r8 = await page.evaluate(() => {
 });
 check('RISK 冒险档分化（safeGap/pengTol）', r8.aGap===3 && r8.gGap===3 && r8.lGap===3 && r8.cGap===2 && r8.sGap===2 && r8.aTol===1 && r8.cTol===0, `激进${r8.aGap}步/容忍${r8.aTol}，保守${r8.cGap}步/容忍${r8.cTol}，沉稳${r8.sGap}步`);
 
-// 用例9：大牌宣言——grand 首次锁姿态播一次性格宣言（语音包 role/{i}/{kind}），重复调用不刷屏
+// 用例9：大牌宣言——grand 首次锁姿态说一次性格宣言、重复不播（2026-11-10 起对局角色语音默认关 ROLE_VOICE_ON=false：宣言走 toast 字幕；语音开关打开时恢复 vpPlay role/ 通道）
 const r9 = await page.evaluate(() => {
   const ai = p(1); ai.style = 'grand';
   const ids = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W3','W6','B5','B8','T4'];
   ai.hand = ids.map((x, i) => window.__mk(x, 960000 + i));
   G._stanceSaid = {}; // 重置宣言标记（用例6已触发过一次），验证「首次播、重复不播」
-  let said = 0, files = '';
-  const backup = vpPlay;
-  window.vpPlay = function (fs2) { if (fs2 && fs2[0] && String(fs2[0]).indexOf('role/') === 0) { said++; files = fs2.join('+'); } return backup.call(null, fs2); };
+  let said = 0, txt = '';
+  const backup = toast;
+  window.toast = function (t) { if (typeof t === 'string' && t.indexOf('：') > 0) { said++; txt = t; } return backup.call(null, t); };
   masterDiscard(ai); masterDiscard(ai); // 连续两次：宣言只应播一次
-  window.vpPlay = backup;
-  vpStop();
-  return { said, files, marked: !!(G._stanceSaid && G._stanceSaid[ai.seat]) };
+  window.toast = backup;
+  return { said, txt, marked: !!(G._stanceSaid && G._stanceSaid[ai.seat]), voiceOff: typeof ROLE_VOICE_ON !== 'undefined' && ROLE_VOICE_ON === false };
 });
-check('大牌宣言：grand 首次锁姿态只播一次（语音包）', r9.said === 1 && r9.marked && /role\/\d+\/qing/.test(r9.files), `语音包 ${r9.said} 次：${r9.files}（grand=福星道人=索引1）`);
+check('大牌宣言：grand 首次锁姿态只播一次（字幕通道）', r9.said === 1 && r9.marked && r9.voiceOff && r9.txt.length > 5, `字幕宣言 ${r9.said} 次：「${r9.txt}」，语音开关默认关=${r9.voiceOff}`);
 
 // 用例10：清一色姿态碰方向保护——别色对子拒碰、主色对子走向听比较
 const r10 = await page.evaluate(() => {
