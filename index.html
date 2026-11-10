@@ -144,10 +144,14 @@
   .wtHand{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;}
   .wtInline{color:#9bb8ab;font-size:12px;}
   .winPlan{background:#1d2a33;border:1px solid #3a5a6e;border-radius:9px;padding:8px 11px;margin:6px 0 8px;}
-  .winPlanHead{color:#8fc3e0;font-weight:700;font-size:13px;margin-bottom:5px;}
+  .winPlanHead{color:#8fc3e0;font-weight:700;font-size:13px;margin-bottom:5px;cursor:pointer;user-select:none;}
+  /* 2026-11-10 结算弹窗瘦身：师傅讲解可折叠（手机默认收起省 1/5 屏滚动，桌面默认展开） */
+  .winPlanFold .winPlan{display:none;}
+  .winPlanFold.open .winPlan{display:block;}
+  .large .winPlanFold .winPlan{display:block;}
   .winPlan p{margin:0 0 6px;font-size:12.5px;line-height:1.6;color:#dce8f0;}
   .winPlan p:last-child{margin-bottom:0;}
-  .modalBtns{display:flex;gap:10px;margin-top:8px;}.modalBtns button{flex:1;padding:7px 10px;font-size:13px;}
+  .modalBtns{display:flex;gap:10px;margin-top:8px;position:sticky;bottom:-10px;background:#262626;padding:8px 0 4px;box-shadow:0 -6px 10px rgba(0,0,0,.35);}.modalBtns button{flex:1;padding:7px 10px;font-size:13px;} /* 2026-11-10：按钮吸底——内容滚动时「再来一局」始终可见 */
   .autoNextTip{margin-top:8px;padding:6px 10px;border-radius:8px;background:rgba(212,175,55,.14);border:1px solid rgba(212,175,55,.5);color:var(--gold);font-size:12px;text-align:center;}
   /* 牌桌闲聊气泡：绝对定位悬浮于 #table 上（按座位锚定，不受窄列座位与旋转影响），几秒后淡出 */
   .chatBox{position:absolute;max-width:150px;padding:4px 10px;background:linear-gradient(135deg,rgba(255,248,225,.97),rgba(255,238,200,.97));color:#5a3811;border:1px solid rgba(180,120,40,.55);border-radius:10px;font-size:12px;line-height:1.35;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:chatPop .22s ease-out;z-index:30;pointer-events:none;word-break:break-all;}
@@ -2668,7 +2672,7 @@ function presentResult(r){return new Promise(res=>{
   if(!r._speechDone){r._speechDone=true;try{speakScore(r.pl?buildWinSpeechKeys(r):['host/liuju']);}catch(e){}}
   const isFinal=roundNum>=ROUND_MAX;
   const mk=document.createElement('div');mk.className='mask';let h='<div class="modal"><h3>'+(isFinal?'本轮最终结算榜单（第'+ROUND_MAX+'/'+ROUND_MAX+'局）':r.title)+'</h3>';
-  if(r.pl){h+='<div class="row"><span>胡牌者</span><span>'+r.pl.name+'</span></div><div class="row"><span>胡牌牌型</span><span>'+((r.handTypes&&r.handTypes.length)?r.handTypes.join('、'):'基本胡牌')+'</span></div><div class="row"><span>赢家整副牌</span><span class="wtInline">手牌+副露如下</span></div>'+winnerWholeTiles(r.pl)+(r.winPlan&&r.winPlan.length?'<div class="winPlan"><div class="winPlanHead">师傅讲解 · 他的做牌思路</div>'+r.winPlan.map(x=>'<p>'+x+'</p>').join('')+'</div>':'')+'<div class="row"><span>基础分</span><span>'+r.base+'</span></div>';
+  if(r.pl){h+='<div class="row"><span>胡牌者</span><span>'+r.pl.name+'</span></div><div class="row"><span>胡牌牌型</span><span>'+((r.handTypes&&r.handTypes.length)?r.handTypes.join('、'):'基本胡牌')+'</span></div><div class="row"><span>赢家整副牌</span><span class="wtInline">手牌+副露如下</span></div>'+winnerWholeTiles(r.pl)+(r.winPlan&&r.winPlan.length?'<div class="winPlanFold" id="wpFold"><div class="winPlanHead" id="wpFoldBtn">▸ 师傅讲解 · 他的做牌思路（点击'+(document.documentElement.classList.contains('large')?'收起':'展开')+'）</div><div class="winPlan">'+r.winPlan.map(x=>'<p>'+x+'</p>').join('')+'</div></div>':'')+'<div class="row"><span>基础分</span><span>'+r.base+'</span></div>';
     if(r.ma){h+='<div class="codeTiles">'+r.ma.tiles.map(t=>tileDiv(t,true)).join('')+'</div><div class="row"><span>翻码'+(r.ma.hasZ?'4张':'6张')+'（1/5/9）</span><span>'+r.ma.hit+'分</span></div>';}
     for(const f of r.fs)h+='<div class="row"><span>'+f.n+'</span><span>×'+f.v+'</span></div>';if(r.cap)h+='<div class="row"><span>超出封顶</span><span>按50分</span></div>';
     h+='<div class="row"><span>本局胡牌得分</span><span class="plus">'+r.total+'</span></div>';}
@@ -2677,6 +2681,9 @@ function presentResult(r){return new Promise(res=>{
   h+=cumRankHTML();
   h+='<div class="modalBtns"><button class="primary" id="mNext">'+(isFinal?'开始下一轮':'再来一局')+'</button><button id="mReview">师傅复盘</button><button id="mResetCum">清零累计</button><button id="mClose">查看桌面</button></div></div>';
   mk.innerHTML=h;document.getElementById('stage').appendChild(mk);
+  // 师傅讲解折叠开关（手机默认收起、桌面默认展开）
+  {const wpf=mk.querySelector('#wpFoldBtn');
+  if(wpf)wpf.onclick=()=>{const f=mk.querySelector('#wpFold');if(f){f.classList.toggle('open');const o=f.classList.contains('open');wpf.textContent=(o?'▾':'▸')+' 师傅讲解 · 他的做牌思路（点击'+(o?'收起':'展开')+'）';}sndClick();};}
   let settled=false,autoTimer=null;
   const goNext=()=>{
     if(settled)return;settled=true;

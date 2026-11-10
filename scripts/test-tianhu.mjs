@@ -23,6 +23,14 @@ const r = await page.evaluate(async () => {
     const score = (html.match(/本局胡牌得分<\/span><span class="plus">(\d+)<\/span>/) || [])[1];
     const title = (html.match(/<h3[^>]*>([^<]*)</) || [])[1];
     results[how] = { hasFan: html.includes(fan), score: Number(score), title };
+    // 折叠开关（2026-11-10 结算弹窗瘦身）：点头部应切换 .open
+    if (how === 'zimo') {
+      const fold = modal ? modal.querySelector('#wpFold') : null;
+      const btn = modal ? modal.querySelector('#wpFoldBtn') : null;
+      const before = fold ? fold.classList.contains('open') : null;
+      if (btn) btn.click();
+      results.wpFold = { exists: !!fold && !!btn, toggles: fold ? fold.classList.contains('open') !== before : false };
+    }
     const close = modal ? modal.querySelector('#mClose') : null; if (close) close.click();
     await new Promise(rs => setTimeout(rs, 120));
   }
@@ -30,6 +38,8 @@ const r = await page.evaluate(async () => {
 });
 console.log(JSON.stringify(r, null, 1));
 const okTian = r.tianhu.hasFan && r.dihu.hasFan && r.tianhu.score === r.dihu.score * 2 && r.dihu.score === r.zimo.score * 2 && r.tianhu.title === '天胡！' && r.dihu.title === '地胡！';
+const okFold = r.wpFold && r.wpFold.exists && r.wpFold.toggles;
 console.log(okTian ? '✓ 天胡×4/地胡×2 计分链路正确（自摸基线 ' + r.zimo.score + ' → 地胡 ' + r.dihu.score + ' → 天胡 ' + r.tianhu.score + '）' : '✗ 计分异常');
+console.log(okFold ? '✓ 师傅讲解折叠开关正常' : '✗ 折叠开关异常');
 await browser.close();
-process.exit(okTian ? 0 : 1);
+process.exit(okTian && okFold ? 0 : 1);
