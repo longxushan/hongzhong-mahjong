@@ -353,13 +353,14 @@
   .large .roleBtn{font-size:17px;padding:20px 10px;}
   .large .roleBtn .ricon{width:118px;height:118px;}
   /* 开局掷骰定庄（2026-11-08）：四人掷定东、东家掷骰数位定庄 */
-  #diceOverlay{position:fixed;inset:0;z-index:84;background:rgba(6,18,14,.82);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:20px;backdrop-filter:blur(2px);}
+  /* 2026-11-10 用户需求：桌上掷骰——遮罩近乎透明露出底下空牌桌与四椅，骰子直接落在桌面中央 */
+  #diceOverlay{position:fixed;inset:0;z-index:84;background:rgba(4,16,12,.30);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:20px;}
   #diceOverlay.show{display:flex;}
-  #diceCard{background:linear-gradient(165deg,#12332277,#0a1f18);border:1px solid rgba(217,164,65,.55);border-radius:16px;padding:20px 28px;max-width:640px;width:min(92vw,640px);text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+  #diceCard{background:transparent;border:none;border-radius:0;padding:4px 10px;max-width:640px;width:min(92vw,640px);text-align:center;box-shadow:none;} /* 桌上模式：无卡片容器，内容直接悬浮于牌桌 */
   #diceTitle{color:var(--gold);font-size:20px;font-weight:800;letter-spacing:2px;margin-bottom:12px;}
   #diceNote{color:#cfe0d8;font-size:13px;min-height:18px;margin-bottom:14px;}
-  .diceSeats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
-  .diceSeat{position:relative;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:8px 10px;min-width:96px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:border-color .15s,background .15s;}
+  .diceSeats{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;} /* 四人已坐在桌上，掷骰列表缩为紧凑分数条 */
+  .diceSeat{position:relative;background:rgba(0,0,0,.30);border:1px solid rgba(217,164,65,.30);border-radius:10px;padding:6px 8px;min-width:76px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:border-color .15s,background .15s;}
   /* 2026-11-09 用户需求：掷骰面板头像角标——定东显「东」、定庄显「庄」（覆于头像右上角） */
   .diceSeat .dsBadge{position:absolute;top:1px;right:5px;display:none;align-items:center;justify-content:center;width:21px;height:21px;border-radius:50%;font-size:11px;font-weight:800;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.55);z-index:2;}
   .diceSeat .dsBadge.east{background:linear-gradient(135deg,#0e7a5f,#16a085);}
@@ -694,6 +695,31 @@ function chooseRole(nm){
   primeSpeech();              // 同理再预热一次 TTS（iOS 双保险）
   vpUnlock();                 // 语音包音频元素再解锁一次
   layout();run();
+}
+// 2026-11-10 用户需求：开局场景化——先呈现空牌桌与四把椅子，四人入座（无手牌无弃牌），
+// 再在牌桌上掷骰定东定庄，最后发牌进局；掷骰浮层改为透明桌上模式（见 #diceOverlay 样式）
+function renderEmptySeats(){
+  const names=[humanName,aiNames[0],aiNames[1],aiNames[2]];
+  for(let i=0;i<4;i++){
+    const e=document.getElementById('seat'+i);
+    if(!e)continue;
+    // 清掉上局遗留（副露/手牌/警示），保留头像结构
+    [...e.children].forEach(c=>{if(!c.classList||!c.classList.contains('who'))c.remove();});
+    let who=e.querySelector('.who');
+    if(!who){
+      who=document.createElement('div');who.className='who';
+      who.innerHTML='<div class="turn"></div><img class="whoAvatar" src="'+avatarFaceOf(names[i])+'" alt=""><span class="whoName"></span><span class="eastBadge" style="display:none">东</span><span class="dealerBadge" style="display:none">庄</span><span class="styleTag" style="display:none"></span>';
+      e.appendChild(who);
+    }
+    who.className='who';
+    who.querySelector('.whoAvatar').src=avatarFaceOf(names[i]);
+    who.querySelector('.whoName').textContent=names[i];
+    const eb=who.querySelector('.eastBadge');if(eb)eb.style.display='none';
+    const db=who.querySelector('.dealerBadge');if(db)db.style.display='none';
+    const tg=who.querySelector('.styleTag');if(tg)tg.style.display='none';
+  }
+  const dp=document.getElementById('discardPool');if(dp)dp.innerHTML='';
+  const cd=document.getElementById('cd');if(cd)cd.remove();
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 // ===== 开局掷骰定庄（2026-11-08 用户规则：四人各掷定东→东家掷骰、以东为1数点数定庄、庄家先抓牌）=====
@@ -2414,6 +2440,8 @@ function takeOverByAI(){if(!G.humanResolve)return;const me=p(0),k=G.awaiting;if(
 
 async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变更：谁赢谁坐庄——上局胡牌者下局当庄家；流局无人胡则按序轮换 */ /* 2026-11-08 新增：每桌首局开局掷骰定庄（四人掷定东→东家掷骰数位定庄），之后仍谁赢谁坐庄 */let nd=forceDealer!=null?forceDealer:(!hasPlayed?null:(lastWinner!=null?lastWinner:(lastDealer+1)%4));
   if(nd==null){
+    // 2026-11-10 用户需求：开局场景化——先呈现空牌桌与入座四人，再在牌桌上掷骰
+    renderEmptySeats();
     nd=await diceForDealer(myToken);
     if(myToken!==runToken)return;
     if(nd<0||nd==null)nd=0;
@@ -2658,11 +2686,16 @@ function renderSeat(i){
     who=document.createElement('div');
     who.innerHTML='<div class="turn"></div><img class="whoAvatar" src="'+avatarFaceOf(pl.name)+'" alt=""><span class="whoName"></span><span class="eastBadge" style="display:none">东</span><span class="dealerBadge" style="display:none">庄</span><span class="styleTag" style="display:none"></span>';
     e.appendChild(who);
-    const melds=document.createElement('div');melds.className='melds';e.appendChild(melds);
-    if(i===0){
+  }
+  // 2026-11-10 修复：开局空桌清场（renderEmptySeats）只保留头像，骨架按需补齐——render 幂等
+  if(!e.querySelector('.melds')){const melds=document.createElement('div');melds.className='melds';e.appendChild(melds);}
+  if(i===0){
+    if(!e.querySelector('#handWrap')){
       const hw=document.createElement('div');hw.id='handWrap';
       hw.innerHTML='<div id="hand"></div><div id="actions"></div>';
       e.appendChild(hw);
+    }
+    if(!e.querySelector('#liveWarn')){
       const lw=document.createElement('div');lw.id='liveWarn';lw.className='liveWarn';lw.style.display='none';e.appendChild(lw);
     }
   }
