@@ -99,14 +99,14 @@ await page.evaluate(() => {
   }
 
   // 文案自检：kou 里的数字/措辞与当前局面是否自洽
-  function kouIssues(pick, d, obj, handIds) {
+  function kouIssues(pick, d, obj, pl) {
     const bad = [];
     const kou = pick.kou || '';
     const m = kou.match(/共\s*(\d+)\s*张有效进张/);
     if (m) {
-      const c = obj.cands.find(x => x.id === pick.id);
-      // teachPick 用真实牌墙口径，应与 dwReal 一致
-      if (c && Math.abs(c.dwReal - parseInt(m[1], 10)) > 0) bad.push(`进张数文案 ${m[1]} vs 实算 ${c.dwReal}`);
+      // 2026-11-11 教学引擎已改用玩家可见口径：文案数字应与 visibleLeft 口径一致（旧版比 dwReal 是真实墙口径，会误报）
+      const q = (typeof discardQuality === 'function') ? discardQuality(pl, pick.id) : null;
+      if (q && Math.abs(q.dw - parseInt(m[1], 10)) > 0) bad.push(`进张数文案 ${m[1]} vs 可见口径实算 ${q.dw}`);
     }
     if (/幺九孤张先出手/.test(kou) && !/1$|9$/.test(pick.id)) bad.push('文案称幺九孤张但推荐牌非1/9');
     if (/边张进张已绝/.test(kou) && d.edge.indexOf(pick.id) < 0) bad.push('文案称边搭但推荐牌不在边搭表');
@@ -133,7 +133,7 @@ await page.evaluate(() => {
         const obj = objective(pl);
         const visId = obj.visTop.id, realId = obj.realTop.id;
         const pickC = obj.cands.find(x => x.id === pick.id);
-        const issues = kouIssues(pick, d, obj, pl.hand.map(x => x.id));
+        const issues = kouIssues(pick, d, obj, pl);
         T.samples.push({
           g: T.rounds.length + 1,
           hand: pl.hand.map(x => x.id).join(','),

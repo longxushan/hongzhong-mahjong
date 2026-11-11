@@ -24,9 +24,14 @@ console.log(`  推荐牌让向听变差 Δsh>0          ${cnt(x => x.deltaSh > 0
 
 console.log('\n【2】打错提醒判定');
 console.log(`  误报：打「可见口径最优」被判打亏 ${cnt(x => x.warnVis === 'bad')} / ${S.length} = ${pct(cnt(x => x.warnVis === 'bad'), S.length)}`);
-console.log(`    被判「大牌方向打得通」放行     ${cnt(x => x.warnVis === 'stance')}；判「选得对」 ${cnt(x => x.warnVis === 'good')}`);
-console.log(`  漏报：打最差牌却没判打亏        ${cnt(x => x.warnWorst !== 'bad')} / ${S.length} = ${pct(cnt(x => x.warnWorst !== 'bad'), S.length)}`);
-console.log(`  「巡内净值是正的」断言中推荐其实非独立最优 ${cnt(x => x.goodButSuboptimal)} / ${S.length} = ${pct(cnt(x => x.goodButSuboptimal), S.length)}`);
+console.log(`    判「这一打不亏」放行 ${cnt(x => x.warnVis === 'fair')}｜判「大牌方向打得通」 ${cnt(x => x.warnVis === 'stance')}｜判「选得对」 ${cnt(x => x.warnVis === 'good')}`);
+console.log(`  漏报：打最差牌却没判打亏        ${cnt(x => x.warnWorst !== 'bad')} / ${S.length} = ${pct(cnt(x => x.warnWorst !== 'bad'), S.length)}（含规则强制打红中/大牌路线/同分放行）`);
+const hasNet = S.some(x => x.netHonest !== undefined);
+if (hasNet) {
+  console.log(`  「净值正」断言诚实率            ${cnt(x => x.netHonest === 1)} / ${S.length} = ${pct(cnt(x => x.netHonest === 1), S.length)}（其余 ${cnt(x => x.netHonest === 0)} 次自动改说「路线取舍」，不再硬套净值正）`);
+} else {
+  console.log(`  （旧版无条件）「巡内净值是正的」断言中推荐其实非独立最优 ${cnt(x => x.goodButSuboptimal)} / ${S.length} = ${pct(cnt(x => x.goodButSuboptimal), S.length)}`);
+}
 
 console.log('\n【3】文案自相矛盾');
 const iss = S.filter(x => x.issues && x.issues.length);
