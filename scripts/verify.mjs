@@ -138,18 +138,19 @@ try {
     const txt = m ? m.textContent : '';
     const hasQuxue = /雀学米高/.test(txt) && /综合价值/.test(txt) && /机会成本/.test(txt);
     const hasZts = /郑太顺/.test(txt) && /金三银七/.test(txt) && /五不碰/.test(txt);
+    const hasShizhan = /早打无周边/.test(txt) && /三档标签/.test(txt) && /交集区域/.test(txt) && /抽屉原则/.test(txt);
     if (shown) m.style.display = 'none';
-    return { shown, secs, tbls, hasQuxue, hasZts };
+    return { shown, secs, tbls, hasQuxue, hasZts, hasShizhan };
   });
-  assert('打法攻略弹窗可用（含雀学米高+郑太顺玩家心法）', tipsOk.shown && tipsOk.secs >= 8 && tipsOk.tbls >= 4 && tipsOk.hasQuxue && tipsOk.hasZts,
-    `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张，雀学米高=${tipsOk.hasQuxue}，郑太顺=${tipsOk.hasZts}`);
+  assert('打法攻略弹窗可用（含雀学米高+郑太顺+结构实战篇玩家心法）', tipsOk.shown && tipsOk.secs >= 9 && tipsOk.tbls >= 5 && tipsOk.hasQuxue && tipsOk.hasZts && tipsOk.hasShizhan,
+    `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张，雀学米高=${tipsOk.hasQuxue}，郑太顺=${tipsOk.hasZts}，实战篇=${tipsOk.hasShizhan}`);
 
   // 2026-11-11 双大师心法接入玩家活引擎：打错提醒点评 / 师傅推荐理由 / 讲思路 / 复盘心法池
   const masterOk = await page.evaluate(() => ({
-    warnWired: typeof liveWarn === 'function' && liveWarn.toString().includes('ztsDanger') && liveWarn.toString().includes('机会成本'),
+    warnWired: typeof liveWarn === 'function' && liveWarn.toString().includes('ztsDanger') && liveWarn.toString().includes('机会成本') && liveWarn.toString().includes('早打无周边'),
     kouWired: typeof teachPick === 'function' && /雀学米高/.test(teachPick.toString()),
-    thinkWired: typeof buildThinkHTML === 'function' && buildThinkHTML.toString().includes('郑太顺同线读牌') && buildThinkHTML.toString().includes('存量口径'),
-    reviewPool: typeof MASTER_KOU !== 'undefined' && MASTER_KOU.length >= 12,
+    thinkWired: typeof buildThinkHTML === 'function' && buildThinkHTML.toString().includes('郑太顺同线读牌') && buildThinkHTML.toString().includes('存量口径') && buildThinkHTML.toString().includes('交集区域'),
+    reviewPool: typeof MASTER_KOU !== 'undefined' && MASTER_KOU.length >= 19,
     reviewPoolN: typeof MASTER_KOU !== 'undefined' ? MASTER_KOU.length : 0,
     reviewWired: typeof buildReviewHTML === 'function' && buildReviewHTML.toString().includes('大师心法'),
   }));
