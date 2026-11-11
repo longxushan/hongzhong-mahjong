@@ -754,7 +754,7 @@ function resetCumForCurrent(){cumScore={};for(const nm of currentNames())cumScor
 function rankListHTML(){
   const rows=currentNames().map(nm=>({nm,v:cumScore[nm]!=null?cumScore[nm]:100})).sort((a,b)=>b.v-a.v);
   let h='<div class="rankGrid">';
-  rows.forEach((r,i)=>{const c=r.v>100?'plus':r.v<100?'minus':'';h+='<div class="row"><span>'+(i+1)+'. '+r.nm+'</span><span class="'+c+'">'+r.v+' 子</span></div>';});
+  rows.forEach((r,i)=>{const c=r.v>100?'plus':r.v<100?'minus':'';h+='<div class="row"><span>'+(i+1)+'. '+r.nm+' <span style="opacity:.55;font-size:11px">修'+qxCarePct(r.nm)+'%</span></span><span class="'+c+'">'+r.v+' 子</span></div>';});
   return h+'</div>';
 }
 function cumRankHTML(){
@@ -2523,6 +2523,69 @@ function ztsClaimGate(pl,id,after,before){ // ⑤ 碰牌五不碰（郑太顺高
 // 角色修炼等级（AI 并非人人满级，体现「学艺有先后」）：进修型/豪腕型吃全套；激进型进攻面强；
 // 沉稳/灵活型中等；保守型偏防守口诀；学习型只吃一半（成长线，留进步空间）
 const QXMG_LEVEL={conservative:0.65,steady:0.75,aggressive:0.9,grand:1.0,academic:1.0,learning:0.55,flexible:0.8};
+// ===== 角色经验学习系统（2026-11-11 用户需求：把每局成败总结成经验）=====
+// 每个角色一份档案，localStorage 持久化（跨局、跨轮、跨会话都记得）；结算时学习、决策时读取。
+// 学习只动四个「风格参数」（幅度小、有界），绝不碰向听精算主体——经验只能改变胆量与熟练度，学不坏牌理：
+//   prAdj 大牌尝试率修正（赢大牌 +2%/流局 -2%）  dzAdj 打红中冒险率修正（打红中赢 +3%/输 -2%）
+//   qxAdj 修炼等级修正（每满 8 局按胜率 ±，合计上限 1.0）  nsMul 熟练度噪声倍率（30 局后每 15 局 ×0.92，越打越稳）
+const EXP_KEY='banshanRoleExpV1';
+function loadRoleExp(){try{return JSON.parse(localStorage.getItem(EXP_KEY))||{};}catch(e){return {};}}
+function saveRoleExp(x){try{localStorage.setItem(EXP_KEY,JSON.stringify(x));}catch(e){}}
+function getRoleExp(nm){const e=loadRoleExp()[nm];return e?e:{g:0,w:0,lp:0,bw:0,dw:0,lj:0,prAdj:0,dzAdj:0,qxAdj:0,nsMul:1};}
+function expClamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+// 角色当前生效的四个学习参数（基础值 + 经验修正，边界内）
+function expParams(pl){
+  const style=pl.style||'flexible';
+  const e=getRoleExp(pl.name);
+  const basePr=PLAN_RATE[style]!=null?PLAN_RATE[style]:0.3;
+  const baseDz=DUMP_Z_RATE[style]!=null?DUMP_Z_RATE[style]:0.5;
+  const baseQx=QXMG_LEVEL[style]!=null?QXMG_LEVEL[style]:0.8;
+  return {
+    planRate:expClamp(basePr+e.prAdj,0.05,0.9),
+    dumpZRate:expClamp(baseDz+e.dzAdj,0,1),
+    qxLv:expClamp(baseQx+e.qxAdj,Math.min(baseQx,0.5),1),
+    noiseMul:e.nsMul!=null?expClamp(e.nsMul,0.5,1):1,
+    exp:{...e,style,baseQx},
+  };
+}
+// 结算学习：每局每人把这一局的成败写进档案（只写一次，r 复用时 _expLearned 防重）
+function learnFromRound(r){
+  try{
+    const all=loadRoleExp();
+    const liuju=!r.pl;
+    const dumpZ=(r.fs||[]).some(f=>/^打出\d+只红中$/.test(f.n));
+    let mult=1;for(const f of (r.fs||[]))mult*=(f.v||1);
+    const bigWin=!!(r.handTypes&&r.handTypes.length)||mult>=2;
+    for(const x of r.d){
+      const nm=p(x.seat)&&p(x.seat).name;if(!nm)continue;
+      const e=all[nm]||{g:0,w:0,lp:0,bw:0,dw:0,lj:0,prAdj:0,dzAdj:0,qxAdj:0,nsMul:1};
+      e.g++;
+      if(x.hu>0){
+        e.w++;
+        if(bigWin){e.bw++;e.prAdj=expClamp(e.prAdj+0.02,-0.10,0.15);}   // 赢了大牌：下次更敢做
+        if(dumpZ){e.dw++;e.dzAdj=expClamp(e.dzAdj+0.03,-0.08,0.12);}   // 打红中赢翻倍：冒险有回报
+      }else if(x.net<0){
+        e.lp++;e.dzAdj=expClamp(e.dzAdj-0.02,-0.08,0.12);              // 输了：收敛冒险
+      }
+      if(liuju){e.lj++;e.prAdj=expClamp(e.prAdj-0.02,-0.10,0.15);}     // 流局：大牌路线更早止损
+      if(e.g%8===0){                                                    // 修炼等级：按战绩缓慢晋升/回落
+        const style=styleOfName(nm);const base=QXMG_LEVEL[style]!=null?QXMG_LEVEL[style]:0.8;
+        if(e.w/e.g>0.5)e.qxAdj=expClamp(e.qxAdj+0.02,-0.05,Math.max(0,1-base));
+        else if(e.w/e.g<0.35)e.qxAdj=expClamp(e.qxAdj-0.01,-0.05,Math.max(0,1-base));
+      }
+      if(e.g>30&&e.g%15===0)e.nsMul=expClamp(e.nsMul*0.92,0.5,1);      // 熟练度：越打越稳
+      all[nm]=e;
+    }
+    saveRoleExp(all);
+  }catch(e){}
+}
+// 修炼等级展示（排行榜/结算用）：基础+经验 → 百分比
+function qxCarePct(nm){
+  const style=styleOfName(nm);
+  const base=QXMG_LEVEL[style]!=null?QXMG_LEVEL[style]:0.8;
+  const e=getRoleExp(nm);
+  return Math.round(expClamp(base+(e.qxAdj||0),Math.min(base,0.5),1)*100);
+}
 function qxmgDeadMeldN(ah){ // 统计手牌中「进张存量≤1」的死搭数（两面/卡张按搭对去重；对子不计）
   // 牌理口径：按实牌进张判死搭（红中百搭补牌的价值已在精算层 canReachTenpai/validTingIds 覆盖，
   // 此处不重复计入红中存量，避免把百搭错当成本搭的专属进张）；只读牌墙不改动张数，112 张守恒
@@ -2551,6 +2614,8 @@ function masterDiscard(pl){
   const style=pl.style||'flexible';
   const mp=MASTER_PROFILE[style]||MASTER_PROFILE.flexible;
   const rk=RISK[style]||RISK.flexible;
+  const xp=expParams(pl);              // 经验学习：修炼等级随战绩晋升、噪声随局数收敛（越打越稳）
+  const mpNoise=mp.noise*xp.noiseMul;
   const d=handDiagnose(pl);
   // 大牌姿态：性格只调启动门槛（大牌偏好越高越早锁定），姿态达成后所有角色都可自主决断做大牌
   // bigHandStance 的 conserv 参数用 1-mp.big：偏好 0（保守型）→conserv 1→要求更高成型度才转大牌
@@ -2566,7 +2631,7 @@ function masterDiscard(pl){
     }
   }
   const seen={},cands=[];
-  const qxLv=QXMG_LEVEL[style]!=null?QXMG_LEVEL[style]:0.8;  // 雀学米高修炼等级（角色差异化）
+  const qxLv=xp.qxLv;                                          // 雀学米高修炼等级（基础 + 战绩晋升，上限 1.0）
   const dead0=qxmgDeadMeldN(pl.hand);                        // ① 死搭基准：打这张若消灭死搭→saved>0（止损要早）
   const totalDisc=G?G.players.reduce((s,x)=>s+x.discard.length,0):0; // 总弃牌数（④攻守时机/③中后期判据）
   for(const t of pl.hand){
@@ -2620,7 +2685,7 @@ function masterDiscard(pl){
       if(c.sh>shMin+rk.safeGap)fit=0; // 烂牌安全闸宽度按性格：激进/大牌/进修型慢3步也坚持，其余最多2步
     }
     // 姿态未达成时维持纯精算；达成后 fit*25 可压过最多 2 级向听差（100/级），即敢于为大牌拆搭
-    c.score=-c.sh*100+c.iw*2+c.dw*0.2+fit*25+Math.random()*mp.noise;
+    c.score=-c.sh*100+c.iw*2+c.dw*0.2+fit*25+Math.random()*mpNoise;
     // 2026-11-10 生张避让：对手越危险，未见过的生张惩罚越重（威胁×生张度，峰值近 1 级向听）；熟张安全奖励
     c.score-=foeThreat*1.4*((4-(ob.seen[c.id]||0))/4)*10;
     c.score+=(ob.seen[c.id]||0)*1.2;
@@ -2650,9 +2715,9 @@ function aiChooseDiscard(pl){
   // 新规则：手里≥2红中且未打出过，必须先主动打出一只红中
   if(blockedByZRule(pl))return pl.hand.find(t=>t.id==='Z');
   const style=pl.style||'flexible';
-  // 冒险大牌：牌型好且只有一只红中，按性格概率主动打掉、手里不留红中，走硬胡+翻倍
+  // 冒险大牌：牌型好且只有一只红中，按性格概率主动打掉、手里不留红中，走硬胡+翻倍（经验学习：打红中赢过加码、输过收敛）
   const dump=shouldDumpSingleZ(pl);
-  if(dump&&Math.random()<(DUMP_Z_RATE[style]!=null?DUMP_Z_RATE[style]:0.5))return pl.hand.find(t=>t.id==='Z');
+  if(dump&&Math.random()<expParams(pl).dumpZRate)return pl.hand.find(t=>t.id==='Z');
   // 2026-11-09 用户需求：大牌路线锁定——起手评估一次 + 中盘复评（2026-11-11 审计升级：原仅起手一次，
   // 100 局清一色 0 兑现——起手主色不足 10 张、中期摸进主色的局面错过锁定窗口；中盘前 5 巡内复评一次，门槛更严 11 张）
   if(pl._plan===undefined||(pl._plan===null&&pl.discard.length>=1&&pl.discard.length<=5&&pl.melds.length===0))pl._plan=evalHandPlan(pl,pl.discard.length>0);
@@ -2668,7 +2733,7 @@ function aiChooseDiscard(pl){
 const PLAN_RATE={conservative:0.1,steady:0.2,aggressive:0.35,grand:0.5,academic:0.25,learning:0.3,flexible:0.3};
 function evalHandPlan(pl,second){
   const style=pl.style||'flexible';
-  if(Math.random()>(PLAN_RATE[style]!=null?PLAN_RATE[style]:0.3))return null;
+  if(Math.random()>expParams(pl).planRate)return null; // 经验学习：赢过大牌更敢走、流局多则更早收
   const hand=pl.hand;
   if(!hand||hand.length<13||pl.melds.length>0)return null;
   const suits={W:0,T:0,B:0},cnt={};let zc=0;
@@ -2984,6 +3049,7 @@ function allHandsHTML(skipSeat){
   return h+'</div>';
 }
 function presentResult(r){return new Promise(res=>{
+  if(!r._expLearned){r._expLearned=true;try{learnFromRound(r);}catch(e){}} // 角色经验学习：每局成败写进档案（跨局持久）
   if(!r._cumAdded){addCum(r.d);r._cumAdded=true;pushHist(r);}
   if(!r._speechDone){r._speechDone=true;try{speakScore(r.pl?buildWinSpeechKeys(r):['host/liuju']);}catch(e){}}
   const isFinal=roundNum>=ROUND_MAX;
