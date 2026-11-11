@@ -196,7 +196,9 @@ try {
     const t = document.getElementById('rulesModal').textContent;
     const keys = ['112 张', '开局掷骰定庄', '为「东」', '以他为 1 数起', '谁赢谁坐庄', '红中可替代任意牌', '禁止胡牌',
       '不能吃牌', '只能自摸', '天胡', '地胡', '主动不胡', '抢杠胡', '七对', '碰碰胡', '清一色', '豪华七对', '杠上花', '单局封顶 50',
-      '100 个子', '8 局为一轮', '战绩', '100 起底', '四家摊牌', '资格作废', '连乘，单局仍封顶'];
+      '100 个子', '8 局为一轮', '战绩', '100 起底', '四家摊牌', '资格作废', '连乘，单局仍封顶',
+      '翻出红中同样算 1 个子', '1、5、9', // 2026-11-11 规则升级：翻码红中计 1 分
+      '碰后不补杠', '不允许再补杠']; // 2026-11-11 规则：手里3张+别家第4张只碰不杠 → 该碰牌禁止补杠
     const miss = keys.filter(k => !t.includes(k));
     // 100 子起底：重置后四家各 100
     const base = currentNames().every(nm => cumScore[nm] === 100);
@@ -207,7 +209,59 @@ try {
     return { ok: miss.length === 0 && base && bigWin && zGate, miss, base, bigWin, zGate };
   });
   assert('游戏规则弹窗与最新规则同步', rulesSync.ok,
-    rulesSync.ok ? '掷骰/坐庄/天胡地胡（含红中硬规则/封顶裁决）/红中/牌型/计分封顶/100子/轮次/战绩/摊牌条款齐全' : (rulesSync.miss.length ? '规则弹窗缺失：' + rulesSync.miss.join('、') : '基础分/天胡/红中闸逻辑异常'));
+    rulesSync.ok ? '掷骰/坐庄/天胡地胡（含红中硬规则/封顶裁决）/红中/牌型/计分封顶/100子/轮次/战绩/摊牌/翻码红中算分条款齐全' : (rulesSync.miss.length ? '规则弹窗缺失：' + rulesSync.miss.join('、') : '基础分/天胡/红中闸逻辑异常'));
+
+  // 2026-11-11 规则升级：赢牌翻码时红中同样算 1 个子（实现 + 弹窗显示同步）
+  const flipZ = await page.evaluate(() => {
+    try {
+      const n = p(0).hand.some(t => t.id === 'Z') ? 4 : 6;
+      const saved = [];
+      for (let k = 0; k < n; k++) {
+        const i = G.head + k; if (i > G.tail) break;
+        saved.push({ i, id: G.wall[i].id }); G.wall[i].id = 'Z';
+      }
+      const r = flipMa(p(0));
+      for (const s of saved) G.wall[s.i].id = s.id;   // 立即还原，不扰动后续断言
+      return { ok: saved.length > 0 && r.hit >= saved.length, hit: r.hit, placed: saved.length, n };
+    } catch (e) { return { ok: false, err: String(e) }; }
+  });
+  const flipShown = await page.evaluate(() => presentResult.toString().includes('1/5/9/红中'));
+  assert('翻码红中算 1 个子（规则升级：实现+结算显示）', flipZ.ok && flipShown,
+    `全置红中 ${flipZ.placed}/${flipZ.n} 张 → 中码 ${flipZ.hit} 分，结算显示含红中=${flipShown}`);
+
+  // 2026-11-11 规则：手里 3 张 + 别家打出第 4 张只碰不杠 → 该碰牌本局禁止补杠
+  const noBu = await page.evaluate(() => {
+    const pl = p(0);
+    const save = { hand: pl.hand.slice(), melds: pl.melds.slice(), gs: G.players.map(x => x.gangScore) };
+    const mk = (id, u) => ({ id, uid: u, suit: id[0], rank: id === 'Z' ? 0 : parseInt(id[1], 10) });
+    const filler = n => Array.from({ length: n }, (_, i) => mk(['T1', 'T4', 'B7', 'B9', 'W9', 'T6', 'B1', 'W2', 'T8', 'B5'][i % 10], 92000 + i));
+    const out = {};
+    try {
+      // A：手里 3 张 W5 时碰别人的第 4 张 → 标记 + 不给补杠选项 + 强行补杠也拦住
+      pl.hand = [mk('W5', 91001), mk('W5', 91002), mk('W5', 91003), ...filler(10)];
+      pl.melds = [];
+      doPeng(pl, 'W5');
+      out.marked = pl.melds[0].noBugang === true;
+      out.leftOne = pl.hand.filter(t => t.id === 'W5').length === 1;
+      out.excluded = !findBuGang(pl).includes('W5');
+      doGang(pl, 'bugang', 'W5');
+      out.stillPeng = pl.melds[0].type === 'peng' && pl.hand.filter(t => t.id === 'W5').length === 1;
+      // B：常规「手里 2 张碰、之后摸到第 4 张」仍然允许补杠
+      pl.hand = [mk('B3', 93001), mk('B3', 93002), ...filler(10)];
+      pl.melds = [];
+      doPeng(pl, 'B3');
+      pl.hand.push(mk('B3', 93099));
+      out.normalAllowed = findBuGang(pl).includes('B3');
+      doGang(pl, 'bugang', 'B3');
+      out.normalGanged = pl.melds[0].type === 'bugang';
+    } catch (e) { out.err = String(e); }
+    pl.hand = save.hand; pl.melds = save.melds;
+    G.players.forEach((x, i) => x.gangScore = save.gs[i]);
+    return out;
+  });
+  assert('碰后不补杠规则（3张只碰不杠→禁止补杠，常规碰补杠仍可用）',
+    !noBu.err && noBu.marked && noBu.leftOne && noBu.excluded && noBu.stillPeng && noBu.normalAllowed && noBu.normalGanged,
+    `标记=${noBu.marked} 剩1张=${noBu.leftOne} 排除=${noBu.excluded} 强杠被拦=${noBu.stillPeng} 常规可补=${noBu.normalAllowed}/${noBu.normalGanged}${noBu.err ? ' err=' + noBu.err : ''}`);
 
   // 语音包（彻底解决手机没人声）：108 条预生成台词 mp3 齐全 + 播放引擎工作
   const voiceFiles = [];

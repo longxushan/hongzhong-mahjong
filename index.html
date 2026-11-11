@@ -490,6 +490,7 @@
     <div class="ruleSec"><h4>四、碰牌与杠</h4><ol>
       <li>不能吃牌；可碰牌，不限次数，最多 4 组。</li>
       <li>杠分明杠（放杠）、暗杠、补杠（弯杠）；杠后从牌墙尾部补牌。</li>
+      <li><b>碰后不补杠（2026-11-11 规则）：</b>手里已有 3 张同牌、别家打出第 4 张时，若当时只<b>碰</b>而没有杠（明杠），这组碰牌此后本局<b>不允许再补杠</b>（下一巡起亦不许，系统不再给出补杠选项）；当时直接明杠则不受此限。常规「手里 2 张碰牌、之后自己摸到第 4 张」的补杠仍然允许。</li>
       <li>结算优先级：胡 &gt; 杠 &gt; 碰。</li>
     </ol></div>
     <div class="ruleSec"><h4>五、胡牌</h4><ol>
@@ -501,7 +502,7 @@
     </ol></div>
     <div class="ruleSec"><h4>六、计分</h4><ol>
       <li>基础分：自摸 3 分，有红中减 1，有碰或杠减 1（只减一次），最低 1 分。</li>
-      <li>翻码：在牌墙头部翻，只认 1、5、9，每张 1 分；软胡（有红中）翻 4 张不保底 0～4；硬胡（无红中）翻 6 张，0 张保底 6 分。</li>
+      <li>翻码：在牌墙头部翻，只认 1、5、9 <b>以及红中</b>，每张 1 分（2026-11-11 升级：翻出红中同样算 1 个子）；软胡（有红中）翻 4 张不保底 0～4；硬胡（无红中）翻 6 张，0 张保底 6 分。</li>
       <li>小计 = 基础分 + 翻码。</li>
       <li>番型连乘：天胡×4、地胡×2、全碰×4、七对×2（其中 4 张一样的豪华七对×4）、清一色×2、杠上花×2、红中 2 的 n 次方（全碰与七对互斥）。起手无碰杠时基数即为有红中 2 子、无红中 3 子。</li>
       <li>单局封顶 50 分。</li>
@@ -540,11 +541,12 @@
     <div class="ruleSec"><h4>二、核心账：红中怎么用最值钱</h4>
       <table>
         <tr><th>胡法</th><th>基础分</th><th>翻码期望</th><th>小计</th><th>红中倍数</th><th>期望总分</th></tr>
-        <tr><td>软胡（手里留 1 红）</td><td>2</td><td>≈1.3</td><td>≈3.3</td><td>×1</td><td class="tipKey">≈3 分</td></tr>
-        <tr><td>硬胡（打出 1 红）</td><td>3</td><td>≈2.5</td><td>≈5.5</td><td>×2</td><td class="tipKey">≈11 分</td></tr>
-        <tr><td>硬胡（打出 2 红）</td><td>3</td><td>≈2.5</td><td>≈5.5</td><td>×4</td><td class="tipKey">≈22 分</td></tr>
-        <tr><td>硬胡（打出 3 红）</td><td>3</td><td>≈2.5</td><td>≈5.5</td><td>×8</td><td class="tipKey">≈44 分</td></tr>
+        <tr><td>软胡（手里留 1 红）</td><td>2</td><td>≈1.4</td><td>≈3.4</td><td>×1</td><td class="tipKey">≈3 分</td></tr>
+        <tr><td>硬胡（打出 1 红）</td><td>3</td><td>≈2.6</td><td>≈5.6</td><td>×2</td><td class="tipKey">≈11 分</td></tr>
+        <tr><td>硬胡（打出 2 红）</td><td>3</td><td>≈2.6</td><td>≈5.6</td><td>×4</td><td class="tipKey">≈22 分</td></tr>
+        <tr><td>硬胡（打出 3 红）</td><td>3</td><td>≈2.6</td><td>≈5.6</td><td>×8</td><td class="tipKey">≈45 分</td></tr>
       </table>
+      <p style="font-size:11.5px;color:#9bb8ab;margin:6px 0">中码口径（2026-11-11 升级）：1 / 5 / 9 <b>加红中</b>，全副 40 张；翻出红中同样算 1 个子。硬胡 6 张 0 中保底 6 分不变。下表期望按此口径估算。</p>
       <ol>
         <li>每多打出一只红中，得分近乎翻倍；留红中换来的只是快 1～2 轮，打出来换来的是 <span class="tipKey">3～7 倍的分值</span>。</li>
         <li>起手 ≥2 只红中：反正被硬规则锁胡（必须先打一只），第一只照打不误；牌型支持就继续打第二只，冲硬胡 ×4。</li>
@@ -574,6 +576,7 @@
       <li>明杠（放杠）：不破坏牌型就杠（+2），顺手收钱。</li>
       <li>补杠：+3 的甜头，-150 的尾部风险。前期、中盘放心补；<span class="tipWarn">残局（牌墙 &lt;15）或对手有明显听牌迹象：忍住不补</span>——抢杠由你一人独扛全部赔付。</li>
       <li>危险信号：对手<b>打过红中</b>（说明手上大概率无红、有抢杠资格）+ 开始跟打熟张（听牌标志）→ 此时补杠高危。</li>
+      <li><b>碰后不补杠（新规则）：</b>手里已有 3 张同牌、别家打出第 4 张时，若选择「碰」而不是「明杠」，这组碰牌本局<b>再也不能补杠</b>（下一巡起也不行）。4 张已全见，唯一的补杠机会就是手里剩的那张——所以这一刻要杠就当场杠，想留给以后是没有的；常规「2 张碰、之后自己摸到第 4 张」的补杠不受影响。</li>
       <li>反过来，你自己手里无红中时，盯紧别人的补杠提示，能抢就抢（硬胡路线的你天然有抢杠资格）。</li>
     </ol></div>
     <div class="ruleSec"><h4>五、听牌与节奏</h4><ol>
@@ -2351,11 +2354,12 @@ function discardTile(pl,t){pl.hand=pl.hand.filter(x=>x.uid!==t.uid);pl.discard.p
 function canPeng(pl,id){return id!=='Z'&&pl.hand.filter(t=>t.id===id).length>=2;}
 function canMingGang(pl,id){return id!=='Z'&&pl.hand.filter(t=>t.id===id).length>=3;}
 function findAnGang(pl){return pl.hand.filter(t=>t.id!=='Z'&&pl.hand.filter(x=>x.id===t.id).length===4).filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i);}
-function findBuGang(pl){const o=[];for(const m of pl.melds)if(m.type==='peng'&&pl.hand.some(t=>t.id===m.base))o.push(m.base);return o;}
-function doPeng(pl,id){const t=[];for(let k=0;k<2;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}pl.melds.push({type:'peng',base:id,tiles:t});sndPeng();flashPlayer(pl);vpSayAction(pl,'peng');scheduleTeachRefresh();}
-function doGang(pl,kind,id){sndGang();const t=[];if(kind==='angang'){for(let k=0;k<4;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}pl.melds.push({type:'angang',base:id,tiles:t});settleGang(pl.seat,'angang');}
+function findBuGang(pl){const o=[];for(const m of pl.melds)if(m.type==='peng'&&!m.noBugang&&pl.hand.some(t=>t.id===m.base))o.push(m.base);return o;}
+// 手里已有 3 张同牌、别家打出第 4 张时只碰不杠 → 该碰牌本局禁止补杠（碰后不补杠规则）
+function doPeng(pl,id){const held=pl.hand.filter(x=>x.id===id).length;const t=[];for(let k=0;k<2;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}const m={type:'peng',base:id,tiles:t};if(held>=3)m.noBugang=true;pl.melds.push(m);sndPeng();flashPlayer(pl);vpSayAction(pl,'peng');scheduleTeachRefresh();}
+function doGang(pl,kind,id){if(kind==='bugang'&&!pl.melds.some(m=>m.type==='peng'&&m.base===id&&!m.noBugang))return;sndGang();const t=[];if(kind==='angang'){for(let k=0;k<4;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}pl.melds.push({type:'angang',base:id,tiles:t});settleGang(pl.seat,'angang');}
   else if(kind==='minggang'){for(let k=0;k<3;k++){const i=pl.hand.findIndex(x=>x.id===id);t.push(pl.hand.splice(i,1)[0]);}pl.melds.push({type:'minggang',base:id,tiles:t});}
-  else{const m=pl.melds.find(x=>x.base===id&&x.type==='peng');const i=pl.hand.findIndex(x=>x.id===id);m.tiles.push(pl.hand.splice(i,1)[0]);m.type='bugang';settleGang(pl.seat,'bugang');}
+  else{const m=pl.melds.find(x=>x.base===id&&x.type==='peng'&&!x.noBugang);if(!m)return;const i=pl.hand.findIndex(x=>x.id===id);m.tiles.push(pl.hand.splice(i,1)[0]);m.type='bugang';settleGang(pl.seat,'bugang');}
   flashPlayer(pl);
   vpSayAction(pl,kind==='angang'?'angang':kind==='minggang'?'gang':'bugang');
   scheduleTeachRefresh();
@@ -3068,7 +3072,7 @@ async function claimsAfterDiscard(from,id){if(id==='Z')return null;const o=[];fo
   for(const i of o){const pl=p(i);if(canMingGang(pl,id)){let ok=false;if(pl.human&&!pl.auto){const r=await waitHuman('claim',{id});ok=r&&r.kind==='gang';}else ok=aiWantClaim(pl,id,'gang');if(ok)return{seat:i,kind:'gang'};}}
   for(const i of o){const pl=p(i);if(canPeng(pl,id)){let ok=false;if(pl.human&&!pl.auto){const r=await waitHuman('claim',{id});ok=r&&r.kind==='peng';}else ok=aiWantClaim(pl,id,'peng');if(ok)return{seat:i,kind:'peng'};}}return null;}
 
-function flipMa(pl){const hasZ=pl.hand.some(t=>t.id==='Z');const n=hasZ?4:6;const t=[];for(let k=0;k<n&&G.head+k<G.tail;k++)t.push(G.wall[G.head+k]);let hit=0;for(const x of t)if(x.rank===1||x.rank===5||x.rank===9)hit++;if(!hasZ&&hit===0)hit=6;return{tiles:t,hit,hasZ};}
+function flipMa(pl){const hasZ=pl.hand.some(t=>t.id==='Z');const n=hasZ?4:6;const t=[];for(let k=0;k<n&&G.head+k<G.tail;k++)t.push(G.wall[G.head+k]);let hit=0;for(const x of t)if(x.id==='Z'||x.rank===1||x.rank===5||x.rank===9)hit++;if(!hasZ&&hit===0)hit=6;return{tiles:t,hit,hasZ};}
 // 基于赢家真实副露、红中、花色、牌型与胡牌方式，生成“做牌思路”逐条讲解（界面完整版）
 function buildWinPlan(pl,w,how){
   const lines=[];
@@ -3204,7 +3208,7 @@ function presentResult(r){return new Promise(res=>{
   const isFinal=roundNum>=ROUND_MAX;
   const mk=document.createElement('div');mk.className='mask';let h='<div class="modal"><h3>'+(isFinal?'本轮最终结算榜单（第'+ROUND_MAX+'/'+ROUND_MAX+'局）':r.title)+'</h3>';
   if(r.pl){h+='<div class="row"><span>胡牌者</span><span>'+r.pl.name+'</span></div><div class="row"><span>胡牌牌型</span><span>'+((r.handTypes&&r.handTypes.length)?r.handTypes.join('、'):'基本胡牌')+'</span></div><div class="row"><span>赢家整副牌</span><span class="wtInline">手牌+副露如下</span></div>'+winnerWholeTiles(r.pl)+(r.winPlan&&r.winPlan.length?'<div class="winPlanFold" id="wpFold"><div class="winPlanHead" id="wpFoldBtn">▸ 师傅讲解 · 他的做牌思路（点击'+(document.documentElement.classList.contains('large')?'收起':'展开')+'）</div><div class="winPlan">'+r.winPlan.map(x=>'<p>'+x+'</p>').join('')+'</div></div>':'')+'<div class="row"><span>基础分</span><span>'+r.base+'</span></div>';
-    if(r.ma){h+='<div class="codeTiles">'+r.ma.tiles.map(t=>tileDiv(t,true)).join('')+'</div><div class="row"><span>翻码'+(r.ma.hasZ?'4张':'6张')+'（1/5/9）</span><span>'+r.ma.hit+'分</span></div>';}
+    if(r.ma){h+='<div class="codeTiles">'+r.ma.tiles.map(t=>tileDiv(t,true)).join('')+'</div><div class="row"><span>翻码'+(r.ma.hasZ?'4张':'6张')+'（1/5/9/红中）</span><span>'+r.ma.hit+'分</span></div>';}
     for(const f of r.fs)h+='<div class="row"><span>'+f.n+'</span><span>×'+f.v+'</span></div>';if(r.cap)h+='<div class="row"><span>超出封顶</span><span>按50分</span></div>';
     h+='<div class="row"><span>本局胡牌得分</span><span class="plus">'+r.total+'</span></div>';}
   h+='<h3 style="margin-top:14px">各家总账（含杠分）</h3><div class="netGrid">';for(const x of r.d){const c=x.net>0?'plus':x.net<0?'minus':'';h+='<div class="row"><span>'+p(x.seat).name+'</span><span class="'+c+'">'+(x.net>0?'+':'')+x.net+'（杠'+(x.gang>0?'+':'')+x.gang+'）</span></div>';}h+='</div>';
