@@ -61,14 +61,14 @@ def parse_stance_say():
     return out
 
 def parse_chat_say():
-    """从 index.html 解析 CHAT_SAY 七风格×六情境闲聊台词（数组），防文本漂移"""
+    """从 index.html 解析 CHAT_SAY 七风格×七情境闲聊台词（含 masterqx 大师心法），防文本漂移"""
     html = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
     m = re.search(r'const CHAT_SAY=\{(.*?)\n\};', html, re.S)
     if not m: sys.exit('未找到 CHAT_SAY')
     out = {}
     for style, inner in re.findall(r"(\w+):\{(.*?)\}", m.group(1)):
         ev = {}
-        for k, arr in re.findall(r"(good|bad|peng|lost|ting|low|guard):\[([^\]]*)\]", inner):
+        for k, arr in re.findall(r"(good|bad|peng|lost|ting|low|guard|masterqx):\[([^\]]*)\]", inner):
             lines = re.findall(r"'([^']*)'", arr)
             if lines: ev[k] = lines
         if ev: out[style] = ev

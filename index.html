@@ -1315,16 +1315,18 @@ function vpSayStance(pl,kind){
   vpPlay(['role/'+i+'/'+kind]);
 }
 // ===== 牌桌闲聊（2026-11-09 用户需求：打牌过程中每人说话/弹字幕表达感想，牌局更有意思）=====
-// 七风格 × 六情境各两句：good=摸到好牌/进张 bad=摸到废牌/久无进展 peng=自己碰杠成功
-// lost=打出的牌被人碰走 ting=刚听牌 low=牌墙快见底；台词与 gen-voice.py 同源（从本表解析生成语音）
+// 七风格 × 七情境各两句：good=摸到好牌/进张 bad=摸到废牌/久无进展 peng=自己碰杠成功
+// lost=打出的牌被人碰走 ting=刚听牌 low=牌墙快见底 guard=转防守
+// masterqx=2026-11-11 双大师心法（雀学米高/郑太顺牌技升级后，AI 拆死搭时冒的技巧口径）
+// 台词与 gen-voice.py 同源（从本表解析生成语音）
 const CHAT_SAY={
-  conservative:{good:['这张摸得踏实。','又进一步，稳。'],bad:['急不得，慢慢来。','沉住气，不慌。'],peng:['碰了这口，落袋为安。','这刻子稳了。'],lost:['被他碰走了，无妨。','下轮舍牌谨慎些。'],ting:['听牌了，守着打。','听上了，求稳。'],low:['牌墙不多了，稳字当头。','尾盘了，一步一算。'],guard:['风向不对，先守两巡。','避他一手，不打生张。']},
-  steady:{good:['这牌来得顺。','这张顶用。'],bad:['不来就不来，不急。','又摸张闲牌。'],peng:['碰一口，牌型顺了。','这碰得值。'],lost:['哎，好牌喂人了。','这张喂得心疼。'],ting:['听牌了，就等它来。','成了，稳稳等胡。'],low:['墙快见底，见机行事。','尾盘别放炮。'],guard:['他牌紧了，我改打熟张。','先安全，再图进张。']},
-  aggressive:{good:['来了！好牌！','哈哈，天助我也！'],bad:['什么破牌！','又摸废牌，气人！'],peng:['碰！就是这么快！','这口必须碰！'],lost:['我的牌也敢碰？！','好牌全喂人了！'],ting:['听牌了，给我来！','就差一张，冲！'],low:['牌不多了，拼一把！','尾盘直接刚！'],guard:['想跑赢我？先截他一口！','他紧他的，我抢我的！']},
-  grand:{good:['好牌！大胡有指望！','此牌有福相！'],bad:['命数未到，再等等。','唉，劫数啊。'],peng:['福到！这口碰得妙！','又近大胡一步！'],lost:['此牌与我无缘呐。','福牌喂了旁人。'],ting:['大胡在望，就差一张！','天机已现！'],low:['成败在此一搏！','尾局了，豪一把！'],guard:['此乃劫数，避其锋芒。','忍一时，待天时。']},
-  academic:{good:['进张概率显著提升。','此牌效率很高。'],bad:['这张期望值为负。','摸牌效率偏低。'],peng:['碰牌使向听下降，正确。','这口符合最优解。'],lost:['舍牌被碰，重新计算。','牌墙信息已更新。'],ting:['已到听牌，等待进张。','听牌确认，张数可观。'],low:['余牌不足，风险上升。','尾盘误差容忍度低。'],guard:['对手威胁度上升，切换防守。','信息更新：舍牌转向安全牌。']},
-  learning:{good:['好牌！学以致用！','这摸牌有讲究。'],bad:['摸到难题了。','这张够呛，慢慢琢磨。'],peng:['碰得好，又学一招！','这口碰得有心得。'],lost:['牌被拿走了，记下来。','这一手要复盘。'],ting:['听牌了，成果在望！','学有所成，就等胡！'],low:['最后一搏，检验成果。','尾声了，稳住。'],guard:['学到了：牌紧要守！','观察他三巡了，我改打法。']},
-  flexible:{good:['哟，来牌了！','这牌妙啊。'],bad:['摸了张寂寞。','这张嘛……先看看。'],peng:['碰！变化来了！','这口碰得灵活。'],lost:['得，牌飞了。','又喂牌了。'],ting:['听牌！有戏！','成了成了，等胡！'],low:['牌不多了，走着瞧。','尾盘随机应变。'],guard:['先躲一巡再说。','形势变了，我也变。']}
+  conservative:{good:['这张摸得踏实。','又进一步，稳。'],bad:['急不得，慢慢来。','沉住气，不慌。'],peng:['碰了这口，落袋为安。','这刻子稳了。'],lost:['被他碰走了，无妨。','下轮舍牌谨慎些。'],ting:['听牌了，守着打。','听上了，求稳。'],low:['牌墙不多了，稳字当头。','尾盘了，一步一算。'],guard:['风向不对，先守两巡。','避他一手，不打生张。'],masterqx:['死搭每巡吃净值，早拆早安心。','对子攒了四对，这手不能乱拆。']},
+  steady:{good:['这牌来得顺。','这张顶用。'],bad:['不来就不来，不急。','又摸张闲牌。'],peng:['碰一口，牌型顺了。','这碰得值。'],lost:['哎，好牌喂人了。','这张喂得心疼。'],ting:['听牌了，就等它来。','成了，稳稳等胡。'],low:['墙快见底，见机行事。','尾盘别放炮。'],guard:['他牌紧了，我改打熟张。','先安全，再图进张。'],masterqx:['死搭止损，这一打净值最正。','进张存量小的搭子先放。']},
+  aggressive:{good:['来了！好牌！','哈哈，天助我也！'],bad:['什么破牌！','又摸废牌，气人！'],peng:['碰！就是这么快！','这口必须碰！'],lost:['我的牌也敢碰？！','好牌全喂人了！'],ting:['听牌了，给我来！','就差一张，冲！'],low:['牌不多了，拼一把！','尾盘直接刚！'],guard:['想跑赢我？先截他一口！','他紧他的，我抢我的！'],masterqx:['等什么？死搭现在就拆！','这搭子没存量了，拆！']},
+  grand:{good:['好牌！大胡有指望！','此牌有福相！'],bad:['命数未到，再等等。','唉，劫数啊。'],peng:['福到！这口碰得妙！','又近大胡一步！'],lost:['此牌与我无缘呐。','福牌喂了旁人。'],ting:['大胡在望，就差一张！','天机已现！'],low:['成败在此一搏！','尾局了，豪一把！'],guard:['此乃劫数，避其锋芒。','忍一时，待天时。'],masterqx:['死搭留着过年？拆！','大牌要算总账，亏本搭子不留。']},
+  academic:{good:['进张概率显著提升。','此牌效率很高。'],bad:['这张期望值为负。','摸牌效率偏低。'],peng:['碰牌使向听下降，正确。','这口符合最优解。'],lost:['舍牌被碰，重新计算。','牌墙信息已更新。'],ting:['已到听牌，等待进张。','听牌确认，张数可观。'],low:['余牌不足，风险上升。','尾盘误差容忍度低。'],guard:['对手威胁度上升，切换防守。','信息更新：舍牌转向安全牌。'],masterqx:['死搭净值为负，执行止损。','机会成本核算完毕，先拆搭。']},
+  learning:{good:['好牌！学以致用！','这摸牌有讲究。'],bad:['摸到难题了。','这张够呛，慢慢琢磨。'],peng:['碰得好，又学一招！','这口碰得有心得。'],lost:['牌被拿走了，记下来。','这一手要复盘。'],ting:['听牌了，成果在望！','学有所成，就等胡！'],low:['最后一搏，检验成果。','尾声了，稳住。'],guard:['学到了：牌紧要守！','观察他三巡了，我改打法。'],masterqx:['记住：死搭要早拆！','这叫机会成本，学着点。']},
+  flexible:{good:['哟，来牌了！','这牌妙啊。'],bad:['摸了张寂寞。','这张嘛……先看看。'],peng:['碰！变化来了！','这口碰得灵活。'],lost:['得，牌飞了。','又喂牌了。'],ting:['听牌！有戏！','成了成了，等胡！'],low:['牌不多了，走着瞧。','尾盘随机应变。'],guard:['先躲一巡再说。','形势变了，我也变。'],masterqx:['这搭子没指望，先拆。','划算就拆，不亏。']}
 };
 // 闲聊气泡：绝对定位悬浮于 #table 牌桌上、按座位头像锚定（布局坐标不受旋转/窄列影响），约 2.6 秒后淡出
 function chatBubble(seat,text){
@@ -2471,6 +2473,38 @@ function ztsClaimGate(pl,id,after,before){ // ⑤ 碰牌五不碰（郑太顺高
   if(pl.melds.length>=3&&after>=before)return false; // 防守碰原则：第 4 副露后手牌过短，仅确定进听才碰
   return true;
 }
+// ===== 雀学米高技巧层（2026-11-11 用户需求：AI 角色牌技升级——《雀学米高结构麻将》六篇二十九节精华算法化，与郑太顺层互补）=====
+// ①死搭止损：进张存量≤1 的死搭/边搭每巡都在吃净值，等向听等进张时优先拆除（止损要早）
+// ②机会成本：对子≥4 时拆对=放弃七对路线的一份价值，对子越多扣得越重（不到决断时不弃进攻价值）
+// ③大牌小牌期望值：中后期向听仍 ≥2 时，大牌姿态补贴衰减——番率补不上更低的胡牌概率，稳定正期望优先
+// ④攻守时机：开局阶段（总弃牌<16）防守门槛抬高（防守的选择权始终都在，过早丢掉的进攻价值无法挽回）
+// 角色修炼等级（AI 并非人人满级，体现「学艺有先后」）：进修型/豪腕型吃全套；激进型进攻面强；
+// 沉稳/灵活型中等；保守型偏防守口诀；学习型只吃一半（成长线，留进步空间）
+const QXMG_LEVEL={conservative:0.65,steady:0.75,aggressive:0.9,grand:1.0,academic:1.0,learning:0.55,flexible:0.8};
+function qxmgDeadMeldN(ah){ // 统计手牌中「进张存量≤1」的死搭数（两面/卡张按搭对去重；对子不计）
+  // 牌理口径：按实牌进张判死搭（红中百搭补牌的价值已在精算层 canReachTenpai/validTingIds 覆盖，
+  // 此处不重复计入红中存量，避免把百搭错当成本搭的专属进张）；只读牌墙不改动张数，112 张守恒
+  // 性能：开局建 27 项进张存量缓存表，搭对循环内查表，避免每对重复遍历整面牌墙
+  let n=0;const done={};
+  const rem={};
+  for(const s of CFG.suits)for(let r=1;r<=9;r++)rem[s+r]=tileRemaining(s+r);
+  const stockOf=id=>rem[id]||0;
+  for(let i=0;i<ah.length;i++)for(let j=i+1;j<ah.length;j++){
+    const a=ah[i],b=ah[j];
+    if(a.id==='Z'||b.id==='Z'||a.id===b.id||a.id[0]!==b.id[0])continue;
+    const key=a.id<b.id?a.id+'|'+b.id:b.id+'|'+a.id;if(done[key])continue;done[key]=1;
+    const ra=parseInt(a.id[1],10),rb=parseInt(b.id[1],10),diff=Math.abs(rb-ra);
+    if(diff===1){ // 两面搭：进张存量合计≤1 判死搭
+      const lo=Math.min(ra,rb),hi=Math.max(ra,rb);let stock=0;
+      if(lo-1>=1)stock+=stockOf(a.id[0]+(lo-1));
+      if(hi+1<=9)stock+=stockOf(a.id[0]+(hi+1));
+      if(stock<=1)n++;
+    }else if(diff===2){ // 卡张搭：中间张存量≤1 判死搭
+      if(stockOf(a.id[0]+(Math.min(ra,rb)+1))<=1)n++;
+    }
+  }
+  return n;
+}
 function masterDiscard(pl){
   const style=pl.style||'flexible';
   const mp=MASTER_PROFILE[style]||MASTER_PROFILE.flexible;
@@ -2490,6 +2524,9 @@ function masterDiscard(pl){
     }
   }
   const seen={},cands=[];
+  const qxLv=QXMG_LEVEL[style]!=null?QXMG_LEVEL[style]:0.8;  // 雀学米高修炼等级（角色差异化）
+  const dead0=qxmgDeadMeldN(pl.hand);                        // ① 死搭基准：打这张若消灭死搭→saved>0（止损要早）
+  const totalDisc=G?G.players.reduce((s,x)=>s+x.discard.length,0):0; // 总弃牌数（④攻守时机/③中后期判据）
   for(const t of pl.hand){
     if(seen[t.id]||t.id==='Z')continue;seen[t.id]=1; // 红中由打红中专门逻辑处理，高手不轻易打
     const ah=pl.hand.filter(x=>x.uid!==t.uid);
@@ -2503,7 +2540,7 @@ function masterDiscard(pl){
       let ok;try{ok=canReachTenpai(trial,pl.melds);}catch(e){ok=false;}
       if(ok)dw+=rem;
     }
-    cands.push({id:t.id,sh,iw,dw});
+    cands.push({id:t.id,sh,iw,dw,saved:dead0-qxmgDeadMeldN(ah)}); // saved=打此牌消灭的死搭数
   }
   if(!cands.length)return null;
   let shMin=99;for(const c of cands)shMin=Math.min(shMin,c.sh);
@@ -2512,7 +2549,9 @@ function masterDiscard(pl){
   const zts=ztsDanger(pl); // 郑太顺技巧层：同线猜牌/反常对/中后期 1-9 预警的危险牌与跟线半熟表
   const foeThreat=Math.max(0,...ob.threat.filter((v,i)=>i!==pl.seat));
   const mySh=calcShanten(pl.hand,pl.melds);
-  const defending=foeThreat>=5&&mySh>=2;
+  // 2026-11-11 雀学米高④攻守时机：开局阶段（弃牌<16）威胁未爆表（<7）时维持进攻——
+  // 防守的选择权始终都在，过早丢掉的进攻价值（机会成本）无法挽回
+  const defending=foeThreat>=5&&mySh>=2&&!(totalDisc<16&&foeThreat<7);
   if(defending){
     // 防守模式：只打最熟张（全场可见数最多，向听损害同权作 tie-break）；红中仍不轻打
     let bestT=null,bestKey=-99;
@@ -2535,6 +2574,7 @@ function masterDiscard(pl){
     let fit=0;
     if(stance){
       fit=stanceFit(stance,c.id,d);
+      if(totalDisc>=40&&mySh>=2)fit*=0.55; // 雀学米高③大牌小牌期望：中后期向听仍远，大牌补贴衰减（番率补不上概率损失）
       if(c.sh>shMin+rk.safeGap)fit=0; // 烂牌安全闸宽度按性格：激进/大牌/进修型慢3步也坚持，其余最多2步
     }
     // 姿态未达成时维持纯精算；达成后 fit*25 可压过最多 2 级向听差（100/级），即敢于为大牌拆搭
@@ -2546,8 +2586,15 @@ function masterDiscard(pl){
     c.score+=ztsKeepBonus(c.id);
     c.score-=Math.min(6,zts.danger[c.id]||0)*6;
     c.score+=Math.min(3,zts.half[c.id]||0)*1.0;
+    // 2026-11-11 雀学米高技巧层（按修炼等级加权，等精算 tie-break 级）：
+    const sameN=pl.hand.filter(x=>x.id===c.id).length;
+    c.score+=(c.saved||0)*4.5*qxLv;                                   // ①死搭止损：这一打消灭的死搭数
+    if(sameN>=2&&d.pairCount>=4)c.score-=(d.pairCount-3)*9*qxLv;      // ②机会成本：对子≥4 拆对=弃七对潜势
   }
   cands.sort((a,b)=>b.score-a.score);
+  if(!pl.human&&cands[0].saved>0){ // ①触发心法台词：拆死搭时低概率冒一句大师口径（气泡必出，语音缺文件自动跳过）
+    try{if(Math.random()<0.3)chatMaybe(pl.seat,'masterqx',0.9);}catch(e){}
+  }
   return pl.hand.find(t=>t.id===cands[0].id);
 }
 function aiChooseDiscard(pl){
