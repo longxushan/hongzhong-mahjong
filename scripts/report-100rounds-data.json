@@ -1,0 +1,4129 @@
+{
+ "rounds": [
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [
+    "七对"
+   ],
+   "fs": [
+    {
+     "n": "七对",
+     "v": 2
+    },
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 8,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 1,
+     "hu": 24,
+     "pay": 0,
+     "gang": 0,
+     "net": 24
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 1,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -1,
+     "gang": 0,
+     "net": -1
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -1,
+     "gang": 0,
+     "net": -1
+    },
+    {
+     "seat": 2,
+     "hu": 3,
+     "pay": 0,
+     "gang": 0,
+     "net": 3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -1,
+     "gang": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 1,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "liuju",
+   "winner": null,
+   "winnerName": null,
+   "handTypes": [],
+   "fs": [],
+   "total": 0,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": 0,
+     "gang": -2,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": 0,
+     "gang": 2,
+     "net": 2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 1,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -1,
+     "gang": -2,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -1,
+     "gang": -2,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 3,
+     "pay": 0,
+     "gang": -2,
+     "net": 1
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -1,
+     "gang": 6,
+     "net": 5
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [
+    "七对"
+   ],
+   "fs": [
+    {
+     "n": "七对",
+     "v": 2
+    }
+   ],
+   "total": 8,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 1,
+     "hu": 24,
+     "pay": 0,
+     "gang": 0,
+     "net": 24
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [
+    "全碰(碰碰胡)"
+   ],
+   "fs": [
+    {
+     "n": "全碰(碰碰胡)",
+     "v": 4
+    }
+   ],
+   "total": 12,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -12,
+     "gang": 0,
+     "net": -12
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -12,
+     "gang": 0,
+     "net": -12
+    },
+    {
+     "seat": 2,
+     "hu": 36,
+     "pay": 0,
+     "gang": 0,
+     "net": 36
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -12,
+     "gang": 0,
+     "net": -12
+    }
+   ]
+  },
+  {
+   "how": "liuju",
+   "winner": null,
+   "winnerName": null,
+   "handTypes": [],
+   "fs": [],
+   "total": 0,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": 0,
+     "gang": -2,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": 0,
+     "gang": 2,
+     "net": 2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 7,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -7,
+     "gang": 0,
+     "net": -7
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -7,
+     "gang": 0,
+     "net": -7
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -7,
+     "gang": 0,
+     "net": -7
+    },
+    {
+     "seat": 3,
+     "hu": 21,
+     "pay": 0,
+     "gang": 0,
+     "net": 21
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 18,
+     "pay": 0,
+     "gang": 2,
+     "net": 20
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": -2,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 5,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 3,
+     "hu": 15,
+     "pay": 0,
+     "gang": 0,
+     "net": 15
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": -2,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 12,
+     "pay": 0,
+     "gang": 2,
+     "net": 14
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "liuju",
+   "winner": null,
+   "winnerName": null,
+   "handTypes": [],
+   "fs": [],
+   "total": 0,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": 0,
+     "gang": -2,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": 0,
+     "gang": 4,
+     "net": 4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": 0,
+     "gang": -2,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "liuju",
+   "winner": null,
+   "winnerName": null,
+   "handTypes": [],
+   "fs": [],
+   "total": 0,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    }
+   ]
+  },
+  {
+   "how": "ganghua",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [
+    "杠上开花"
+   ],
+   "fs": [
+    {
+     "n": "杠上开花",
+     "v": 2
+    }
+   ],
+   "total": 12,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -12,
+     "gang": -4,
+     "net": -16
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -12,
+     "gang": 0,
+     "net": -12
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -12,
+     "gang": 2,
+     "net": -10
+    },
+    {
+     "seat": 3,
+     "hu": 36,
+     "pay": 0,
+     "gang": 2,
+     "net": 38
+    }
+   ]
+  },
+  {
+   "how": "ganghua",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [
+    "杠上开花"
+   ],
+   "fs": [
+    {
+     "n": "杠上开花",
+     "v": 2
+    },
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 8,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -8,
+     "gang": -2,
+     "net": -10
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -8,
+     "gang": -2,
+     "net": -10
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -8,
+     "gang": -2,
+     "net": -10
+    },
+    {
+     "seat": 3,
+     "hu": 24,
+     "pay": 0,
+     "gang": 6,
+     "net": 30
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": -1,
+     "net": -5
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 1,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 3,
+     "net": -1
+    },
+    {
+     "seat": 3,
+     "hu": 12,
+     "pay": 0,
+     "gang": -3,
+     "net": 9
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 9,
+     "pay": 0,
+     "gang": 2,
+     "net": 11
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": -2,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 2,
+     "net": -1
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 9,
+     "pay": 0,
+     "gang": -2,
+     "net": 7
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [
+    "七对"
+   ],
+   "fs": [
+    {
+     "n": "七对",
+     "v": 2
+    },
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 16,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 48,
+     "pay": 0,
+     "gang": 0,
+     "net": 48
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -16,
+     "gang": 0,
+     "net": -16
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -16,
+     "gang": 0,
+     "net": -16
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -16,
+     "gang": 0,
+     "net": -16
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "liuju",
+   "winner": null,
+   "winnerName": null,
+   "handTypes": [],
+   "fs": [],
+   "total": 0,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 1,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -1,
+     "gang": -1,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 3,
+     "pay": 0,
+     "gang": -1,
+     "net": 2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -1,
+     "gang": -1,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -1,
+     "gang": 3,
+     "net": 2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [
+    "七对"
+   ],
+   "fs": [
+    {
+     "n": "七对",
+     "v": 2
+    },
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 20,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -20,
+     "gang": 0,
+     "net": -20
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -20,
+     "gang": 0,
+     "net": -20
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -20,
+     "gang": 0,
+     "net": -20
+    },
+    {
+     "seat": 3,
+     "hu": 60,
+     "pay": 0,
+     "gang": 0,
+     "net": 60
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 5,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 15,
+     "pay": 0,
+     "gang": 0,
+     "net": 15
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": -2,
+     "net": -8
+    },
+    {
+     "seat": 2,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 2,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 8,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 2,
+     "hu": 24,
+     "pay": 0,
+     "gang": 0,
+     "net": 24
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 10,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 30,
+     "pay": 0,
+     "gang": 0,
+     "net": 30
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -10,
+     "gang": 0,
+     "net": -10
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -10,
+     "gang": 0,
+     "net": -10
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -10,
+     "gang": 0,
+     "net": -10
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 1,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "ganghua",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [
+    "杠上开花"
+   ],
+   "fs": [
+    {
+     "n": "杠上开花",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": -2,
+     "net": -8
+    },
+    {
+     "seat": 3,
+     "hu": 18,
+     "pay": 0,
+     "gang": 2,
+     "net": 20
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 10,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -10,
+     "gang": -1,
+     "net": -11
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -10,
+     "gang": -1,
+     "net": -11
+    },
+    {
+     "seat": 2,
+     "hu": 30,
+     "pay": 0,
+     "gang": -1,
+     "net": 29
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -10,
+     "gang": 3,
+     "net": -7
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 1,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": -2,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 6,
+     "pay": 0,
+     "gang": 2,
+     "net": 8
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": -1,
+     "net": -5
+    },
+    {
+     "seat": 1,
+     "hu": 12,
+     "pay": 0,
+     "gang": 3,
+     "net": 15
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": -1,
+     "net": -5
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": -1,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 2,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 12,
+     "pay": 0,
+     "gang": -2,
+     "net": 10
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [
+    "豪华七对"
+   ],
+   "fs": [
+    {
+     "n": "豪华七对",
+     "v": 4
+    },
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 32,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -32,
+     "gang": 0,
+     "net": -32
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -32,
+     "gang": 0,
+     "net": -32
+    },
+    {
+     "seat": 2,
+     "hu": 96,
+     "pay": 0,
+     "gang": 0,
+     "net": 96
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -32,
+     "gang": 0,
+     "net": -32
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": -1,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 1,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 9,
+     "pay": 0,
+     "gang": 1,
+     "net": 10
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": -1,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [
+    "七对"
+   ],
+   "fs": [
+    {
+     "n": "七对",
+     "v": 2
+    }
+   ],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 1,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [
+    "全碰(碰碰胡)"
+   ],
+   "fs": [
+    {
+     "n": "全碰(碰碰胡)",
+     "v": 4
+    }
+   ],
+   "total": 8,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -8,
+     "gang": -2,
+     "net": -10
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -8,
+     "gang": -2,
+     "net": -10
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -8,
+     "gang": -4,
+     "net": -12
+    },
+    {
+     "seat": 3,
+     "hu": 24,
+     "pay": 0,
+     "gang": 8,
+     "net": 32
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 5,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 3,
+     "hu": 15,
+     "pay": 0,
+     "gang": 0,
+     "net": 15
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": -2,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 6,
+     "pay": 0,
+     "gang": 2,
+     "net": 8
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 6,
+     "net": 3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": -2,
+     "net": -5
+    },
+    {
+     "seat": 2,
+     "hu": 9,
+     "pay": 0,
+     "gang": -2,
+     "net": 7
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": -2,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": -2,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 2,
+     "net": 0
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [
+    "七对"
+   ],
+   "fs": [
+    {
+     "n": "七对",
+     "v": 2
+    }
+   ],
+   "total": 8,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 3,
+     "hu": 24,
+     "pay": 0,
+     "gang": 0,
+     "net": 24
+    }
+   ]
+  },
+  {
+   "how": "liuju",
+   "winner": null,
+   "winnerName": null,
+   "handTypes": [],
+   "fs": [],
+   "total": 0,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": 0,
+     "gang": 2,
+     "net": 2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": 0,
+     "gang": -2,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": 0,
+     "gang": 0,
+     "net": 0
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 3,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 5,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 15,
+     "pay": 0,
+     "gang": 0,
+     "net": 15
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "how": "ganghua",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [
+    "杠上开花"
+   ],
+   "fs": [
+    {
+     "n": "杠上开花",
+     "v": 2
+    }
+   ],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": -2,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 6,
+     "pay": 0,
+     "gang": 2,
+     "net": 8
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 8,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -8,
+     "gang": 6,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -8,
+     "gang": -2,
+     "net": -10
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -8,
+     "gang": -2,
+     "net": -10
+    },
+    {
+     "seat": 3,
+     "hu": 24,
+     "pay": 0,
+     "gang": -2,
+     "net": 22
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [
+    "七对"
+   ],
+   "fs": [
+    {
+     "n": "七对",
+     "v": 2
+    },
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 16,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -16,
+     "gang": -1,
+     "net": -17
+    },
+    {
+     "seat": 1,
+     "hu": 48,
+     "pay": 0,
+     "gang": -1,
+     "net": 47
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -16,
+     "gang": 3,
+     "net": -13
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -16,
+     "gang": -1,
+     "net": -17
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [],
+   "total": 4,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    },
+    {
+     "seat": 2,
+     "hu": 12,
+     "pay": 0,
+     "gang": 0,
+     "net": 12
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -4,
+     "gang": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [
+    "全碰(碰碰胡)"
+   ],
+   "fs": [
+    {
+     "n": "全碰(碰碰胡)",
+     "v": 4
+    }
+   ],
+   "total": 8,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -8,
+     "gang": 0,
+     "net": -8
+    },
+    {
+     "seat": 3,
+     "hu": 24,
+     "pay": 0,
+     "gang": 0,
+     "net": 24
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 3,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 1,
+     "hu": 9,
+     "pay": 0,
+     "gang": 0,
+     "net": 9
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -3,
+     "gang": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [
+    "七对"
+   ],
+   "fs": [
+    {
+     "n": "七对",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 6,
+     "pay": 0,
+     "gang": 0,
+     "net": 6
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 0,
+   "winnerName": "龙须山人",
+   "handTypes": [],
+   "fs": [],
+   "total": 5,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 15,
+     "pay": 0,
+     "gang": 0,
+     "net": 15
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -5,
+     "gang": 0,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 2,
+   "winnerName": "梅姐",
+   "handTypes": [],
+   "fs": [
+    {
+     "n": "打出1只红中",
+     "v": 2
+    }
+   ],
+   "total": 6,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -6,
+     "gang": -2,
+     "net": -8
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -6,
+     "gang": 0,
+     "net": -6
+    },
+    {
+     "seat": 2,
+     "hu": 18,
+     "pay": 0,
+     "gang": 0,
+     "net": 18
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -6,
+     "gang": 2,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 3,
+   "winnerName": "厨建国",
+   "handTypes": [],
+   "fs": [],
+   "total": 2,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 0,
+     "pay": -2,
+     "gang": 0,
+     "net": -2
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -2,
+     "gang": 2,
+     "net": 0
+    },
+    {
+     "seat": 3,
+     "hu": 6,
+     "pay": 0,
+     "gang": -2,
+     "net": 4
+    }
+   ]
+  },
+  {
+   "how": "zimo",
+   "winner": 1,
+   "winnerName": "僧大兴",
+   "handTypes": [],
+   "fs": [],
+   "total": 1,
+   "cap": false,
+   "d": [
+    {
+     "seat": 0,
+     "hu": 0,
+     "pay": -1,
+     "gang": -1,
+     "net": -2
+    },
+    {
+     "seat": 1,
+     "hu": 3,
+     "pay": 0,
+     "gang": 3,
+     "net": 6
+    },
+    {
+     "seat": 2,
+     "hu": 0,
+     "pay": -1,
+     "gang": -1,
+     "net": -2
+    },
+    {
+     "seat": 3,
+     "hu": 0,
+     "pay": -1,
+     "gang": -1,
+     "net": -2
+    }
+   ]
+  }
+ ],
+ "names": [
+  {
+   "seat": 0,
+   "name": "龙须山人"
+  },
+  {
+   "seat": 1,
+   "name": "僧大兴"
+  },
+  {
+   "seat": 2,
+   "name": "梅姐"
+  },
+  {
+   "seat": 3,
+   "name": "厨建国"
+  }
+ ],
+ "stoppedAt": 100
+}
