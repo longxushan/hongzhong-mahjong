@@ -531,11 +531,11 @@
     <div class="ruleSec"><h4>一、规则决定的五条战略推论</h4>
       <table>
         <tr><th>规则</th><th>战略推论</th></tr>
-        <tr><td>只能自摸、不可点炮</td><td>防守无意义，全速进攻；生张随便打（唯一小险：放杠 -2）</td></tr>
+        <tr><td>只能自摸、不可点炮</td><td>防守无意义，全速进攻；生张随便打（唯一小险：放杠 -2）。注：AI 会因对手威胁评估略避生张，那是稳妥取舍而非规则要求，你按规则打无需顾忌</td></tr>
         <tr><td>打出红中后胡牌 ×2ⁿ</td><td>红中首先是<b>分数资源</b>，其次才是万能牌——能白打就白打</td></tr>
         <tr><td>硬胡翻 6 张保底 6，软胡翻 4 张无保底</td><td>赢的时候手里没红中，光是打底分就多 2 分期望</td></tr>
         <tr><td>暗杠 +6 / 补杠 +3 / 放杠 +2，流局也付、不占 50 封顶</td><td>暗杠无风险白拿；牌差时杠分是唯一稳定收入</td></tr>
-        <tr><td>抢杠由补杠者一人独扛全部赔付</td><td>残局补杠是全游戏最大的单点风险（最高 -150）</td></tr>
+        <tr><td>抢杠由补杠者一人独付（不再三家分摊）</td><td>残局补杠是最大单点风险：<b>最多 -50</b>（单局封顶 50；旧版误把三家分摊的 150 算成单人赔付，已更正）</td></tr>
       </table>
     </div>
     <div class="ruleSec"><h4>二、核心账：红中怎么用最值钱</h4>
@@ -558,10 +558,10 @@
     </div>
     <div class="ruleSec"><h4>三、牌型方向优先级</h4>
       <table>
-        <tr><th>方向</th><th>番数</th><th>触发条件</th><th>说明</th></tr>
-        <tr><td>全碰</td><td>×4</td><td>对子/刻子 ≥4 组</td><td>本玩法第一番型；红中可代刻子；碰就是加速器</td></tr>
-        <tr><td>七对</td><td>×2（豪华×4）</td><td>实体对子 ≥4（无副露）</td><td>关门自摸流；某牌实体 4 张=豪华七对</td></tr>
-        <tr><td>清一色</td><td>×2</td><td>同色 ≥9 张</td><td>可与全碰叠成 ×8，接近封顶</td></tr>
+        <tr><th>方向</th><th>番数</th><th>路线启动门槛（不是胡牌条件）</th><th>说明</th></tr>
+        <tr><td>全碰</td><td>×4</td><td>刻型本钱 ≥4 组；胡牌需 4 组刻子 + 1 将</td><td>本玩法第一番型；红中可代刻子；碰就是加速器</td></tr>
+        <tr><td>七对</td><td>×2（豪华×4）</td><td>≥4 对可考虑转路线；胡牌需 7 对且无副露</td><td>关门自摸流；某牌实体 4 张=豪华七对</td></tr>
+        <tr><td>清一色</td><td>×2</td><td>主色 ≥9 张可定调；胡牌需全手同色</td><td>可与全碰叠成 ×8，接近封顶</td></tr>
         <tr><td>平胡快硬胡</td><td>×2ⁿ</td><td>默认路线</td><td>5.5 打底 × 红中倍数，稳</td></tr>
       </table>
       <ol>
@@ -574,7 +574,7 @@
     <div class="ruleSec"><h4>四、碰杠策略（杠分是流局保险）</h4><ol>
       <li><span class="tipKey">暗杠：无脑开。</span>白拿 6 分、流局也付、不占封顶、不可被抢、还有杠上开花（×2）机会——全游戏唯一的免费午餐。</li>
       <li>明杠（放杠）：不破坏牌型就杠（+2），顺手收钱。</li>
-      <li>补杠：+3 的甜头，-150 的尾部风险。前期、中盘放心补；<span class="tipWarn">残局（牌墙 &lt;15）或对手有明显听牌迹象：忍住不补</span>——抢杠由你一人独扛全部赔付。</li>
+      <li>补杠：+3 的甜头，<b>最多 -50</b> 的尾部风险（抢杠由你一人独付，单局封顶 50）。前期、中盘放心补；<span class="tipWarn">残局（牌墙 &lt;15）或对手有明显听牌迹象：忍住不补</span>——抢杠由你一人独扛全部赔付。</li>
       <li>危险信号：对手<b>打过红中</b>（说明手上大概率无红、有抢杠资格）+ 开始跟打熟张（听牌标志）→ 此时补杠高危。</li>
       <li><b>碰后不补杠（新规则）：</b>手里已有 3 张同牌、别家打出第 4 张时，若选择「碰」而不是「明杠」，这组碰牌本局<b>再也不能补杠</b>（下一巡起也不行）。4 张已全见，唯一的补杠机会就是手里剩的那张——所以这一刻要杠就当场杠，想留给以后是没有的；常规「2 张碰、之后自己摸到第 4 张」的补杠不受影响。</li>
       <li>反过来，你自己手里无红中时，盯紧别人的补杠提示，能抢就抢（硬胡路线的你天然有抢杠资格）。</li>
@@ -633,14 +633,14 @@
         <tr><td>早打无周边</td><td>前三巡打出的牌，他手上没有周边牌也没有周边需求；多家同区不要 → 该区牌大量躺在牌墙</td><td>对手第 1-3 巡打二万 → 后期他不要一~四万；两家三家都这么打 → 小万区存量高，你的小万搭子就是黄金口</td></tr>
         <tr><td>前期跟打是坏习惯</td><td>别人都不要 ≠ 我们也不要；跟打会让手牌与对手扎堆，要的牌全捏在别人手里</td><td>「刚打一筒又接二筒三筒」的回手掏不是运气差，是那个区域三家都不要全在牌墙里，你打掉的每一张都在给自己拆台</td></tr>
         <tr><td>交集区域理论</td><td>三家交集不要区 = 你的进攻区（后期还是安全区）</td><td>底部「听牌一览」的「剩」数就是替你算好的存量口：剩得多的方向，自摸概率高</td></tr>
-        <tr><td>抽屉原则算存量</td><td>136 −（四家手牌 + 牌池已见）= 牌墙存量；两三家都缺某花色 → 该花色全在牌墙</td><td>拆搭留存量大的一侧、拆存量为 0 或极少的一侧——听牌一览已把可见剩余摆在你眼前</td></tr>
+        <tr><td>抽屉原则算存量</td><td><b>112</b> −（四家手牌 + 牌池已见）= 牌墙存量（本游戏全副 112 张，不是常规麻将的 136）；两三家都缺某花色 → 该花色全在牌墙</td><td>拆搭留存量大的一侧、拆存量为 0 或极少的一侧——听牌一览已把可见剩余摆在你眼前</td></tr>
         <tr><td>三档标签记牌</td><td>给每家贴三档：牌型信息 / 牌效速度 / 留牌区域；记信息链不记原始牌</td><td>盯三家副露与弃牌顺序，判谁快听了 → 决定你是抢速度还是收杠分等流局</td></tr>
-        <tr><td>七对攻防兼备</td><td>七对隐蔽性强、进可攻退可守；牌运最差时强做七对是改运节点</td><td>本玩法七对 ×2（豪华 ×4）：连输两局牌又散时，起手 2+ 对子可转七对稳住心态</td></tr>
+        <tr><td>七对攻防兼备</td><td>七对隐蔽性强、进可攻退可守；牌运最差时强做七对是改运节点</td><td>本玩法七对 ×2（豪华 ×4）：连输两局牌又散时，起手 4 对以上可转七对稳住心态</td></tr>
         <tr><td>接牌快打牌慢</td><td>性子越急出牌越快、错误率越高，恶性循环；摸牌快、出牌慢养算力</td><td>把「打错提醒」开着打：每次出牌等师傅点评 3 秒再确认，错误率自然下来</td></tr>
       </table>
       <ol>
         <li>记牌 ≠ 背牌：拉开差距的从来不是记忆力，是分析与判断——记结论（他不要什么 / 在留什么 / 在等什么），不记原始牌张。</li>
-        <li>高手算账：记牌与否每小时差 15 分、一年近万分——零和牌桌上，这是不会记牌的人年年白送的固定成本。</li>
+        <li>高手算账：会不会算存量，长期每局的期望分就有差距——本游戏单局封顶 50、零和结算，这笔差额就是你反复白送的固定成本（外部教材按小时/按年算的分值口径不适用本玩法的 50 封顶，别照搬那个数字）。</li>
         <li>上牌只有两条来路：牌墙存量 + 对手不要。把这条想通，「打啥接啥」「灯腿听」这类"运气问题"全是操作问题。</li>
       </ol>
     </div>
@@ -2501,7 +2501,7 @@ function observeTable(pl){
   return {seen,suitOut,threat};
 }
 // ===== 补杠风控（2026-11-11 V3 百局审计升级：AI 学会攻略里的「残局防抢杠」）=====
-// 抢杠由补杠者一人独扛全部赔付（最高 -150）——僧大兴实测杠分 -24 即被抢；
+// 抢杠由补杠者一人独付、不再三家分摊（单局封顶 50，故最多 -50；旧注释 -150 系误算已更正）——僧大兴实测杠分 -24 即被抢；
 // 判据与攻略一致：前中盘（牌墙≥15）放心补；残局且对手具备抢杠资格（手里无红中）
 // 叠加听牌迹象（熟张流/副露进度）时忍住不补。暗杠/放杠无被抢风险，不设闸。
 function buGangRiskOK(pl){
@@ -3012,7 +3012,7 @@ function renderCountdown(n){
 }
 function clearCountdown(){if(G._cd){clearInterval(G._cd);G._cd=null;}const c=document.getElementById('cd');if(c)c.remove();}
 function humanRespond(v){clearCountdown();if(G.humanResolve){const r=G.humanResolve;G.humanResolve=null;G.awaiting=null;r(v);}}
-function takeOverByAI(){if(!G.humanResolve)return;const me=p(0),k=G.awaiting;if(k==='discard')humanRespond(aiChooseDiscard(me));else if(k==='zimo'||k==='qiang')humanRespond({hu:'hu'});else if(k==='gangself'){const an=findAnGang(me),bu=findBuGang(me);if(an.length)humanRespond({kind:'an',id:an[0].id});else if(bu.length)humanRespond({kind:'bu',id:bu[0]});else humanRespond({pass:1});}else if(k==='claim')humanRespond({pass:1});else if(k==='confirmZ')humanRespond({yes:1});}
+function takeOverByAI(){if(!G.humanResolve)return;const me=p(0),k=G.awaiting;if(k==='discard')humanRespond(aiChooseDiscard(me));else if(k==='zimo'||k==='qiang')humanRespond({hu:'hu'});else if(k==='gangself'){const an=findAnGang(me),bu=findBuGang(me);if(an.length)humanRespond({kind:'an',id:an[0].id});else if(bu.length)humanRespond({kind:'bu',id:bu[0]});else humanRespond({pass:1});}else if(k==='claim')humanRespond({pass:1});}
 
 async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变更：谁赢谁坐庄——上局胡牌者下局当庄家；流局无人胡则按序轮换 */ /* 2026-11-08 新增：每桌首局开局掷骰定庄（四人掷定东→东家掷骰数位定庄），之后仍谁赢谁坐庄 */let nd=forceDealer!=null?forceDealer:(!hasPlayed?null:(lastWinner!=null?lastWinner:(lastDealer+1)%4));
   if(nd==null){
@@ -3052,7 +3052,7 @@ async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变
       if(!did&&canG){const bu=findBuGang(cur);if(bu.length&&aiWantClaim(cur,bu[0],'gang')&&buGangRiskOK(cur)){const rb=await checkQiangGang(cur.seat,bu[0]);if(myToken!==runToken)return;if(rb)break;doGang(cur,'bugang',bu[0]);did=true;}}
       gh=did;}
     if(gh){if(wallRemain()<=CFG.keepTiles){await showLiuJu();break;}drawTile(cur,true);render();const w2=analyzeWin(cur);if(w2.win){await showWin(cur.seat,'ganghua',w2);break;}}
-    let disc;if(cur.human&&!cur.auto){let settled=false;while(!settled){disc=await waitHuman('discard',{});if(myToken!==runToken)return;if(disc.id==='Z'){const ok=await waitHuman('confirmZ',{});if(myToken!==runToken)return;if(ok.yes)settled=true;}else settled=true;}}else{disc=aiChooseDiscard(cur);await think();if(myToken!==runToken)return;}
+    let disc;if(cur.human&&!cur.auto){disc=await waitHuman('discard',{});if(myToken!==runToken)return;}else{disc=aiChooseDiscard(cur);await think();if(myToken!==runToken)return;} // 2026-11-11：打红中不再二次确认，点选即打出
     if(cur.human&&!cur.auto)recordMove(disc);
     discardTile(cur,disc);render();
     chatAfterDiscard(cur); // 牌桌闲聊：出牌后感想（进张得意/刚听牌/久无进展牢骚）
@@ -3310,7 +3310,7 @@ function renderHand(){const me=p(0),e=document.getElementById('hand');e.innerHTM
 function renderActions(o){const a=document.getElementById('actions');a.innerHTML='';const k=G.awaiting;const mk=(l,v,c)=>{const b=document.createElement('button');if(c)b.className=c;b.textContent=l;b.onclick=()=>humanRespond(v);a.appendChild(b);return b;};
   if(k==='zimo'){mk('胡牌',{hu:'hu'},'primary');mk('过',{pass:1});}else if(k==='gangself'){for(const t of o.an)mk('暗杠 '+tileName(t),{kind:'an',id:t.id},'danger');for(const id of o.bu)mk('补杠 '+id,{kind:'bu',id},'danger');mk('不杠',{pass:1});}
   else if(k==='discard'){const b=mk('出牌',null,'primary');b.onclick=()=>{if(G._sel){const t=G._sel;G._sel=null;clearWarn();humanRespond(t);}else toast('先点选一张牌');};}
-  else if(k==='confirmZ'){mk('确认打出',{yes:1},'danger');mk('取消',{no:1});}else if(k==='qiang'){mk('抢杠胡',{hu:'hu'},'primary');mk('放弃',{pass:1});}
+  else if(k==='qiang'){mk('抢杠胡',{hu:'hu'},'primary');mk('放弃',{pass:1});}
   else if(k==='claim'){const id=o.id;if(canMingGang(p(0),id))mk('杠',{kind:'gang'},'danger');if(canPeng(p(0),id))mk('碰',{kind:'peng'},'primary');mk('过',{pass:1});}}
 function renderInfo(){const remain=G.wall.length-G.head-(G.wall.length-1-G.tail);document.getElementById('info').textContent='墙剩'+remain+'张 · 留底6 · 你的杠分'+p(0).gangScore;
   document.getElementById('warnTag').style.display=blockedByZRule(p(0))?'inline-block':'none';

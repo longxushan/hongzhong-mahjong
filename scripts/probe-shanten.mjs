@@ -46,16 +46,14 @@ while (samples.length < N && guard < 160) {
   ).catch(() => null);
   const over = await page.evaluate(() => !G || G.over);
   if (over) { await page.evaluate(() => { restart(); }); continue; }
-  // 打红中确认弹窗：自动确认，解锁「手里≥2红中必须先打红中」的规则锁定局
-  const cz = await page.evaluate(() => G.awaiting === 'confirmZ');
-  if (cz) { await page.evaluate(() => humanRespond({ yes: 1 })); await page.waitForTimeout(200); continue; }
+  // 2026-11-11 起打红中不再二次确认，点选即打出（confirmZ 流程已移除）
   const ok = await page.evaluate(() => G.awaiting === 'discard' && p(0).hand.length === 14);
   if (!ok) { await page.waitForTimeout(400); continue; }
 
   const r = await page.evaluate(() => {
     const me = p(0), d = handDiagnose(me), pick = teachPick(d), md = masterDiscard(me);
     if (pick.rule) {
-      // 特例路径（红中硬规则/冒险打红中）：不参与向听对比；zBlocked 打红中推进（confirmZ 由外层自动确认）
+      // 特例路径（红中硬规则/冒险打红中）：不参与向听对比；zBlocked 打红中直接推进（无二次确认）
       const outTile = (pick.id === 'Z' && blockedByZRule(me))
         ? me.hand.find(t => t.id === 'Z')
         : (me.hand.find(t => t.id !== 'Z') || me.hand[0]);

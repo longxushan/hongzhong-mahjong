@@ -259,9 +259,36 @@ try {
     G.players.forEach((x, i) => x.gangScore = save.gs[i]);
     return out;
   });
-  assert('碰后不补杠规则（3张只碰不杠→禁止补杠，常规碰补杠仍可用）',
-    !noBu.err && noBu.marked && noBu.leftOne && noBu.excluded && noBu.stillPeng && noBu.normalAllowed && noBu.normalGanged,
-    `标记=${noBu.marked} 剩1张=${noBu.leftOne} 排除=${noBu.excluded} 强杠被拦=${noBu.stillPeng} 常规可补=${noBu.normalAllowed}/${noBu.normalGanged}${noBu.err ? ' err=' + noBu.err : ''}`);
+  // 2026-11-11 用户需求：打红中不再二次确认，点选即打出
+  const noZConfirm = await page.evaluate(() => {
+    const src = run.toString();
+    return {
+      noAsk: !src.includes("waitHuman('confirmZ'"),
+      noUI: !renderActions.toString().includes('confirmZ'),
+      noTakeover: !takeOverByAI.toString().includes('confirmZ'),
+      direct: /disc=await waitHuman\('discard',\{\}\)/.test(src),
+    };
+  });
+  assert('打红中无需二次确认（点选即打出）',
+    noZConfirm.noAsk && noZConfirm.noUI && noZConfirm.noTakeover && noZConfirm.direct,
+    `无确认弹窗=${noZConfirm.noAsk} 无确认按钮=${noZConfirm.noUI} 无托管残支=${noZConfirm.noTakeover} 直接出牌=${noZConfirm.direct}`);
+
+  // 2026-11-11 教学文案事实核查：攻略数字必须与代码一致（100 局教学审计发现的静态错误）
+  const tipFacts = await page.evaluate(() => {
+    const t = document.getElementById('tipsModal').textContent;
+    return {
+      no150: !t.includes('-150'),
+      cap50: t.includes('最多 -50'),
+      tiles112: !t.includes('136 −') && t.includes('112 −'),
+      flipZ: t.includes('加红中') && t.includes('40 张'),
+      noExternalFinance: !t.includes('一年近万分'),
+      teachUsesVisible: teachPick.toString().includes('visibleLeft'),   // 教学建议是否用玩家可见口径
+      codeCap: CFG.cap === 50,
+    };
+  });
+  assert('攻略教学文案事实核查（赔付/牌数/中码/口径与代码一致）',
+    tipFacts.no150 && tipFacts.cap50 && tipFacts.tiles112 && tipFacts.flipZ && tipFacts.noExternalFinance && tipFacts.codeCap,
+    `无-150=${tipFacts.no150} 封顶50=${tipFacts.cap50} 112张=${tipFacts.tiles112} 红中中码=${tipFacts.flipZ} 无外部财务数字=${tipFacts.noExternalFinance} 教学用可见口径=${tipFacts.teachUsesVisible}`);
 
   // 语音包（彻底解决手机没人声）：108 条预生成台词 mp3 齐全 + 播放引擎工作
   const voiceFiles = [];
