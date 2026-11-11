@@ -15,20 +15,22 @@ ROLES = ['龙须山人', '福星道人', '曹大师', '僧大兴', '华少', '�
 # 音色配置（按角色年龄/性别/性格）
 VOICE_HOST = 'zh-CN-YunyangNeural'   # 播报员：掷骰/坐庄播报
 VOICE_W = 'zh-CN-YunxiNeural'        # 男声词库：报牌/动作（龙须山人、福星道人、曹大师、僧大兴、华少、厨建国）
-VOICE_WF = 'zh-CN-XiaoxiaoNeural'    # 女声词库：梅姐报牌/动作
-ROLE_VOICE = {  # 2026-11-09 整体提速 5%：更干脆，保留各角色相对性格差异
-    0: ('zh-CN-YunjianNeural', '-5%', '-20Hz'),   # 龙须山人：进修型老者，低沉（原-10%）
-    1: ('zh-CN-YunjianNeural', '+5%', '-5Hz'),    # 福星道人：大牌型，豪朗（原+0%）
-    2: ('zh-CN-YunyangNeural', '+0%', '+0Hz'),    # 曹大师：学院派，专业（原-5%）
-    3: ('zh-CN-YunjianNeural', '-10%', '-25Hz'),  # 僧大兴：保守型，沉稳低缓（原-15%）
-    4: ('zh-CN-YunxiaNeural', '+10%', '+5Hz'),    # 华少：激进少爷，明快（原+5%）
-    5: ('zh-CN-XiaoxiaoNeural', '+0%', '+0Hz'),   # 梅姐：女声沉稳（原-5%）
-    6: ('zh-CN-YunxiNeural', '+5%', '+0Hz'),      # 厨建国：灵活通用（原+0%）
+VOICE_WF = 'zh-CN-XiaoxiaoNeural'    # 女声词库：梅姐报牌/动作（与梅姐角色音色气质一致，-8% 沉稳）
+WF_RATE = '-8%'                      # 2026-11-11 群像升级：女声词库与梅姐音色同步降速（原 +5% 通用）
+# 音色配置（按角色年龄/性别/性格；2026-11-11 群像升级：按画像重调 rate/pitch 拉开七人听感区分度）
+ROLE_VOICE = {
+    0: ('zh-CN-YunjianNeural', '-8%', '-30Hz'),  # 龙须山人：65 岁白发老者，苍老低沉（原 -5% -20Hz）
+    1: ('zh-CN-YunjianNeural', '+5%', '-10Hz'),  # 福星道人：58 岁道士，浑厚豪朗（原 +5% -5Hz）
+    2: ('zh-CN-YunyangNeural', '+0%', '+0Hz'),   # 曹大师：48 岁学院派，专业冷静（不变）
+    3: ('zh-CN-YunjianNeural', '-15%', '-35Hz'), # 僧大兴：55 岁僧人，最沉最缓念经感（原 -10% -25Hz）
+    4: ('zh-CN-YunxiaNeural', '+12%', '+5Hz'),   # 华少：25 岁急脾气少爷，明快急促（原 +10% +5Hz）
+    5: ('zh-CN-XiaoxiaoNeural', '-8%', '-5Hz'),  # 梅姐：45 岁茶楼老板娘，沉稳温柔知性（原 +0% +0Hz）
+    6: ('zh-CN-YunxiNeural', '+8%', '+0Hz'),     # 厨建国：42 岁市井大厨，爽朗烟火气（原 +5% +0Hz）
 }
 HOST_RATE = '+8%'    # 2026-11-09 用户需求「干脆响亮」：播报员提速（原 -5% 偏慢拖沓）
 WORD_RATE = '+5%'    # 报牌/动作词库：干脆利落（原 +0%）
 VOL = '+30%'         # 全部人声音量整体提升
-FORCE = True         # 调参后全量重生成（先写临时文件，成功才覆盖，失败保留旧文件不丢语音）
+FORCE = os.environ.get('FORCE', '1') != '0'  # 调参后全量重生成（先写临时文件，成功才覆盖，失败保留旧文件不丢语音）；FORCE=0 跳过已存在文件（增量模式）
 
 # 数字 0-99（2 念「两」；10-19 「十X」；20+ 「X十Y」；n2-n12 为旧骰点词，内容一致自动 skip 复用）
 DIG = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九']
@@ -108,10 +110,10 @@ async def main():
     actions = {'peng': '碰！', 'gang': '杠！', 'angang': '暗杠！', 'bugang': '补杠！', 'hu': '胡了！', 'zimo': '自摸！', 'tianhu': '天胡！', 'dihu': '地胡！'}
     for id_ in ids:
         jobs.append(('w/' + id_, tile_text(id_), VOICE_W, WORD_RATE, '+0Hz'))
-        jobs.append(('wf/' + id_, tile_text(id_), VOICE_WF, WORD_RATE, '+0Hz'))
+        jobs.append(('wf/' + id_, tile_text(id_), VOICE_WF, WF_RATE, '-5Hz'))
     for k, t in actions.items():
         jobs.append(('w/' + k, t, VOICE_W, WORD_RATE, '+0Hz'))
-        jobs.append(('wf/' + k, t, VOICE_WF, WORD_RATE, '+0Hz'))
+        jobs.append(('wf/' + k, t, VOICE_WF, WF_RATE, '-5Hz'))
     # ② host 播报库：角色名 + 骰点数字 + 句段
     #    2026-11-09 台词改版新增：qingdong 请先定东 / dongshi 东是 / dingzhuangjia 定庄家 / zhuangjiashi 庄家是 / jinru 请进入游戏出牌
     for i, name in enumerate(ROLES):
