@@ -123,18 +123,21 @@ try {
   assert('听牌一览剩余=可见口径 4−废牌区−副露−自己手牌', visAnchor && vis.okFn && vis.all,
     `公式自洽 ${vis.n}/7 项（别家暗杠只扣明张；AI 精算仍走牌墙口径 tileRemaining 不受影响）`);
 
-  // 打法攻略弹窗：打开、检查分节与表格、关闭
+  // 打法攻略弹窗：打开、检查分节与表格、关闭；2026-11-11 玩家技能体系并入双大师心法
   const tipsOk = await page.evaluate(() => {
     document.getElementById('tipsBtn').click();
     const m = document.getElementById('tipsModal');
     const shown = m && m.style.display !== 'none';
     const secs = m ? m.querySelectorAll('.ruleSec').length : 0;
     const tbls = m ? m.querySelectorAll('table').length : 0;
+    const txt = m ? m.textContent : '';
+    const hasQuxue = /雀学米高/.test(txt) && /综合价值/.test(txt) && /机会成本/.test(txt);
+    const hasZts = /郑太顺/.test(txt) && /金三银七/.test(txt) && /五不碰/.test(txt);
     if (shown) m.style.display = 'none';
-    return { shown, secs, tbls };
+    return { shown, secs, tbls, hasQuxue, hasZts };
   });
-  assert('打法攻略弹窗可用', tipsOk.shown && tipsOk.secs >= 6 && tipsOk.tbls >= 3,
-    `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张`);
+  assert('打法攻略弹窗可用（含雀学米高+郑太顺玩家心法）', tipsOk.shown && tipsOk.secs >= 8 && tipsOk.tbls >= 4 && tipsOk.hasQuxue && tipsOk.hasZts,
+    `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张，雀学米高=${tipsOk.hasQuxue}，郑太顺=${tipsOk.hasZts}`);
 
   // 对局账单（战绩）：每局输赢明细 + 累计汇总 + 结果列牌型标注 + 末尾各局胡牌牌型图；赢红输绿
   const histOk = await page.evaluate(() => {
