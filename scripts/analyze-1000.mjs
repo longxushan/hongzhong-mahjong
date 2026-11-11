@@ -57,7 +57,7 @@ for (const r of R) {
 }
 const scoreBinRows = scoreBins.map(([lo, hi]) => {
   const n = scores.filter(v => v >= lo && v <= hi).length;
-  return `| ${lo}–${hi === 999 ? '50+' : hi} 分 | ${n} | ${pct(n, wins.length)} |`;
+  return hi === 999 ? `| 50 分（封顶） | ${n} | ${pct(n, wins.length)} |` : `| ${lo}–${hi} 分 | ${n} | ${pct(n, wins.length)} |`;
 });
 const rank = Object.values(P).sort((a, b) => b.net - a.net);
 scores.sort((a, b) => a - b);
@@ -98,7 +98,7 @@ w('| 排名 | 角色 | 性格 | 累计净分 | 胡牌次数 | 胜率 | 杠分累
 w('|---|---|---|---|---|---|---|---|---|---|');
 rank.forEach((p, i) => w(`| ${i + 1} | ${p.name} | ${p.style} | ${p.net > 0 ? '+' : ''}${p.net} | ${p.wins} | ${pct(p.wins, N)} | ${p.gang > 0 ? '+' : ''}${p.gang} | ${p.big} | ${p.cap} | ${p.maxWin} |`));
 w('');
-w(`**胡牌收入 / 赔付**：${rank.map(p => `${p.name} 收 ${p.huPts} / 付 ${p.pay}`).join('；')}`);
+w(`**胡牌收入 / 赔付**：${rank.map(p => `${p.name} 收 ${p.huPts} / 付 ${Math.abs(p.pay)}`).join('；')}`);
 w('');
 w(`**庄家优势**：庄家胡牌 ${dealerWinN} 次 / ${dealerRoundN} 局 = ${pct(dealerWinN, dealerRoundN)}（随机基准 25%）。`);
 w('');
@@ -145,7 +145,7 @@ w('| 技法层 | 触发次数 | 每局均值 | 说明 |');
 w('|---|---|---|---|');
 const skillRows = [
   ['郑太顺·读牌 ztsDanger 调用', C.zDanger, '每次 AI 出牌前读各家弃牌轨迹'],
-  ['郑太顺·危险信号命中', C.zHits, '同线加减一 / 反常对 / 中后期 1·9 未见'],
+  ['郑太顺·危险信号命中条目', C.zHits, '同线加减一 / 反常对 / 中后期 1·9 未见；一次读牌可命中多张'],
   ['郑太顺·碰牌五不碰评估', C.gateCalls, ''],
   ['郑太顺·五不碰实际拦下', C.gateBlock, `拦截率 ${pct(C.gateBlock || 0, C.gateCalls || 0)}`],
   ['郑太顺·金三银七留牌加分', C.keep37, ''],
