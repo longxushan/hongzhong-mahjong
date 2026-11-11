@@ -53,6 +53,7 @@ function assert(name, ok, detail = '') {
 
 try {
   await page.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
+  await page.evaluate(() => { window.__noCloudExp = 1; __cloudDB = null; }); // 禁云：测试数据不得写入真实云端
   assert('页面加载', true, `${fs.statSync(FILE).size} 字节`);
 
   // 只加速 AI 思考与掷骰动画，不写入文件
@@ -326,6 +327,7 @@ try {
   const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
     await page2.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
+    await page2.evaluate(() => { window.__noCloudExp = 1; __cloudDB = null; }); // 禁云：测试数据不得写入真实云端
     // 与 page1 同等的加速+静音：掷骰/思考提速、跳过语音播放等待，防止开局流程（含 host 台词语音）超 30s 超时线
     await page2.evaluate(() => {
       if (typeof CFG !== 'undefined') {

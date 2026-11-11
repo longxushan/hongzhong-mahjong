@@ -1,6 +1,7 @@
-// 2026-11-11 角色经验学习系统回归测试
-// 断言：①学习方向正确（赢大牌→更敢做、流局→更收敛、打红中赢→更敢冒险、输→收敛）
-//       ②参数边界钳制 ③档案持久化 ④真实跑局学习发生且零报错 ⑤修炼等级晋升
+// 2026-11-11 角色经验学习系统回归测试（V2：计数器 + 派生 + 云同步 pending 机制）
+// 断言：①学习只累计数器且方向正确（赢大牌→bw、流局→lj、打红中赢→dw、输→lp）
+//       ②派生参数方向与边界（bw↑→prAdj↑、g>30→nsMul<1、胜率过半→qxAdj>0）
+//       ③pending/merged 合并无重复计数 ④V1 档案迁移 ⑤真实跑局学习发生、零报错
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -24,6 +25,7 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 const pageErrors = [];
 page.on('pageerror', e => pageErrors.push(e.message));
 await page.addInitScript(() => {
+  window.__noCloudExp = 1; // 禁云钩子：测试数据不得写入真实云端
   HTMLMediaElement.prototype.play = function () {
     const self = this;
     setTimeout(() => { if (typeof self.onended === 'function') self.onended(); }, 30);
@@ -42,57 +44,70 @@ await page.waitForFunction(
 let pass = true;
 const chk = (cond, msg) => { console.log((cond ? '✓ ' : '✗ ') + msg); if (!cond) pass = false; };
 
-// ===== ① 学习方向测试（构造结算结果 r，直接调 learnFromRound） =====
+// ===== ① 计数器方向测试（构造结算 r，直接调 learnFromRound；云不可达时 pending 保留） =====
 const dir = await page.evaluate(() => {
   const names = G.players.map(pl => pl.name);
-  const mkR = (winner, bigWin, dumpZ, netOverride) => ({
+  const mkR = (winner, bigWin, dumpZ) => ({
     pl: winner != null ? { seat: winner, name: names[winner] } : null,
     handTypes: bigWin ? ['七对'] : [],
     fs: bigWin ? [{ n: '七对', v: 2 }] : dumpZ ? [{ n: '打出1只红中', v: 2 }] : [],
     d: [0, 1, 2, 3].map(s => ({ seat: s, hu: s === winner ? 1 : 0, pay: s === winner ? 0 : -12, gang: 0, net: s === winner ? 36 : -12 })),
   });
-  const out = {};
-  // 清档案
+  localStorage.removeItem('banshanRoleExpSyncV2');
   localStorage.removeItem('banshanRoleExpV1');
   const nm1 = names[1], nm2 = names[2];
-  // 赢大牌 5 局
-  for (let i = 0; i < 5; i++) learnFromRound(mkR(1, true, false));
-  out.afterBigWins = getRoleExp(nm1);
-  // 流局 5 局
-  for (let i = 0; i < 5; i++) learnFromRound(mkR(null, false, false));
-  out.afterLiuju = getRoleExp(nm1);
-  // 打红中赢 4 局（席位2）
-  for (let i = 0; i < 4; i++) learnFromRound(mkR(2, false, true));
-  out.afterDumpWin = getRoleExp(nm2);
-  // 席位2 连输 10 局（不含 dump）
-  for (let i = 0; i < 10; i++) learnFromRound(mkR(0, false, false));
-  out.afterLoss = getRoleExp(nm2);
-  // 8 的倍数局：胜率>0.5 → qxAdj +0.02（席位0 连赢 8 局）
-  localStorage.removeItem('banshanRoleExpV1');
+  for (let i = 0; i < 5; i++) learnFromRound(mkR(1, true, false));   // 席位1 赢大牌 5 局
+  const afterBig = getRoleExp(nm1);
+  for (let i = 0; i < 3; i++) learnFromRound(mkR(null, false, false)); // 流局 3 局
+  const afterLj = getRoleExp(nm1);
+  for (let i = 0; i < 4; i++) learnFromRound(mkR(2, false, true));   // 席位2 打红中赢 4 局
+  const afterDump = getRoleExp(nm2);
+  for (let i = 0; i < 6; i++) learnFromRound(mkR(0, false, false));  // 席位2 连输 6 局
+  const afterLoss = getRoleExp(nm2);
+  // 派生
+  const dBig = deriveExpAdj(afterBig), dLj = deriveExpAdj(afterLj);
+  const dDump = deriveExpAdj(afterDump), dLoss = deriveExpAdj(afterLoss);
+  // 8 局胜率 8/8 → qxAdj>0
+  localStorage.removeItem('banshanRoleExpSyncV2');
   for (let i = 0; i < 8; i++) learnFromRound(mkR(0, false, false));
-  out.afterQx = getRoleExp(names[0]);
-  // 持久化
-  out.persisted = JSON.parse(localStorage.getItem('banshanRoleExpV1'));
-  // expParams 边界
-  const p0 = G.players[0];
-  out.params = expParams(p0);
-  out.qxPct = qxCarePct(names[0]);
-  out.baseQx = QXMG_LEVEL[styleOfName(names[0])];
-  return out;
+  const afterQx = deriveExpAdj(getRoleExp(names[0]));
+  // 45 局胜率>50% → nsMul<1
+  localStorage.removeItem('banshanRoleExpSyncV2');
+  for (let i = 0; i < 45; i++) learnFromRound(mkR(0, false, false));
+  const afterNs = deriveExpAdj(getRoleExp(names[0]));
+  // pending/merged 合并：手动把 pending 并入 merged 再看总数
+  localStorage.removeItem('banshanRoleExpSyncV2');
+  for (let i = 0; i < 4; i++) learnFromRound(mkR(1, false, false));
+  const s0 = expSyncState();
+  const mergedIn = { ...s0.pending };
+  const s1 = expSyncState(); s1.merged = { ...mergedIn }; s1.pending = {}; expSaveSync(s1);
+  const totalAfter = getRoleExp(names[1]);
+  // V1 迁移
+  localStorage.removeItem('banshanRoleExpSyncV2');
+  localStorage.setItem('banshanRoleExpV1', JSON.stringify({ foo: { g: 10, w: 3, lp: 5, bw: 2, dw: 1, lj: 4, prAdj: 0.05, dzAdj: 0, qxAdj: 0, nsMul: 0.9 } }));
+  const migrated = getRoleExp('foo');
+  const v1Removed = localStorage.getItem('banshanRoleExpV1') == null;
+  // expParams
+  const params = expParams(G.players[1]);
+  const baseQx = QXMG_LEVEL[styleOfName(names[1])];
+  return { afterBig, afterLj, afterDump, afterLoss, dBig, dLj, dDump, dLoss, afterQx, afterNs, totalAfter, migrated, v1Removed, params, baseQx, names };
 });
 
-chk(dir.afterBigWins.bw === 5 && dir.afterBigWins.prAdj > 0, '①赢大牌 5 局 → 大牌数+5、大牌尝试率修正上升（+' + dir.afterBigWins.prAdj.toFixed(2) + '）');
-chk(dir.afterLiuju.prAdj < dir.afterBigWins.prAdj, '①流局 5 局 → 尝试率修正回落（' + dir.afterLiuju.prAdj.toFixed(2) + '）');
-chk(dir.afterDumpWin.dzAdj > 0, '①打红中赢 4 局 → 冒险率修正上升（+' + dir.afterDumpWin.dzAdj.toFixed(2) + '）');
-chk(dir.afterLoss.dzAdj < dir.afterDumpWin.dzAdj, '①连输 10 局 → 冒险率修正收敛（' + dir.afterLoss.dzAdj.toFixed(2) + '）');
-chk(dir.afterQx.g === 8 && dir.afterQx.w === 8 && dir.afterQx.qxAdj > 0, '①胜率 8/8 → 修炼等级修正晋升（+' + dir.afterQx.qxAdj.toFixed(2) + '）');
-chk(dir.persisted && dir.persisted[dir.afterQx ? Object.keys(dir.persisted)[0] : ''] != null, '②档案持久化到 localStorage');
-chk(dir.params.planRate >= 0.05 && dir.params.planRate <= 0.9 && dir.params.dumpZRate >= 0 && dir.params.dumpZRate <= 1, '②参数边界钳制有效');
-chk(dir.params.qxLv <= 1 && dir.params.qxLv >= 0.5, '②修炼等级上限 1.0、下限 0.5 内');
-chk(dir.qxPct >= 50 && dir.qxPct <= 100, '⑤修炼等级展示 ' + dir.qxPct + '%（基础 ' + Math.round(dir.baseQx * 100) + '%）');
+chk(dir.afterBig.g === 5 && dir.afterBig.w === 5 && dir.afterBig.bw === 5, '①赢大牌 5 局 → g/w/bw 计数=5/5/5');
+chk(dir.afterLj.lj === 3 && dir.afterLj.g === 8, '①流局 3 局 → lj=3 累计 g=8');
+chk(dir.afterDump.dw === 4 && dir.afterDump.g === 12, '①打红中赢 4 局 → dw=4（前置 8 局输+流局累计 g=12）');
+chk(dir.afterLoss.lp === 14 && dir.afterLoss.g === 18, '①连输 6 局 → lp=14（含前置输 5+流局 3）、g=18');
+chk(dir.dBig.prAdj > 0 && dir.dLj.prAdj < dir.dBig.prAdj, '②派生：大牌尝试率修正 随 bw↑ / 随 lj↓（' + dir.dBig.prAdj.toFixed(2) + '→' + dir.dLj.prAdj.toFixed(2) + '）');
+chk(dir.dDump.dzAdj > 0 && dir.dLoss.dzAdj < dir.dDump.dzAdj, '②派生：冒险率修正 随 dw↑ / 随 lp↓');
+chk(dir.afterQx.qxAdj > 0, '②派生：胜率 8/8 → 修炼修正 +' + dir.afterQx.qxAdj.toFixed(2));
+chk(dir.afterNs.nsMul < 1, '②派生：45 局 → 熟练度倍率 ' + dir.afterNs.nsMul.toFixed(2) + ' <1（越打越稳）');
+chk(dir.params.qxLv <= 1 && dir.params.qxLv >= Math.min(dir.baseQx, 0.5) && dir.params.planRate >= 0.05 && dir.params.dumpZRate >= 0, '②expParams 边界钳制有效');
+chk(dir.totalAfter.g === 4, '③pending 并入 merged 后总数不变不重（g=4）');
+chk(dir.migrated.g === 10 && dir.migrated.bw === 2 && dir.v1Removed, '④V1 档案一次性迁移（计数并入、旧键删除）');
 
-// ===== ③ 真实跑局：托管连打 4 局，档案累计、零报错 =====
+// ===== ⑤ 真实跑局 4 局：pending 增长、零报错 =====
 await page.evaluate(() => {
+  localStorage.removeItem('banshanRoleExpSyncV2');
   const origST = window.setTimeout.bind(window);
   window.setTimeout = function (fn, ms) {
     if (arguments.length <= 2) return origST(fn, Math.min(ms == null ? 0 : ms, 25));
@@ -104,18 +119,12 @@ await page.evaluate(() => {
   setInterval(() => { try { const b = document.querySelector('#mNext'); if (b) b.click(); } catch (e) { } }, 150);
   if (!humanAuto) document.getElementById('autoBtn').click();
 });
-await page.evaluate(() => { localStorage.removeItem('banshanRoleExpV1'); window.__n = 0; });
 await page.waitForFunction(
-  () => { try { const x = JSON.parse(localStorage.getItem('banshanRoleExpV1') || '{}'); let g = 0; for (const k in x) g += x[k].g; return g >= 16; } catch (e) { return false; } },
+  () => { try { const s = JSON.parse(localStorage.getItem('banshanRoleExpSyncV2') || '{}'); let g = 0; for (const k in (s.pending || {})) g += s.pending[k].g; return g >= 16; } catch (e) { return false; } },
   null, { timeout: 90000 }
 );
-const live = await page.evaluate(() => {
-  const x = JSON.parse(localStorage.getItem('banshanRoleExpV1') || '{}');
-  return { roles: Object.keys(x).length, totalG: Object.values(x).reduce((s, e) => s + e.g, 0) };
-});
-chk(live.roles === 4 && live.totalG >= 16, '③真实跑局学习发生：4 角色共 ' + live.totalG + ' 局经验入档');
-chk(pageErrors.length === 0, '③学习系统运行零 JS 报错');
+chk(pageErrors.length === 0, '⑤真实跑局学习零 JS 报错（含云同步静默失败路径）');
 
-console.log(pass ? 'PASS: 角色经验学习系统方向正确、边界有效、持久化、实战跑通' : 'FAIL: 需调整');
+console.log(pass ? 'PASS: 经验学习 V2（计数器+派生+pending 合并+V1 迁移）全过' : 'FAIL: 需调整');
 await browser.close();
 process.exit(pass ? 0 : 1);

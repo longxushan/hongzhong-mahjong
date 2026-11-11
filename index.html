@@ -2523,68 +2523,153 @@ function ztsClaimGate(pl,id,after,before){ // ⑤ 碰牌五不碰（郑太顺高
 // 角色修炼等级（AI 并非人人满级，体现「学艺有先后」）：进修型/豪腕型吃全套；激进型进攻面强；
 // 沉稳/灵活型中等；保守型偏防守口诀；学习型只吃一半（成长线，留进步空间）
 const QXMG_LEVEL={conservative:0.65,steady:0.75,aggressive:0.9,grand:1.0,academic:1.0,learning:0.55,flexible:0.8};
-// ===== 角色经验学习系统（2026-11-11 用户需求：把每局成败总结成经验）=====
-// 每个角色一份档案，localStorage 持久化（跨局、跨轮、跨会话都记得）；结算时学习、决策时读取。
-// 学习只动四个「风格参数」（幅度小、有界），绝不碰向听精算主体——经验只能改变胆量与熟练度，学不坏牌理：
-//   prAdj 大牌尝试率修正（赢大牌 +2%/流局 -2%）  dzAdj 打红中冒险率修正（打红中赢 +3%/输 -2%）
-//   qxAdj 修炼等级修正（每满 8 局按胜率 ±，合计上限 1.0）  nsMul 熟练度噪声倍率（30 局后每 15 局 ×0.92，越打越稳）
-const EXP_KEY='banshanRoleExpV1';
-function loadRoleExp(){try{return JSON.parse(localStorage.getItem(EXP_KEY))||{};}catch(e){return {};}}
-function saveRoleExp(x){try{localStorage.setItem(EXP_KEY,JSON.stringify(x));}catch(e){}}
-function getRoleExp(nm){const e=loadRoleExp()[nm];return e?e:{g:0,w:0,lp:0,bw:0,dw:0,lj:0,prAdj:0,dzAdj:0,qxAdj:0,nsMul:1};}
+// ===== 角色经验学习系统 + 云端跨设备累加（2026-11-11 用户需求：网址发给谁、电脑手机都累加）=====
+// 档案只存六个计数器（g/w/lp/bw/dw/lj），四个学习参数全部由计数器**确定性派生**——
+// 本地与云端用同一套派生公式，合并=计数器相加，跨设备累加零歧义：
+//   prAdj 大牌尝试率修正 = 大牌胡×2% − 流局×2%      dzAdj 冒险率修正 = 打红中胡×3% − 失局×1%
+//   qxAdj 修炼等级修正 = 胜率过半渐进（8 局起生效）  nsMul 熟练度 = 局数越多决策噪声越小（越打越稳）
+// 学习只动风格参数、绝不碰向听精算——经验改胆量不改牌理。
+// 云同步：merged(已并入云端) + pending(本机未上行增量)，生效=merged+pending；
+//   每局结算后异步调 bump_role_exp RPC（服务端原子累加）上行 pending，成功即并入 merged；
+//   启动时拉云端（别人设备上攒的经验自动进本机）。云端不可达时纯本地，联网后自动补传。
+// 云端参数来自 publicConfig（应用域名+publishableKey，创建时已固定），服务端按 Origin 精确校验。
+const EXP_SYNC_KEY='banshanRoleExpSyncV2';
+const CLOUD_EXP={endpoint:'https://hongzhong-mahjong-61408.app.workbuddy.host',publishableKey:'wbpk_qdm29f6v2VaO53M0qBgHVT_LrFKO5wjtYOcMpZoqCp1Ojnje1dNWJdp'};
+const EXP_ZERO={g:0,w:0,lp:0,bw:0,dw:0,lj:0};
+let __cloudDB=null;
 function expClamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
-// 角色当前生效的四个学习参数（基础值 + 经验修正，边界内）
+function expSyncState(){
+  try{
+    const s=JSON.parse(localStorage.getItem(EXP_SYNC_KEY))||{};
+    if(!s.merged)s.merged={};if(!s.pending)s.pending={};
+    // 旧版 V1 本地档案一次性迁移：计数器并入 pending（旧 adj 字段丢弃，由派生公式重算）
+    try{
+      const v1=JSON.parse(localStorage.getItem('banshanRoleExpV1'));
+      if(v1&&Object.keys(v1).length){
+        for(const nm in v1){
+          const o=v1[nm];const p=s.pending[nm]||{...EXP_ZERO};
+          p.g+=o.g||0;p.w+=o.w||0;p.lp+=o.lp||0;p.bw+=o.bw||0;p.dw+=o.dw||0;p.lj+=o.lj||0;
+          s.pending[nm]=p;
+        }
+        localStorage.removeItem('banshanRoleExpV1');
+      }
+    }catch(e){}
+    return s;
+  }catch(e){return {merged:{},pending:{}};}
+}
+function expSaveSync(s){try{localStorage.setItem(EXP_SYNC_KEY,JSON.stringify(s));}catch(e){}}
+const expAddCnt=(a,b)=>({g:(a.g||0)+(b.g||0),w:(a.w||0)+(b.w||0),lp:(a.lp||0)+(b.lp||0),bw:(a.bw||0)+(b.bw||0),dw:(a.dw||0)+(b.dw||0),lj:(a.lj||0)+(b.lj||0)});
+function loadRoleExp(){ // 生效档案 = merged + pending（供派生与展示）
+  const s=expSyncState();const out={};
+  for(const nm in s.merged)out[nm]=expAddCnt(out[nm]||{...EXP_ZERO},s.merged[nm]);
+  for(const nm in s.pending)out[nm]=expAddCnt(out[nm]||{...EXP_ZERO},s.pending[nm]);
+  return out;
+}
+function getRoleExp(nm){return loadRoleExp()[nm]||{...EXP_ZERO};}
+function saveRoleExp(){} // 保留空函数兼容旧调用；V2 落盘走 expSaveSync
+// 由计数器确定性派生四个学习参数（本地/云端同构）
+function deriveExpAdj(e){
+  const g=e.g||0;
+  const prAdj=expClamp((e.bw||0)*0.02-(e.lj||0)*0.02,-0.10,0.15);
+  const dzAdj=expClamp((e.dw||0)*0.03-(e.lp||0)*0.01,-0.08,0.12);
+  let qxAdj=0;
+  if(g>=8){const wr=(e.w||0)/g;qxAdj=expClamp((wr-0.5)*0.4,-0.05,0.30);}
+  const nsMul=g>30?Math.max(0.5,Math.pow(0.92,Math.floor((g-30)/15)+1)):1;
+  return {prAdj,dzAdj,qxAdj,nsMul};
+}
+// 角色当前生效的四个学习参数（基础值 + 派生修正，边界内）
 function expParams(pl){
   const style=pl.style||'flexible';
-  const e=getRoleExp(pl.name);
+  const adj=deriveExpAdj(getRoleExp(pl.name));
   const basePr=PLAN_RATE[style]!=null?PLAN_RATE[style]:0.3;
   const baseDz=DUMP_Z_RATE[style]!=null?DUMP_Z_RATE[style]:0.5;
   const baseQx=QXMG_LEVEL[style]!=null?QXMG_LEVEL[style]:0.8;
   return {
-    planRate:expClamp(basePr+e.prAdj,0.05,0.9),
-    dumpZRate:expClamp(baseDz+e.dzAdj,0,1),
-    qxLv:expClamp(baseQx+e.qxAdj,Math.min(baseQx,0.5),1),
-    noiseMul:e.nsMul!=null?expClamp(e.nsMul,0.5,1):1,
-    exp:{...e,style,baseQx},
+    planRate:expClamp(basePr+adj.prAdj,0.05,0.9),
+    dumpZRate:expClamp(baseDz+adj.dzAdj,0,1),
+    qxLv:expClamp(baseQx+adj.qxAdj,Math.min(baseQx,0.5),1),
+    noiseMul:expClamp(adj.nsMul,0.5,1),
+    exp:{...getRoleExp(pl.name),style,baseQx},
   };
 }
-// 结算学习：每局每人把这一局的成败写进档案（只写一次，r 复用时 _expLearned 防重）
+// 结算学习：每局每人把这一局的成败记进 pending 计数器（只记一次，r 复用时 _expLearned 防重），随后异步上行云端
 function learnFromRound(r){
   try{
-    const all=loadRoleExp();
     const liuju=!r.pl;
     const dumpZ=(r.fs||[]).some(f=>/^打出\d+只红中$/.test(f.n));
     let mult=1;for(const f of (r.fs||[]))mult*=(f.v||1);
     const bigWin=!!(r.handTypes&&r.handTypes.length)||mult>=2;
+    const s=expSyncState();
     for(const x of r.d){
       const nm=p(x.seat)&&p(x.seat).name;if(!nm)continue;
-      const e=all[nm]||{g:0,w:0,lp:0,bw:0,dw:0,lj:0,prAdj:0,dzAdj:0,qxAdj:0,nsMul:1};
+      const e=s.pending[nm]||{...EXP_ZERO};
       e.g++;
       if(x.hu>0){
         e.w++;
-        if(bigWin){e.bw++;e.prAdj=expClamp(e.prAdj+0.02,-0.10,0.15);}   // 赢了大牌：下次更敢做
-        if(dumpZ){e.dw++;e.dzAdj=expClamp(e.dzAdj+0.03,-0.08,0.12);}   // 打红中赢翻倍：冒险有回报
+        if(bigWin)e.bw++;        // 赢了大牌：下次更敢做（派生 prAdj↑）
+        if(dumpZ)e.dw++;         // 打红中赢翻倍：冒险有回报（派生 dzAdj↑）
       }else if(x.net<0){
-        e.lp++;e.dzAdj=expClamp(e.dzAdj-0.02,-0.08,0.12);              // 输了：收敛冒险
+        e.lp++;                  // 输了：派生收敛冒险
       }
-      if(liuju){e.lj++;e.prAdj=expClamp(e.prAdj-0.02,-0.10,0.15);}     // 流局：大牌路线更早止损
-      if(e.g%8===0){                                                    // 修炼等级：按战绩缓慢晋升/回落
-        const style=styleOfName(nm);const base=QXMG_LEVEL[style]!=null?QXMG_LEVEL[style]:0.8;
-        if(e.w/e.g>0.5)e.qxAdj=expClamp(e.qxAdj+0.02,-0.05,Math.max(0,1-base));
-        else if(e.w/e.g<0.35)e.qxAdj=expClamp(e.qxAdj-0.01,-0.05,Math.max(0,1-base));
-      }
-      if(e.g>30&&e.g%15===0)e.nsMul=expClamp(e.nsMul*0.92,0.5,1);      // 熟练度：越打越稳
-      all[nm]=e;
+      if(liuju)e.lj++;           // 流局：派生大牌更早止损
+      s.pending[nm]=e;
     }
-    saveRoleExp(all);
+    expSaveSync(s);
+    cloudExpPush(); // 异步上行（失败保留 pending 下次再试）
   }catch(e){}
 }
-// 修炼等级展示（排行榜/结算用）：基础+经验 → 百分比
+// 修炼等级展示（排行榜/结算用）：基础 + 派生修正 → 百分比
 function qxCarePct(nm){
   const style=styleOfName(nm);
   const base=QXMG_LEVEL[style]!=null?QXMG_LEVEL[style]:0.8;
-  const e=getRoleExp(nm);
-  return Math.round(expClamp(base+(e.qxAdj||0),Math.min(base,0.5),1)*100);
+  const adj=deriveExpAdj(getRoleExp(nm));
+  return Math.round(expClamp(base+adj.qxAdj,Math.min(base,0.5),1)*100);
+}
+// ===== 云端同步（应用域名下生效；GitHub Pages 镜像/离线时静默走本地，联网后自动补传）=====
+// __noCloudExp=1 为测试钩子：跑局类测试（verify/audit/单测）置此标志，防止测试数据写进真实云端
+let __expPushing=false;
+function initCloudExp(){
+  try{
+    if(window.__noCloudExp)return;
+    if(typeof WorkBuddyCloud==='undefined')return;
+    const c=WorkBuddyCloud.createWorkBuddyCloud({endpoint:CLOUD_EXP.endpoint,publishableKey:CLOUD_EXP.publishableKey});
+    __cloudDB=c.database;
+    cloudExpPull();
+  }catch(e){}
+}
+async function cloudExpPull(){
+  if(!__cloudDB)return;
+  try{
+    const {data,error}=await __cloudDB.from('role_exp').select('name,g,w,lp,bw,dw,lj');
+    if(error||!Array.isArray(data)||!data.length)return;
+    const s=expSyncState();
+    for(const row of data)s.merged[row.name]={g:row.g,w:row.w,lp:row.lp,bw:row.bw,dw:row.dw,lj:row.lj};
+    expSaveSync(s);
+  }catch(e){}
+}
+async function cloudExpPush(){
+  if(!__cloudDB||__expPushing)return; // 串行化：并发 push 会重复计数（await 间隙 pending 继续增长）
+  __expPushing=true;
+  try{
+    for(let guard=0;guard<10;guard++){ // 推完一批若 pending 又涨（新对局），继续推到清空
+      const s=expSyncState();
+      const names=Object.keys(s.pending).filter(nm=>s.pending[nm]&&s.pending[nm].g>0);
+      if(!names.length)return;
+      for(const nm of names){
+        const p={g:s.pending[nm].g||0,w:s.pending[nm].w||0,lp:s.pending[nm].lp||0,bw:s.pending[nm].bw||0,dw:s.pending[nm].dw||0,lj:s.pending[nm].lj||0};
+        if(!p.g)continue;
+        const {error}=await __cloudDB.rpc('bump_role_exp',{p_name:nm,p_w:p.w,p_lp:p.lp,p_bw:p.bw,p_dw:p.dw,p_lj:p.lj});
+        if(error)return; // 失败：pending 保留，下一局结算再试
+        const s2=expSyncState();
+        s2.merged[nm]=expAddCnt(s2.merged[nm]||{...EXP_ZERO},p);
+        const rem={...s2.pending[nm]};
+        for(const k of ['g','w','lp','bw','dw','lj'])rem[k]=Math.max(0,(rem[k]||0)-(p[k]||0));
+        s2.pending[nm]=rem;
+        expSaveSync(s2);
+      }
+    }
+  }catch(e){}
+  finally{__expPushing=false;}
 }
 function qxmgDeadMeldN(ah){ // 统计手牌中「进张存量≤1」的死搭数（两面/卡张按搭对去重；对子不计）
   // 牌理口径：按实牌进张判死搭（红中百搭补牌的价值已在精算层 canReachTenpai/validTingIds 覆盖，
@@ -3395,6 +3480,10 @@ tableEl.addEventListener('touchcancel',endTouch,{passive:false});
 tableEl.addEventListener('wheel',e=>{if(TABLE_PAN){/* 备查：原滚轮缩放逻辑 */}e.preventDefault();},{passive:false});
 
 layout();
+// 角色经验云同步：CDN SDK（单文件零构建走全局 WorkBuddyCloud）；失败/离线静默走本地，联网后自动补传
+initCloudExp();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script>if(typeof WorkBuddyCloud!=='undefined'&&!__cloudDB)initCloudExp();</script>
 </body>
 </html>
