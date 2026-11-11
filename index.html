@@ -395,7 +395,25 @@
   #diceNote,#diceResult:not(:empty){display:inline-block;width:fit-content;max-width:min(88vw,540px);margin-left:auto;margin-right:auto;padding:4px 12px;border-radius:10px;background:rgba(0,0,0,.52);line-height:1.5;}
   #diceNote{margin-bottom:12px;}
   /* 2026-11-10 用户需求：掷骰阶段四周座位头像放大成「入座铭牌」（竖排：大头像+名字） */
-  #table.dicePhase .seat{justify-content:center;}
+  #table.dicePhase .seat{justify-content:center;overflow:visible;} /* 掷骰阶段放开座位格子裁剪：左右座位的分数要显示在 .who 外侧 */
+  /* 2026-11-11 用户需求：去掉中间头像列表——骰子得分直接标在四周座位头像旁
+     下方（seat0）分数在头像上面、上方（seat2）在头像下面、左（seat1）在头像右面、右（seat3）在头像左面 */
+  #table.dicePhase .who{position:relative;}
+  .seatDice{display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.55);border:1px solid rgba(217,164,65,.40);border-radius:10px;padding:2px 9px;margin-top:3px;}
+  .seatDice .dsVal{color:var(--gold);font-size:15px;font-weight:800;line-height:1.25;min-height:19px;}
+  .seatDice .dsTag{font-size:9.5px;color:#ff8a3d;font-weight:700;line-height:1.15;}
+  #seat0 .who .seatDice{margin-top:0;margin-bottom:3px;}       /* 下方座位：分数显示在头像上面 */
+  .seatDice.side{position:absolute;top:14px;margin:0;}          /* 左右座位：贴头像垂直中心（朝牌桌中央一侧，不出屏） */
+  #seat3 .who .seatDice.side{left:calc(100% + 6px);}            /* seat3=左座位：分数显示在头像右面（朝中央） */
+  #seat1 .who .seatDice.side{right:calc(100% + 6px);}           /* seat1=右座位：分数显示在头像左面（朝中央） */
+  .whoAvatar .dsBadge{position:absolute;top:-3px;right:-6px;display:none;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;font-size:9.5px;font-weight:800;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.55);z-index:3;}
+  .whoAvatar .dsBadge.east{background:linear-gradient(135deg,#0e7a5f,#16a085);}
+  .whoAvatar .dsBadge.dealer{background:linear-gradient(135deg,#c0392b,#e74c3c);}
+  #table.dicePhase .whoAvatar{position:relative;}
+  #table.dicePhase .who.cur{box-shadow:0 0 0 2px var(--gold),0 4px 14px rgba(0,0,0,.45);}
+  #table.dicePhase .who.east{box-shadow:0 0 0 2px #ff8a3d,0 4px 14px rgba(0,0,0,.45);}
+  body.pport .seatDice{padding:1px 7px;}
+  body.pport .seatDice .dsVal{font-size:14px;min-height:17px;}
   #table.dicePhase .who{flex-direction:column;gap:5px;padding:9px 8px 7px;border-radius:16px;background:rgba(0,0,0,.50);box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 1px rgba(217,164,65,.30);}
   #table.dicePhase .who .turn{display:none;} /* 空桌阶段无轮次灯 */
   #table.dicePhase .who .whoAvatar{width:54px;height:54px;box-shadow:0 2px 8px rgba(0,0,0,.55),0 0 0 2px rgba(217,164,65,.55);}
@@ -631,7 +649,6 @@
   <div id="diceCard">
     <div id="diceTitle">开局掷骰 · 定东</div>
     <div id="diceNote">四人各掷两颗骰子，点数最大者为东</div>
-    <div class="diceSeats" id="diceSeats"></div>
     <div class="diceStageRow">
       <div class="die" id="die1"></div>
       <div id="diceSum">?</div>
@@ -853,19 +870,41 @@ function waitDiceClick(){
   });
 }
 function diceSeatCells(){
-  const box=document.getElementById('diceSeats');
-  if(!box)return null;
-  box.innerHTML='';
+  // 2026-11-11 用户需求：去掉中间头像列表——得分直接挂四周座位头像旁
+  // 座位方位（grid 定义，横竖屏一致）：seat0 下、seat2 上、seat3 左、seat1 右
+  // 下方头像上面 / 上方头像下面 / 左座位(seat3)头像右面 / 右座位(seat1)头像左面（朝牌桌中央一侧）
+  // 返回 cells[i]=座位 .who 元素（含 .seatDice 分数与 .dsTag），角标注入头像右上角
   const cells=[];
-  const names=[humanName,aiNames[0],aiNames[1],aiNames[2]];
   for(let i=0;i<4;i++){
-    const c=document.createElement('div');c.className='diceSeat';
-    // 竖屏面板窄，玩家卡用「你」短标避免名字截断（底部铭牌有全名）；横屏用「你·全名」
-    const label=i===0?(isPhonePort()?'你':'你·'+names[i]):names[i];
-    c.innerHTML='<span class="dsBadge"></span><img src="'+avatarFaceOf(names[i])+'" alt=""><div class="dsName">'+label+'</div><div class="dsVal">—</div><div class="dsTag"></div>';
-    box.appendChild(c);cells.push(c);
+    const who=document.querySelector('#seat'+i+' .who');
+    if(!who){cells.push(null);continue;}
+    try{const old=who.querySelector('.seatDice');if(old)old.remove();}catch(e){}
+    const d=document.createElement('div');d.className='seatDice';
+    d.innerHTML='<div class="dsVal">—</div><div class="dsTag"></div>';
+    if(i===0)who.prepend(d);
+    else if(i===2)who.appendChild(d);
+    else{
+      d.classList.add('side');
+      who.appendChild(d); // seat1/seat3 由 CSS 绝对定位贴头像侧面
+    }
+    try{
+      const av=who.querySelector('.whoAvatar');
+      if(av){
+        const ob=av.querySelector('.dsBadge');if(ob)ob.remove();
+        av.insertAdjacentHTML('beforeend','<span class="dsBadge"></span>');
+      }
+    }catch(e){}
+    cells.push(who);
   }
   return cells;
+}
+function diceSeatClean(){ // 掷骰收尾：移除座位分数/角标/高亮（进局前座位恢复常规状态）
+  for(let i=0;i<4;i++){
+    const who=document.querySelector('#seat'+i+' .who');if(!who)continue;
+    try{const d=who.querySelector('.seatDice');if(d)d.remove();}catch(e){}
+    try{const av=who.querySelector('.whoAvatar');const b=av&&av.querySelector('.dsBadge');if(b)b.remove();}catch(e){}
+    who.classList.remove('cur','east');
+  }
 }
 function diceSetVal(cells,i,v,tag){
   if(!cells||!cells[i])return;
@@ -925,7 +964,7 @@ async function diceForDealer(token){
     for(let round=0;round<5&&east<0;round++){
       note.textContent=round===0?'四人各掷两颗骰子，点数最大者为东':'点数并列，平局者加掷一轮';
       for(const i of participants){
-        if(token!==runToken){ov.classList.remove('show');return -1;}
+        if(token!==runToken){ov.classList.remove('show');diceSeatClean();return -1;}
         cells.forEach((c,k)=>c.classList.toggle('cur',k===i));
         if(i===0&&!humanAuto){
           if(_diceEarlyRes){ // 已提前显示的按钮：优先消费提前点击（点击或超时都隐藏按钮）
@@ -935,7 +974,7 @@ async function diceForDealer(token){
           }else await waitDiceClick();
         }
         else await sleep(Math.max(30,dGap));
-        if(token!==runToken){ov.classList.remove('show');return -1;}
+        if(token!==runToken){ov.classList.remove('show');diceSeatClean();return -1;}
         const a=1+randInt(6),b=1+randInt(6);
         const sum=await rollDice(a,b,dFast);
         scores[i]=sum;
@@ -960,7 +999,7 @@ async function diceForDealer(token){
     note.textContent='以'+eastName+'为 1 数起（数到 5 绕回自己），掷出点数落谁家谁坐庄';
     // 2026-11-09 用户需求：选出东后由东自动掷骰定庄——东为玩家时也不再手动点按钮，直接掷
     await sleep(Math.max(30,dGap));
-    if(token!==runToken){ov.classList.remove('show');return -1;}
+    if(token!==runToken){ov.classList.remove('show');diceSeatClean();return -1;}
     const a=1+randInt(6),b=1+randInt(6);
     const s=await rollDice(a,b,dFast);
     const dealer=(east+s-1)%4;
@@ -977,10 +1016,10 @@ async function diceForDealer(token){
     window._diceResult={east,rolls:scores,s,dealer};
     // 2026-11-11 用户需求：定完庄在结果面板停留 1.5 秒（看清数位过程与「庄」角标）再进牌局
     await sleep(humanAuto?30:1500);
-    ov.classList.remove('show');
+    ov.classList.remove('show');diceSeatClean();
     return dealer;
   }catch(e){
-    try{ov.classList.remove('show');}catch(x){}
+    try{ov.classList.remove('show');}catch(x){}try{diceSeatClean();}catch(x){}
     return 0;
   }
 }

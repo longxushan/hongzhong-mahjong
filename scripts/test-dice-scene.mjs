@@ -1,4 +1,6 @@
-// 2026-11-10 实测：掷骰阶段中间四卡缩小、四周座位铭牌放大、无遮挡重叠；进局后恢复正常
+// 2026-11-11 用户需求实测：掷骰中间头像列表移除——得分直接标四周座位头像旁
+// 座位方位（grid：seat3=左、seat1=右）：下方(seat0)分数在头像上面、上方(seat2)在头像下面、左(seat3)在头像右面、右(seat1)在头像左面（均朝牌桌中央）；
+// 进局后座位分数清理干净；无遮挡重叠
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -40,49 +42,48 @@ await page.waitForFunction(
   () => document.getElementById('diceOverlay')?.classList.contains('show'),
   null, { timeout: 20000 }
 );
-await page.waitForTimeout(800); // 等定东第一轮起滚
+await page.waitForTimeout(800);
 
 const dice = await page.evaluate(() => {
   const r = el => el ? el.getBoundingClientRect() : null;
   const q = s => document.querySelector(s);
-  const av = s => { const el = q(s); return el ? Math.round(el.getBoundingClientRect().width) : 0; };
+  const seatDice = i => r(q('#seat' + i + ' .who .seatDice'));
+  const avatar = i => r(q('#seat' + i + ' .who .whoAvatar'));
+  const who = i => r(q('#seat' + i + ' .who'));
   return {
-    diceAvatar: av('.diceSeat img'),
-    seat2Avatar: av('#seat2 .whoAvatar'),
-    seat0Avatar: av('#seat0 .whoAvatar'),
-    seat1Avatar: av('#seat1 .whoAvatar'),
-    seat3Avatar: av('#seat3 .whoAvatar'),
+    midCardCount: document.querySelectorAll('.diceSeat').length,
+    diceCount: document.querySelectorAll('.seatDice').length,
     dicePhase: document.getElementById('table').classList.contains('dicePhase'),
-    // 交叠检测：掷骰卡行 vs 左右座位铭牌；标题/结果 vs 上下铭牌
-    seatsRow: r(document.querySelector('.diceSeats')),
-    seat1Who: r(document.querySelector('#seat1 .who')),
-    seat3Who: r(document.querySelector('#seat3 .who')),
+    s0: seatDice(0), a0: avatar(0), w0: who(0),
+    s2: seatDice(2), a2: avatar(2), w2: who(2),
+    s1: seatDice(1), a1: avatar(1), w1: who(1),
+    s3: seatDice(3), a3: avatar(3), w3: who(3),
     note: r(document.getElementById('diceNote')),
     title: r(document.getElementById('diceTitle')),
     stageRow: r(document.querySelector('.diceStageRow')),
     result: r(document.getElementById('diceResult')),
-    seat2Who: r(document.querySelector('#seat2 .who')),
-    seat0Who: r(document.querySelector('#seat0 .who')),
-    seatsRowH: Math.round(document.querySelector('.diceSeats').getBoundingClientRect().height),
-    cardCount: document.querySelectorAll('.diceSeat').length,
   };
 });
 const inter = (a, b) => a && b && a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2;
 
-console.log('掷骰阶段：中间卡头像', dice.diceAvatar, 'px | 四周：上', dice.seat2Avatar, '下', dice.seat0Avatar, '左', dice.seat1Avatar, '右', dice.seat3Avatar, 'px');
-console.log('dicePhase 类 =', dice.dicePhase);
-const overlapSeat1 = inter(dice.seatsRow, dice.seat1Who), overlapSeat3 = inter(dice.seatsRow, dice.seat3Who);
-const noteOverlap1 = inter(dice.note, dice.seat1Who), noteOverlap3 = inter(dice.note, dice.seat3Who);
-const titleOverlap = inter(dice.title, dice.seat2Who) || inter(dice.title, dice.seat0Who);
-const resultOverlap = inter(dice.result, dice.seat0Who) || inter(dice.result, dice.seat2Who);
-const stageOverlap = inter(dice.stageRow, dice.seat1Who) || inter(dice.stageRow, dice.seat3Who);
-console.log('掷骰卡行 vs 左右铭牌交叠:', overlapSeat1 || overlapSeat3, '| 文字胶囊 vs 左右铭牌交叠:', noteOverlap1 || noteOverlap3);
-console.log('标题 vs 上下铭牌交叠:', titleOverlap, '| 骰子行 vs 左右铭牌交叠:', stageOverlap, '| 结果 vs 上下铭牌交叠:', resultOverlap);
-console.log('掷骰卡行高度', dice.seatsRowH, 'px（≤70 为一行四张）| 卡片数', dice.cardCount);
+// 方位断言：分数与头像不交叠且方向正确
+const pos0 = dice.s0 && dice.a0 && dice.s0.bottom <= dice.a0.top + 2;         // 下：分数在头像上面
+const pos2 = dice.s2 && dice.a2 && dice.s2.top >= dice.a2.bottom - 2;         // 上：分数在头像下面
+const pos3 = dice.s3 && dice.w3 && dice.s3.left >= dice.w3.right - 4;         // 左座位(seat3)：分数在 .who 右面（朝中央）
+const pos1 = dice.s1 && dice.w1 && dice.s1.right <= dice.w1.left + 4;         // 右座位(seat1)：分数在 .who 左面（朝中央）
+console.log('中间卡数量 =', dice.midCardCount, '（应 0）| 座位分数元素 =', dice.diceCount, '（应 4）');
+console.log('方位：下头像上=' + pos0, '上头像下=' + pos2, '左座位(seat3)头像右=' + pos3, '右座位(seat1)头像左=' + pos1);
+
+// 交叠：中央面板文字/骰子行 vs 座位铭牌
+const noteOv = inter(dice.note, dice.w1) || inter(dice.note, dice.w3);
+const titleOv = inter(dice.title, dice.w2) || inter(dice.title, dice.w0);
+const stageOv = inter(dice.stageRow, dice.w1) || inter(dice.stageRow, dice.w3);
+const resultOv = inter(dice.result, dice.w0) || inter(dice.result, dice.w2);
+console.log('胶囊 vs 左右铭牌交叠:', noteOv, '| 标题 vs 上下:', titleOv, '| 骰子行 vs 左右:', stageOv, '| 结果 vs 上下:', resultOv);
 
 await page.screenshot({ path: path.join(ROOT, 'scripts', 'dice-phase.png') });
 
-// 等进局（1s 停留 + 发牌），验证恢复正常座位
+// 等进局，验证座位恢复（分数/角标清理干净）
 await page.waitForFunction(
   () => typeof G !== 'undefined' && !!G && G.awaiting === 'discard',
   null, { timeout: 30000 }
@@ -90,21 +91,22 @@ await page.waitForFunction(
 await page.waitForTimeout(500);
 const after = await page.evaluate(() => ({
   dicePhase: document.getElementById('table').classList.contains('dicePhase'),
-  seat2Avatar: Math.round(document.querySelector('#seat2 .whoAvatar').getBoundingClientRect().width),
+  seatDiceLeft: document.querySelectorAll('.seatDice').length,
+  badgeLeft: document.querySelectorAll('.whoAvatar .dsBadge').length,
   hand14: p(0).hand.length,
 }));
-console.log('进局后：dicePhase =', after.dicePhase, '| 座位头像恢复', after.seat2Avatar, 'px | 手牌', after.hand14, '张');
+console.log('进局后：dicePhase =', after.dicePhase, '| 残留分数 =', after.seatDiceLeft, '| 残留角标 =', after.badgeLeft, '| 手牌', after.hand14, '张');
 await page.screenshot({ path: path.join(ROOT, 'scripts', 'game-phase.png') });
 
 console.log('页面错误:', pageErrors.length, '条');
-const pass = dice.diceAvatar <= 28
-  && dice.seat2Avatar >= 50 && dice.seat0Avatar >= 50
+const pass = dice.midCardCount === 0
+  && dice.diceCount === 4
   && dice.dicePhase === true
-  && !overlapSeat1 && !overlapSeat3
-  && !titleOverlap && !stageOverlap && !resultOverlap
-  && dice.seatsRowH <= 70 && dice.cardCount === 4
-  && after.dicePhase === false && after.hand14 === 14
+  && pos0 && pos2 && pos1 && pos3
+  && !noteOv && !titleOv && !stageOv && !resultOv
+  && after.dicePhase === false && after.seatDiceLeft === 0 && after.badgeLeft === 0
+  && after.hand14 === 14
   && pageErrors.length === 0;
-console.log(pass ? 'PASS: 中间缩小四周放大、无遮挡、进局恢复' : 'FAIL: 需调整');
+console.log(pass ? 'PASS: 中间列表已移除、四方位分数正确、进局清理干净' : 'FAIL: 需调整');
 await browser.close();
 process.exit(pass ? 0 : 1);
