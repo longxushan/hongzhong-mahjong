@@ -2458,6 +2458,23 @@ function observeTable(pl){
   }
   return {seen,suitOut,threat};
 }
+// ===== 补杠风控（2026-11-11 V3 百局审计升级：AI 学会攻略里的「残局防抢杠」）=====
+// 抢杠由补杠者一人独扛全部赔付（最高 -150）——僧大兴实测杠分 -24 即被抢；
+// 判据与攻略一致：前中盘（牌墙≥15）放心补；残局且对手具备抢杠资格（手里无红中）
+// 叠加听牌迹象（熟张流/副露进度）时忍住不补。暗杠/放杠无被抢风险，不设闸。
+function buGangRiskOK(pl){
+  try{
+    if(wallRemain()>=15)return true;
+    const ob=observeTable(pl);
+    for(let o=1;o<=3;o++){
+      const foe=p((pl.seat+o)%4);
+      if(foe.hand.some(t=>t.id==='Z'))continue;        // 有红中者无抢杠资格
+      if(!foe.discard.some(t=>t.id==='Z'))continue;    // 没打过红中：手上大概率还握着红中，风险低
+      if((ob.threat[foe.seat]||0)>=3)return false;      // 硬胡资格 + 听牌迹象 → 忍住不补
+    }
+    return true;
+  }catch(e){return true;}
+}
 // ===== 郑太顺技巧层（2026-11-11 用户需求：让牌局机器人学会《郑太顺麻将经典技巧》，九篇五十七节精华算法化）=====
 // ①金三银七孤张价值（3/7 尖张联络最强要多留、2/8 次之早处理、1/9 边张靠搭仅 3 张最先打）
 // ②同线加减一猜牌（对手同筋线小到大打出→需要 +1 牌；大到小→需要 -1 牌）+ 反常对信号（先六后八必有对九、先四后二必有对一）
@@ -2981,7 +2998,7 @@ async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变
     else{const canG=wallRemain()>CFG.keepTiles;let did=false;
       const an=canG?findAnGang(cur):[];
       if(an.length&&aiWantClaim(cur,an[0].id,'gang')){doGang(cur,'angang',an[0].id);did=true;}
-      if(!did&&canG){const bu=findBuGang(cur);if(bu.length&&aiWantClaim(cur,bu[0],'gang')){const rb=await checkQiangGang(cur.seat,bu[0]);if(myToken!==runToken)return;if(rb)break;doGang(cur,'bugang',bu[0]);did=true;}}
+      if(!did&&canG){const bu=findBuGang(cur);if(bu.length&&aiWantClaim(cur,bu[0],'gang')&&buGangRiskOK(cur)){const rb=await checkQiangGang(cur.seat,bu[0]);if(myToken!==runToken)return;if(rb)break;doGang(cur,'bugang',bu[0]);did=true;}}
       gh=did;}
     if(gh){if(wallRemain()<=CFG.keepTiles){await showLiuJu();break;}drawTile(cur,true);render();const w2=analyzeWin(cur);if(w2.win){await showWin(cur.seat,'ganghua',w2);break;}}
     let disc;if(cur.human&&!cur.auto){let settled=false;while(!settled){disc=await waitHuman('discard',{});if(myToken!==runToken)return;if(disc.id==='Z'){const ok=await waitHuman('confirmZ',{});if(myToken!==runToken)return;if(ok.yes)settled=true;}else settled=true;}}else{disc=aiChooseDiscard(cur);await think();if(myToken!==runToken)return;}
