@@ -61,6 +61,7 @@ const result = await page.evaluate(() => {
       warnOverlapHand: inter(warn, handWrap) || inter(warn, actions),
       dockTop: dock ? Math.round(dock.top) : null,
       warnText: document.getElementById('liveWarn')?.textContent.slice(0, 24) || '',
+      warnFull: document.getElementById('liveWarn')?.textContent || '',
       // 诊断明细
       dbg: {
         tableH: Math.round(table.height),
@@ -88,6 +89,7 @@ const pass = result.handTopPct <= 62
   && result.warnBottomGap <= 12
   && result.gapBetween >= 20
   && result.warnOverlapHand === false
+  && /雀学米高|郑太顺/.test(result.warnFull) // 2026-11-11：双大师心法已入实时点评
   && pageErrors.length === 0;
 console.log(pass ? 'PASS: 手牌上移+提醒钉底空挡' : 'FAIL: 需调整');
 await browser.close();

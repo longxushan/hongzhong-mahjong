@@ -1861,11 +1861,11 @@ function teachPick(d){
   const meldNote=d.completeMelds.length?('已成型的 '+d.completeMelds.join('、')+' 要保留，不拆成型面子；'):'';
   let kou;
   if(best.dw>0){
-    if(d.edge.indexOf(best.id)>=0)kou=meldNote+'边张进张已绝，先拆死搭：'+nm+'所在边搭需要的牌已经摸不到，留着只占手；打掉后可进 '+listTxt+'，共 '+best.dw+' 张有效进张，活路最宽。';
-    else kou=meldNote+'两害相权取其轻：打 '+nm+' 损失的进张最少，打掉后可进 '+listTxt+'，共 '+best.dw+' 张有效进张，听牌速度最快。';
+    if(d.edge.indexOf(best.id)>=0)kou=meldNote+'边张进张已绝，先拆死搭：'+nm+'所在边搭需要的牌已经摸不到，留着只占手；打掉后可进 '+listTxt+'，共 '+best.dw+' 张有效进张，活路最宽。雀学米高口径：死搭每巡都在吃净值，止损要早。';
+    else kou=meldNote+'两害相权取其轻：打 '+nm+' 损失的进张最少，打掉后可进 '+listTxt+'，共 '+best.dw+' 张有效进张，听牌速度最快。这也是机会成本最小的一打（雀学米高）。';
   }else{
     const rank=parseInt(best.id[1],10),isYJ=rank===1||rank===9;
-    if(d.orphans.indexOf(best.id)>=0)kou=meldNote+(isYJ?'幺九孤张先出手，金三银七要保留：':'牌从孤张起，先打孤张后打熟：')+nm+(isYJ?'靠边、无对无邻，成搭最难，先打不亏；中张和搭子先留着。':'无对无邻、成搭最难，先打最有利；中张和搭子先留着。');
+    if(d.orphans.indexOf(best.id)>=0)kou=meldNote+(isYJ?'幺九孤张先出手，金三银七要保留：':'牌从孤张起，先打孤张后打熟：')+nm+(isYJ?'靠边、无对无邻，成搭最难，先打不亏；中张和搭子先留着。':'无对无邻、成搭最难，先打最有利；中张和搭子先留着。')+'（雀学米高口径：孤张每巡净值最负，先出止损；口诀是起点，存量与配合才是判据。）';
     else if(d.edge.indexOf(best.id)>=0)kou=meldNote+'这个边搭进张窄、又不是成型面子，先拆 '+nm+'，保留进张更宽的两面搭和中张。';
     else if(d.embedded.indexOf(best.id)>=0)kou=meldNote+'两害相权取其轻：'+nm+'所在嵌张搭进张较窄，先打它，保留两面搭和中张。';
     else kou=meldNote+'两害相权取其轻：先打对牌型帮助最小的 '+nm+'，保留更有希望的搭子。';
@@ -2149,17 +2149,25 @@ function liveWarn(tile){
   const me=p(0),d=handDiagnose(me),pick=teachPick(d);
   const el=document.getElementById('liveWarn');if(!el)return;
   const nm=tileName(tile);
+  // 2026-11-11 双大师心法实时点评：郑太顺读牌（同线/反常对危险信号）+ 雀学米高机会成本
+  let master='';
+  try{
+    const zts=ztsDanger(me);
+    if(zts.danger[tile.id])master+='<b>郑太顺读牌：</b>各家弃牌轨迹显示 '+nm+' 是危险信号张（同线加减一/反常对命中）——对手多半快听了。本游戏无点炮，但这是「抢速度还是收杠分」的决策信号。<br>';
+    const pairBreak=tile.id!=='Z'&&me.hand.filter(t=>t.id===tile.id).length>=2;
+    if(pairBreak&&d.pairCount>=4)master+='<b>雀学米高·机会成本：</b>拆这个对子=放弃七对/全碰路线的一份价值（手里已有 '+d.pairCount+' 对），机会成本要算进这一打。<br>';
+  }catch(e){}
   if(tile.id===pick.id){
     el.className='liveWarn warnGood';
-    el.innerHTML='<b>师傅点评：这张选得对，可放心打出</b>你选的 '+nm+' 正是我推荐的牌。'+pick.kou;
+    el.innerHTML='<b>师傅点评：这张选得对，可放心打出</b>你选的 '+nm+' 正是我推荐的牌。'+pick.kou+'<br><b>雀学米高·综合价值：</b>这一打的巡内净值是正的——进张价值覆盖了弃牌损失，手牌价值在累积。'+master;
   }else if(pick.stance&&stanceFit(pick.stance,tile.id,d)>0&&tile.id!=='Z'){
     const best=tileName(tileFromId(pick.id));
     el.className='liveWarn warnGood';
-    el.innerHTML='<b>师傅点评：大牌方向，打得通</b>你正在做'+pick.stance.name+'，选的 '+nm+' 符合大牌路线，做牌不为最快胡、这步走得通；我同路线的首推是 '+best+'。'+pick.kou;
+    el.innerHTML='<b>师傅点评：大牌方向，打得通</b>你正在做'+pick.stance.name+'，选的 '+nm+' 符合大牌路线，做牌不为最快胡、这步走得通；我同路线的首推是 '+best+'。'+pick.kou+master;
   }else{
     const best=tileName(tileFromId(pick.id));
     el.className='liveWarn warnBad';
-    el.innerHTML='<b>师傅提醒：这张可能打亏了，先别急着出牌</b>你选的是 '+nm+'，我更建议打 '+best+'。'+pick.kou;
+    el.innerHTML='<b>师傅提醒：这张可能打亏了，先别急着出牌</b>你选的是 '+nm+'，我更建议打 '+best+'。'+pick.kou+master;
   }
   if(warnTimer){clearTimeout(warnTimer);warnTimer=null;}
   el.style.display='block';
@@ -2185,6 +2193,13 @@ function buildThinkHTML(){
   h+='<div class="thinkStep"><b>第三步，我看牌局阶段和别家在做什么</b>';
   h+='现在是“'+d.stage+'”。'+STAGE_KOU[d.stage];
   for(const o of opp)h+=' '+o.name+'：'+o.text+'。';
+  // 2026-11-11 双大师读牌研判：郑太顺危险信号张 + 雀学米高存量口径
+  try{
+    const zts=ztsDanger(me),dz=Object.keys(zts.danger||{});
+    if(dz.length)h+='按郑太顺同线读牌，'+dz.slice(0,3).map(x=>tileName(tileFromId(x))).join('、')+'是危险信号张——有人弃牌轨迹反常、多半快听了，你若牌差就转收杠分。';
+    else h+='按郑太顺读牌：各家弃牌轨迹暂无明显等张信号。';
+    h+='雀学米高存量口径：牌墙可见存量 '+wallRemain()+' 张，存量越高自摸概率越大，拆搭先拆存量小的。';
+  }catch(e){}
   h+='</div>';
   h+='<div class="thinkFinal">综合这三步，我建议打 <b>'+tileName(tileFromId(pick.id))+'</b>。'+pick.kou+'</div>';
   return h;
@@ -2199,6 +2214,21 @@ const REVIEW_KNOWLEDGE={
   liuju:'流局不翻码、只结杠分。后期进张变窄，要算清留底 6 张，别为了做不出来的大牌耽误听牌。',
   basic:'基础牌理是一切的根：先打幺九孤张、再处理边搭，保留中张和两面搭；先把搭子凑齐、尽快听牌，比贪大牌更稳。'
 };
+// 2026-11-11 玩家技能体系·双大师心法池：每次复盘随机学一条，随身成长
+const MASTER_KOU=[
+  '雀学米高·综合价值：每一打都问「这巡净值是正还是负」，长期顺差定输赢——对局账单就是你的报表。',
+  '雀学米高·机会成本：拆对子=放弃七对可能，过早收守=丢进攻价值；牌墙>25 前不轻言转守。',
+  '雀学米高·听牌三维：牌效（速度）×牌价（力度）×风险（损害）——单吊窄口快听不等于好听。',
+  '雀学米高·裸对消化：两个以上孤立裸对牌效最低，用 ABB 结构消化，别见对就碰。',
+  '雀学米高·大牌小牌期望值：小牌高频低分 vs 大牌低频高分，红中 ×2ⁿ 正是番补足概率损失的临界场景。',
+  '雀学米高·逆风四招：理牌打散重摆、反转出牌习惯、小胡暖手、借对手碰杠变节奏。',
+  '雀学米高·猜牌趁早：前五巡缩维度，盯「由低到高」秩序被违反的反常出牌者。',
+  '郑太顺·金三银七：3/7 联络 7 门最金、2/8 次之、1/9 仅 3 门——等向听时的留牌 tie-break。',
+  '郑太顺·同线猜牌：筋线 147/258/369，对手小到大打出=等 +1，大到小=等 −1。',
+  '郑太顺·反常对信号：先打六后打八必有对九，先打四后打二必有对一。',
+  '郑太顺·两圈不见一和九：中后期河里 0 张的 1/9 多半在别家成对或单吊——他快听了。',
+  '郑太顺·五不碰：顺子带搭、大肚子、已听贪碰、第 4 副露后非进听不碰；本游戏碰完还能杠，更要过这道闸。'
+];
 function makeReview(resultText,knowledgeKey){
   lastReview={resultText:resultText,knowledge:REVIEW_KNOWLEDGE[knowledgeKey]||REVIEW_KNOWLEDGE.basic,moves:moveLog.slice()};
   return lastReview;
@@ -2219,6 +2249,8 @@ function buildReviewHTML(rev){
     h+='<div class="revMoves"><div class="revMove good"><span class="revMoveTag good">打对了</span><div>这局你的出牌和师傅判断基本一致，牌理很稳，继续保持。</div></div></div>';
   }
   h+='<div class="revPoint"><b>本局知识点：</b>'+rev.knowledge+'</div>';
+  // 2026-11-11 双大师心法：每次复盘随机学一条（玩家技能成长）
+  try{h+='<div class="revPoint"><b>大师心法（本局学一条）：</b>'+MASTER_KOU[Math.floor(Math.random()*MASTER_KOU.length)]+'</div>';}catch(e){}
   return h;
 }
 

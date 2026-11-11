@@ -139,6 +139,19 @@ try {
   assert('打法攻略弹窗可用（含雀学米高+郑太顺玩家心法）', tipsOk.shown && tipsOk.secs >= 8 && tipsOk.tbls >= 4 && tipsOk.hasQuxue && tipsOk.hasZts,
     `分节 ${tipsOk.secs} 个、表格 ${tipsOk.tbls} 张，雀学米高=${tipsOk.hasQuxue}，郑太顺=${tipsOk.hasZts}`);
 
+  // 2026-11-11 双大师心法接入玩家活引擎：打错提醒点评 / 师傅推荐理由 / 讲思路 / 复盘心法池
+  const masterOk = await page.evaluate(() => ({
+    warnWired: typeof liveWarn === 'function' && liveWarn.toString().includes('ztsDanger') && liveWarn.toString().includes('机会成本'),
+    kouWired: typeof teachPick === 'function' && /雀学米高/.test(teachPick.toString()),
+    thinkWired: typeof buildThinkHTML === 'function' && buildThinkHTML.toString().includes('郑太顺同线读牌') && buildThinkHTML.toString().includes('存量口径'),
+    reviewPool: typeof MASTER_KOU !== 'undefined' && MASTER_KOU.length >= 12,
+    reviewPoolN: typeof MASTER_KOU !== 'undefined' ? MASTER_KOU.length : 0,
+    reviewWired: typeof buildReviewHTML === 'function' && buildReviewHTML.toString().includes('大师心法'),
+  }));
+  assert('双大师心法接入玩家活引擎（点评/推荐/思路/复盘）',
+    masterOk.warnWired && masterOk.kouWired && masterOk.thinkWired && masterOk.reviewPool && masterOk.reviewWired,
+    `点评=${masterOk.warnWired}，推荐=${masterOk.kouWired}，思路=${masterOk.thinkWired}，心法池=${masterOk.reviewWired?masterOk.reviewPoolN+'条':'缺'}，复盘=${masterOk.reviewWired}`);
+
   // 对局账单（战绩）：每局输赢明细 + 累计汇总 + 结果列牌型标注 + 末尾各局胡牌牌型图；赢红输绿
   const histOk = await page.evaluate(() => {
     const btn = document.getElementById('histBtn');
