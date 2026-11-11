@@ -636,7 +636,7 @@
         <tr><td>抽屉原则算存量</td><td><b>112</b> −（四家手牌 + 牌池已见）= 牌墙存量（本游戏全副 112 张，不是常规麻将的 136）；两三家都缺某花色 → 该花色全在牌墙</td><td>拆搭留存量大的一侧、拆存量为 0 或极少的一侧——听牌一览已把可见剩余摆在你眼前</td></tr>
         <tr><td>三档标签记牌</td><td>给每家贴三档：牌型信息 / 牌效速度 / 留牌区域；记信息链不记原始牌</td><td>盯三家副露与弃牌顺序，判谁快听了 → 决定你是抢速度还是收杠分等流局</td></tr>
         <tr><td>七对攻防兼备</td><td>七对隐蔽性强、进可攻退可守；牌运最差时强做七对是改运节点</td><td>本玩法七对 ×2（豪华 ×4）：连输两局牌又散时，起手 4 对以上可转七对稳住心态</td></tr>
-        <tr><td>接牌快打牌慢</td><td>性子越急出牌越快、错误率越高，恶性循环；摸牌快、出牌慢养算力</td><td>把「打错提醒」开着打：每次出牌等师傅点评 3 秒再确认，错误率自然下来</td></tr>
+        <tr><td>接牌快打牌慢</td><td>性子越急出牌越快、错误率越高，恶性循环；摸牌快、出牌慢养算力</td><td>把「打错提醒」开着打：每次出牌前看一眼师傅点评，慢三秒再出牌，错误率自然下来</td></tr>
       </table>
       <ol>
         <li>记牌 ≠ 背牌：拉开差距的从来不是记忆力，是分析与判断——记结论（他不要什么 / 在留什么 / 在等什么），不记原始牌张。</li>
@@ -1647,6 +1647,8 @@ function visibleLeft(id){
   return Math.max(0,4-used);
 }
 function suitRemaining(suit){let n=0;for(let r=1;r<=9;r++)n+=tileRemaining(suit+r);return n;}
+// 面向玩家的教学口径：与「听牌一览」同源的可见剩余（AI 精算层仍走 tileRemaining 真实墙口径，二者各司其职）
+function suitVisibleLeft(suit){let n=0;for(let r=1;r<=9;r++)n+=visibleLeft(suit+r);return n;}
 function teachingAdvice(){
   const me=p(0),hand=me.hand;
   const allIds=[];
@@ -1721,17 +1723,17 @@ function handDiagnose(pl){
 }
 function recommendHandType(d,me){
   const mainN=d.sc[d.mainSuit];
-  const suitRem=suitRemaining(d.mainSuit);
+  const suitRem=suitVisibleLeft(d.mainSuit);
   const qingPossible=(mainN+suitRem+d.zN>=13)&&!(d.stage==='残局'&&mainN<11);
   const sevenPossible=!(d.stage==='残局'&&d.pairCount7+d.zN<4);
   const list=[];
   if(me.melds.length===0){
-    const sevenNeed=Math.max(0,7-d.pairCount7);
+    const sevenNeed=Math.max(0,7-d.pairCount7-d.zN); // 红中可顶对，按「实体对子+红中」算真实缺口
     list.push({name:'七对',mult:2,feasible:sevenPossible,
-      text:'七对（×2）：现有对子'+d.pairCount7+'对（四张一样算两对）'+(d.zN?'，红中'+d.zN+'只可补':'')+'，还差'+sevenNeed+'对'+(sevenPossible?'，留对子、打孤张。':'，但已到'+d.stage+'、来不及凑齐，建议放弃，改走基本胡。')});
+      text:'七对（×2）：现有对子'+d.pairCount7+'对（四张一样算两对）'+(d.zN?'，红中'+d.zN+'只可顶'+d.zN+'对':'')+'，按可见信息还差'+sevenNeed+'对'+(sevenPossible?'，留对子、打孤张。':'，但已到'+d.stage+'、来不及凑齐，建议放弃，改走基本胡。')});
   }
   list.push({name:'清一色',mult:2,feasible:qingPossible,
-    text:'清一色（×2）：'+CFG.suitName[d.mainSuit]+'子已有'+mainN+'张，牌墙里还剩'+suitRem+'张'+CFG.suitName[d.mainSuit]+'子可摸'+(qingPossible?'，集中'+CFG.suitName[d.mainSuit]+'子、打其他花色。':'，可进张被别家碰打后不足，硬做容易烂牌，建议放弃。')});
+    text:'清一色（×2）：'+CFG.suitName[d.mainSuit]+'子已有'+mainN+'张，按全场可见信息还有'+suitRem+'张'+CFG.suitName[d.mainSuit]+'子没露面'+(qingPossible?'，集中'+CFG.suitName[d.mainSuit]+'子、打其他花色。':'，可进张被别家碰打后不足，硬做容易烂牌，建议放弃。')});
   // 全碰可行口径（2026-11-11 修复收紧）：刻型资源=刻型副露+手里刻子+对子，≥3 组才有碰碰胡本钱；
   // 顺子结构碰一组只是普通加速，不代表在做碰碰胡（原逻辑有副露就锁死全碰且状态粘滞不重置）
   const meldKan=me.melds.filter(m=>m.type==='peng'||m.type.indexOf('gang')>=0).length;
@@ -1742,7 +1744,7 @@ function recommendHandType(d,me){
       :'全碰（×4）：刻型本钱仅'+kanRes+'组（不足3），这手牌走顺子结构更快——碰只是加速，别硬凑刻子。'});
   // 主做判定（2026-11-11 修复）：与推荐引擎 teachPick 的大牌姿态 bigHandStance 同源——两套口径合一，
   // 牌型分析与推荐永不打架；纯函数实时重算，随手牌变化更新，不再有粘滞状态
-  const stance=bigHandStance(me,d,0.5);
+  const stance=bigHandStance(me,d,0.5,true);
   let lead;
   if(stance)lead=stance.kind==='qing'?'清一色':stance.kind==='seven'?'七对':'全碰';
   else if(kanRes>=3)lead='全碰';
@@ -1769,8 +1771,8 @@ function recommendHandType(d,me){
 // 识别当前手牌是否值得锁定大牌路线：清一色、七对、碰碰胡及组合（清一色碰碰胡×8、清一色七对×4）。
 // conserv=0~1 保守度：越高越晚锁定（要求更高成型度才转大牌）；返回 null 表示维持普通精算路线。
 // 每种姿态都带烂牌安全闸：允许为做大牌牺牲向听，但最多恶化 2 级（见 stanceFit 调用处）。
-function bigHandStance(pl,d,conserv){
-  const mainN=d.sc[d.mainSuit],suitRem=suitRemaining(d.mainSuit);
+function bigHandStance(pl,d,conserv,vis){
+  const mainN=d.sc[d.mainSuit],suitRem=vis?suitVisibleLeft(d.mainSuit):suitRemaining(d.mainSuit);
   const meldPongs=pl.melds.filter(m=>m.type==='peng'||m.type.indexOf('gang')>=0).length;
   const c=conserv||0;
   // 七对成型度：自数实体对子（2张=1对，4张=2对，3张拆开=1对+1孤张）
@@ -1880,7 +1882,7 @@ function teachPick(d){
   const dump=shouldDumpSingleZ(me);
   if(dump){
     const which=dump==='seven'?'七对':'清一色';
-    return {id:'Z',rule:true,ting:null,kou:'冒险做大牌：这副牌往'+which+'走、成型度已经很高，可主动打掉这只红中、手里不留红中。虽少了癞子补位，但胡牌时算硬胡（翻码6张、0张保底6），再叠加打出红中本人胡牌×2，大牌收益更高。已确认打掉红中后仍有有效进张、做得下去才建议这招；想求稳也可继续留红中。'};
+    return {id:'Z',rule:true,ting:null,kou:'冒险做大牌：这副牌往'+which+'走、成型度已经很高，可主动打掉这只红中、手里不留红中。虽少了癞子补位，但胡牌时算硬胡（翻码6张、0张保底6），再叠加打出红中本人胡牌×2，大牌收益更高。已核算打掉红中后仍有有效进张、做得下去才建议这招；想求稳也可继续留红中。'};
   }
   const seen={},cands=[];
   for(const t of me.hand){
@@ -1890,20 +1892,20 @@ function teachPick(d){
     const sh=calcShanten(ah,me.melds);
     // ② 打出后能否立即有效听牌
     const vt=validTingIds(ah,me.melds);
-    let iw=0;for(const x of vt)iw+=tileRemaining(x);
+    let iw=0;for(const x of vt)iw+=visibleLeft(x);
     // ③ 若不能立即听牌，计算有效进张：再摸一张后能进入有效听牌
     const draws=[];let dw=0;
     for(const x of allTileIds()){
-      const rem=tileRemaining(x);if(rem<=0)continue;
+      const rem=visibleLeft(x);if(rem<=0)continue;
       const trial=ah.concat([tileFromId(x)]);
       let ok;try{ok=canReachTenpai(trial,me.melds);}catch(e){ok=false;}
       if(ok){draws.push(x);dw+=rem;}
     }
     cands.push({id:t.id,sh,vt,iw,draws,dw,role:tileRoleRank(t.id,d)});
   }
-  // 大牌姿态：成型度达标时教学建议切换到大牌导向口径（用户需求：做大牌不必按最快胡牌走）
+  // 大牌姿态：成型度达标时教学建议切换到大牌导向口径（用户需求：做大牌不必按最快胡牌走）；教学一律用玩家可见口径
   let shMin=99;for(const c of cands)shMin=Math.min(shMin,c.sh);
-  const stance=bigHandStance(me,d,0.5);
+  const stance=bigHandStance(me,d,0.5,true);
   if(stance){
     for(const c of cands){
       c.fit=stanceFit(stance,c.id,d);
@@ -2198,11 +2200,29 @@ let lastReview=null;
 let warnTimer=null;
 function resetMoveLog(){moveLog=[];clearWarn();refreshDock();}
 // 玩家出牌时记录决策（用于局后复盘）；实时提醒已在点选时由 liveWarn 完成，这里不再重复提醒
-// good 判定：师傅首推牌，或处于大牌姿态且所选牌符合大牌方向（做大牌不必按最快胡牌走）
+// 2026-11-11 百局教学审计修复：打错提醒/复盘独立复核（一律用玩家可见口径，与「听牌一览」同源）
+// 旧版只要「不等于首推」就判「可能打亏」→ 100 局实测 38% 误报（其中 87% 是同分不同选）。
+function discardQuality(pl,id){
+  const i=pl.hand.findIndex(t=>t.id===id);if(i<0)return null;
+  const ah=pl.hand.slice();ah.splice(i,1);
+  const sh=calcShanten(ah,pl.melds);
+  const vt=validTingIds(ah,pl.melds);let iw=0;for(const x of vt)iw+=visibleLeft(x);
+  let dw=0;
+  for(const x of allTileIds()){
+    const rem=visibleLeft(x);if(rem<=0)continue;
+    let ok;try{ok=canReachTenpai(ah.concat([tileFromId(x)]),pl.melds);}catch(e){ok=false;}
+    if(ok)dw+=rem;
+  }
+  return {sh,iw,dw};
+}
+function notWorse(a,b){return !!(a&&b&&(a.sh<b.sh||(a.sh===b.sh&&(a.iw>b.iw||(a.iw===b.iw&&a.dw>=b.dw)))));}
+function shMinOf(pl){let m=99,seen={};for(const t of pl.hand){if(seen[t.id])continue;seen[t.id]=1;m=Math.min(m,calcShanten(pl.hand.filter(x=>x.uid!==t.uid),pl.melds));}return m;}
+// good 判定：师傅首推 / 大牌方向 / 独立复核后不比首推差（同分不同选不再算「打错」）
 function recordMove(chosenTile){
   try{
     const me=p(0),d=handDiagnose(me),pick=teachPick(d);
-    const good=chosenTile.id===pick.id||(pick.stance&&stanceFit(pick.stance,chosenTile.id,d)>0);
+    const good=chosenTile.id===pick.id||(pick.stance&&stanceFit(pick.stance,chosenTile.id,d)>0)
+      ||notWorse(discardQuality(me,chosenTile.id),discardQuality(me,pick.id));
     moveLog.push({chosen:chosenTile.id,best:pick.id,good:good,stage:d.stage,reason:pick.kou});
   }catch(e){}
 }
@@ -2229,15 +2249,25 @@ function liveWarn(tile){
       if(hit>=2&&totalD<30)master+='<b>实战篇·存量：</b>'+nm+' 周边已有 '+hit+' 家弃过——「早打无周边」，这区域的牌多半还在牌墙里，是你最容易进张的方向；前期跟打丢掉它，后面就是「打啥接啥」的回手掏循环。<br>';
     }
   }catch(e){}
+  // 独立复核：玩家这打是否真的比首推差（避免把同分/更快的一打误报成「打亏」）
+  let qMine=null,qPick=null,shMin=99;
+  try{qMine=discardQuality(me,tile.id);qPick=discardQuality(me,pick.id);shMin=shMinOf(me);}catch(e){}
+  const fair=notWorse(qMine,qPick);
+  const best=tileName(tileFromId(pick.id));
   if(tile.id===pick.id){
     el.className='liveWarn warnGood';
-    el.innerHTML='<b>师傅点评：这张选得对，可放心打出</b>你选的 '+nm+' 正是我推荐的牌。'+pick.kou+'<br><b>雀学米高·综合价值：</b>这一打的巡内净值是正的——进张价值覆盖了弃牌损失，手牌价值在累积。'+master;
+    const valueLine=(qPick&&qPick.sh<=shMin)
+      ?'<br><b>雀学米高·综合价值：</b>这一打向听不倒退，巡内净值是正的——进张价值覆盖了弃牌损失，手牌价值在累积。'
+      :'<br><b>雀学米高·综合价值：</b>这一打是路线取舍（做大牌 / 先解红中限制），向听会慢一步；净值要按该路线算，别套最快胡牌的尺子。';
+    el.innerHTML='<b>师傅点评：这张选得对，可放心打出</b>你选的 '+nm+' 正是我推荐的牌。'+pick.kou+valueLine+master;
+  }else if(fair&&tile.id!=='Z'){
+    el.className='liveWarn warnGood';
+    const why=pick.rule?'规则要求先解红中限制':(pick.stance?'按'+pick.stance.name+'大牌路线':'综合牌理口径');
+    el.innerHTML='<b>师傅点评：这一打不亏</b>你选的 '+nm+' 按最快听牌口径并不比我首推的 '+best+' 差'+(qMine.sh<qPick.sh?'（还快一步）':'（同向听、进张相当）')+'；我推荐 '+best+' 是'+why+'，两条路线取向不同，按你的判断走没问题。<br><b>雀学米高·综合价值：</b>两打效率相当、巡内净值都不为负，机会成本算清即可，不必硬改。'+pick.kou+master;
   }else if(pick.stance&&stanceFit(pick.stance,tile.id,d)>0&&tile.id!=='Z'){
-    const best=tileName(tileFromId(pick.id));
     el.className='liveWarn warnGood';
     el.innerHTML='<b>师傅点评：大牌方向，打得通</b>你正在做'+pick.stance.name+'，选的 '+nm+' 符合大牌路线，做牌不为最快胡、这步走得通；我同路线的首推是 '+best+'。'+pick.kou+master;
   }else{
-    const best=tileName(tileFromId(pick.id));
     el.className='liveWarn warnBad';
     el.innerHTML='<b>师傅提醒：这张可能打亏了，先别急着出牌</b>你选的是 '+nm+'，我更建议打 '+best+'。'+pick.kou+master;
   }
@@ -2312,7 +2342,7 @@ const MASTER_KOU=[
   '实战篇·抽屉原则：两三家手牌都缺某花色，该花色全在牌墙——拆搭留存量大的、拆存量为 0 的，上牌自然快。',
   '实战篇·三档标签：给对手贴「牌型/速度/区域」三档，记信息链不记原始牌——判谁快听了，你就知道抢速度还是收杠分。',
   '实战篇·七对攻防兼备：七对隐蔽、进可攻退可守；牌运最差时强做七对是改运节点——本玩法还有 ×2 豪华 ×4。',
-  '实战篇·接牌快打牌慢：性子急→出牌快→错误率升→恶性循环；每张牌等师傅点评 3 秒，胜率自然回来。'
+  '实战篇·接牌快打牌慢：性子急→出牌快→错误率升→恶性循环；每张牌看一眼师傅点评、慢三秒再出，胜率自然回来。'
 ];
 function makeReview(resultText,knowledgeKey){
   lastReview={resultText:resultText,knowledge:REVIEW_KNOWLEDGE[knowledgeKey]||REVIEW_KNOWLEDGE.basic,moves:moveLog.slice()};

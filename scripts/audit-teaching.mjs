@@ -90,9 +90,10 @@ await page.evaluate(() => {
     return { cands, shMin, visTop: vis[0], realTop: real[0], worst: vis[vis.length - 1], vis, real };
   }
 
-  // liveWarn 判定复刻（只看结论，不动 DOM）
-  function warnVerdict(d, pick, tileId) {
+  // liveWarn 判定复刻（2026-11-11 改为分级：同分/更快不再判打亏）
+  function warnVerdict(d, pick, tileId, pl) {
     if (tileId === pick.id) return 'good';
+    if (tileId !== 'Z' && typeof notWorse === 'function' && notWorse(discardQuality(pl, tileId), discardQuality(pl, pick.id))) return 'fair';
     if (pick.stance && tileId !== 'Z') { try { if (stanceFit(pick.stance, tileId, d) > 0) return 'stance'; } catch (e) { } }
     return 'bad';
   }
@@ -150,13 +151,14 @@ await page.evaluate(() => {
           pickVsAI: pick.id === t.id,
           stance: pick.stance ? pick.stance.name : null,
           // 误报：玩家打「可见口径最优」被判打亏；漏报：打最差牌被判选得对
-          warnVis: warnVerdict(d, pick, visId),
-          warnWorst: warnVerdict(d, pick, obj.worst.id),
+          warnVis: warnVerdict(d, pick, visId, pl),
+          warnWorst: warnVerdict(d, pick, obj.worst.id, pl),
           worstId: obj.worst.id,
           kou: (pick.kou || '').slice(0, 150),
           issues: issues,
-          // 「净值正」断言：选得对时无条件输出，检查此刻推荐是否真的不劣
+          // 「净值正」断言：新文案只在向听不倒退时才说净值正；记录该断言是否诚实
           goodButSuboptimal: (pick.id === visId) ? 0 : 1,
+          netHonest: (function () { try { const q = discardQuality(pl, pick.id); return q && q.sh <= shMinOf(pl) ? 1 : 0; } catch (e) { return -1; } })(),
         });
       }
     } catch (e) { T.errors.push(String(e && e.message || e)); }

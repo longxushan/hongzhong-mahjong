@@ -282,13 +282,19 @@ try {
       tiles112: !t.includes('136 −') && t.includes('112 −'),
       flipZ: t.includes('加红中') && t.includes('40 张'),
       noExternalFinance: !t.includes('一年近万分'),
-      teachUsesVisible: teachPick.toString().includes('visibleLeft'),   // 教学建议是否用玩家可见口径
+      teachUsesVisible: teachPick.toString().includes('visibleLeft') && !teachPick.toString().includes('tileRemaining'),
+      fairGrade: typeof discardQuality === 'function' && typeof notWorse === 'function'
+        && liveWarn.toString().includes('这一打不亏') && recordMove.toString().includes('notWorse'),
+      netConditional: liveWarn.toString().includes('向听不倒退'),
       codeCap: CFG.cap === 50,
     };
   });
   assert('攻略教学文案事实核查（赔付/牌数/中码/口径与代码一致）',
     tipFacts.no150 && tipFacts.cap50 && tipFacts.tiles112 && tipFacts.flipZ && tipFacts.noExternalFinance && tipFacts.codeCap,
     `无-150=${tipFacts.no150} 封顶50=${tipFacts.cap50} 112张=${tipFacts.tiles112} 红中中码=${tipFacts.flipZ} 无外部财务数字=${tipFacts.noExternalFinance} 教学用可见口径=${tipFacts.teachUsesVisible}`);
+  assert('教学引擎修复（可见口径 + 打错提醒分级 + 净值断言条件化）',
+    tipFacts.teachUsesVisible && tipFacts.fairGrade && tipFacts.netConditional,
+    `教学口径与听牌一览同源=${tipFacts.teachUsesVisible} 同分不误报=${tipFacts.fairGrade} 净值断言条件化=${tipFacts.netConditional}`);
 
   // 语音包（彻底解决手机没人声）：108 条预生成台词 mp3 齐全 + 播放引擎工作
   const voiceFiles = [];

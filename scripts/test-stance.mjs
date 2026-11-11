@@ -31,7 +31,7 @@ await page.evaluate(() => { CFG.diceMs = 40; CFG.diceGap = 20; CFG.diceAuto = 30
 await page.click('#startBtn');
 await page.waitForSelector('#roleSelect.show .roleBtn', { timeout: 10000 });
 await page.locator('.roleBtn').first().click();
-await page.waitForFunction(() => typeof G !== 'undefined' && !!G && G.awaiting === 'discard' && p(0).hand.length === 14, null, { timeout: 15000 });
+await page.waitForFunction(() => typeof G !== 'undefined' && !!G && G.awaiting === 'discard' && p(0).hand.length === 14, null, { timeout: 30000 }); // 冷启动 Edge 掷骰链路约 10s，15s 偶发超时
 
 // 换手牌工具：普通牌 id → 牌对象（uid 伪造，不参与全局计数，仅用于引擎计算）
 const results = [];
