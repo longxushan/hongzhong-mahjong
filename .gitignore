@@ -6,3 +6,6 @@ playwright-report/
 Thumbs.db
 *.log
 shot-*.png
+
+# 测试探针截图
+*-phase.png
