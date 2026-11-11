@@ -2675,14 +2675,23 @@ async function cloudExpPush(){
       for(const nm of names){
         const p={g:s.pending[nm].g||0,w:s.pending[nm].w||0,lp:s.pending[nm].lp||0,bw:s.pending[nm].bw||0,dw:s.pending[nm].dw||0,lj:s.pending[nm].lj||0};
         if(!p.g)continue;
-        const {error}=await __cloudDB.rpc('bump_role_exp',{p_name:nm,p_w:p.w,p_lp:p.lp,p_bw:p.bw,p_dw:p.dw,p_lj:p.lj});
-        if(error)return; // 失败：pending 保留，下一局结算再试
-        const s2=expSyncState();
-        s2.merged[nm]=expAddCnt(s2.merged[nm]||{...EXP_ZERO},p);
-        const rem={...s2.pending[nm]};
-        for(const k of ['g','w','lp','bw','dw','lj'])rem[k]=Math.max(0,(rem[k]||0)-(p[k]||0));
-        s2.pending[nm]=rem;
-        expSaveSync(s2);
+        // 2026-11-11 本机调试修复：云端 RPC bump_role_exp 无 p_g 参数、每次调用 g 只 +1，
+        // 聚合一次推送会让云端 g 少计（断网补传/多局积压场景 g 与局数脱钩，test-cloud-sync B 端读不到）。
+        // 修法：逐局拆分——把聚合计数还原成 p.g 个单局事件逐次上行（服务端每次 g+1 与局数精确一致；
+        // 单局内的组合分配方式不影响任何派生参数——deriveExpAdj 只读聚合力，总量守恒）。
+        const evts=Array.from({length:p.g},()=>({g:1,w:0,lp:0,bw:0,dw:0,lj:0}));
+        const spread=(key,n)=>{for(let k=0;k<n;k++)evts[k%p.g][key]++;};
+        spread('w',p.w);spread('lp',p.lp);spread('bw',p.bw);spread('dw',p.dw);spread('lj',p.lj);
+        for(const e of evts){
+          const {error}=await __cloudDB.rpc('bump_role_exp',{p_name:nm,p_w:e.w,p_lp:e.lp,p_bw:e.bw,p_dw:e.dw,p_lj:e.lj});
+          if(error)return; // 失败：pending 只剩未推部分（成功一个扣一个，绝不重复计数），下一局结算再试
+          const s2=expSyncState();
+          s2.merged[nm]=expAddCnt(s2.merged[nm]||{...EXP_ZERO},e);
+          const rem={...s2.pending[nm]};
+          for(const k of ['g','w','lp','bw','dw','lj'])rem[k]=Math.max(0,(rem[k]||0)-(e[k]||0));
+          s2.pending[nm]=rem;
+          expSaveSync(s2);
+        }
       }
     }
   }catch(e){}
@@ -3500,7 +3509,24 @@ layout();
 // 角色经验云同步：CDN SDK（单文件零构建走全局 WorkBuddyCloud）；失败/离线静默走本地，联网后自动补传
 initCloudExp();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
-<script>if(typeof WorkBuddyCloud!=='undefined'&&!__cloudDB)initCloudExp();</script>
+<script>
+// 2026-11-11 可靠性修复（本机调试发现）：云 SDK 双源异步加载——jsdelivr CDN 优先、失败回落本地 cloud-sdk.js 副本。
+// 原同步 <script src> 在代理故障/国内网络不稳时阻塞首屏且云同步直接失效；改异步后不阻塞渲染，
+// 双源皆败时保持离线本地模式（pending 补传机制兜底，联网后自动补传）。就绪后自动 initCloudExp。
+(function(){
+  var done=function(){try{if(typeof WorkBuddyCloud!=='undefined'&&!__cloudDB)initCloudExp();}catch(e){}};
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js';
+  s.onload=done;
+  s.onerror=function(){
+    var s2=document.createElement('script');
+    s2.src='cloud-sdk.js'; // 本仓副本（与 CDN 同版本）：GitHub Pages/应用域名/file:// 本地打开均直连可靠
+    s2.onload=done;
+    s2.onerror=done;
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>

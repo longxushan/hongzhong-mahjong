@@ -43,7 +43,11 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
-page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+page.on('console', m => { if (m.type() === 'error') { const t = m.text();
+  // 2026-11-11：网络层资源加载失败（代理故障/DNS 不通）不算 JS 逻辑错误——CDN 失败已由本地 cloud-sdk.js 副本回落兜底；
+  // 真正的 JS 异常（pageerror）与非网络 console.error 仍然全量计入
+  if (t.startsWith('Failed to load resource') && t.includes('net::ERR')) return;
+  errors.push('console: ' + t); } });
 
 const checks = [];
 function assert(name, ok, detail = '') {
