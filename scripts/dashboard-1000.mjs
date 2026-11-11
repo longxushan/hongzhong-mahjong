@@ -37,6 +37,7 @@ for (const r of R) {
   if (Math.abs(s) > 0.01) zeroErr++;
 }
 const rank = Object.values(P).sort((a, b) => b.net - a.net);
+const bigGames = Object.values(P).reduce((a, p) => a + p.big, 0); // 含番型的胡牌「局数」，与报告大牌率同口径
 const maxNet = Math.max(1, ...rank.map(p => Math.abs(p.net)));
 const maxType = Math.max(1, ...Object.values(types), ...Object.values(mults));
 const typeRows = Object.entries(types).sort((a, b) => b[1] - a[1]);
@@ -83,12 +84,13 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{padding:7px 8px
 .note{color:var(--sub);font-size:11.5px;margin-top:10px}.svgbox{width:100%;height:140px}.foot{color:var(--sub);font-size:11.5px;text-align:center;margin-top:24px;border-top:1px solid var(--line);padding-top:14px}
 </style></head><body><div class="wrap">
 <h1>千局实战看板 · 巢湖-金华红中</h1>
-<div class="sub">托管全自动 · ${N} 局 · 生成于 2026-11-11 · 四家均由 AI 决策 · 禁用云经验写入 · 页面 JS 报错 ${(d.pageErrors || []).length} 条</div>
+<div class="sub">托管全自动 · ${N} 局 · 数据批次 2026-11-11（跨夜生成于 2026-11-12）· 四家均由 AI 决策 · 禁用云经验写入 · 页面 JS 报错 ${(d.pageErrors || []).length} 条</div>
 <div class="kpis">
 <div class="kpi"><b>${N}</b><span>总局数</span></div>
-<div class="kpi"><b>${pct(wins.length, N)}</b><span>自摸胡牌率</span></div>
+<div class="kpi"><b>${pct(wins.length, N)}</b><span>胡牌率（全部自摸类）</span></div>
 <div class="kpi"><b>${pct(liuju, N)}</b><span>流局率</span></div>
 <div class="kpi"><b>${(total / (wins.length || 1)).toFixed(2)}</b><span>平均单局得分</span></div>
+<div class="kpi"><b>${pct(bigGames, wins.length)}</b><span>大牌率（${bigGames}/${wins.length} 胡牌局）</span></div>
 <div class="kpi"><b>${cap}</b><span>50 分封顶次数</span></div>
 <div class="kpi"><b>${zeroErr}</b><span>零和校验异常局</span></div>
 </div>
@@ -102,7 +104,7 @@ ${rank.map(p => bar(p.name, Math.abs(p.net), maxNet, p.net >= 0 ? RED : GREEN, (
 ${typeRows.length ? typeRows.map(([k, v]) => bar(k, v, maxType, PURPLE, `${v} / ${pct(v, wins.length)}`)).join('') : '<div class="note">本样本未出现番型</div>'}
 <div class="note" style="margin:14px 0 6px">总倍率分布（番型连乘）</div>
 ${multRows.map(([k, v]) => bar('×' + k, v, Math.max(1, ...Object.values(mults)), GOLD, `${v} / ${pct(v, wins.length)}`)).join('')}
-<div class="note">红中变现：赢家打出 ≥1 只红中 ${wins.length - (R.filter(r => r.how !== 'liuju' && !(r.fs || []).some(f => /打出\d+只红中/.test(f.n))).length)} 局；翻码翻出红中计分 ${maZ} 张；软胡 ${soft} / 硬胡 ${hard}。</div>
+<div class="note">大牌率 ${pct(bigGames, wins.length)}（含番型 ${bigGames} 局 / 番型条目 ${Object.values(types).reduce((a, b) => a + b, 0)} 次，少数局同时命中两番）。红中变现：赢家打出 ≥1 只红中 ${wins.length - (R.filter(r => r.how !== 'liuju' && !(r.fs || []).some(f => /打出\d+只红中/.test(f.n))).length)} 局；翻码翻出红中计分 ${maZ} 张（${R.filter(r => r.how !== 'liuju' && r.maZTiles > 0).length} 局）；软胡 ${soft} / 硬胡 ${hard}。</div>
 </div>
 <div class="card"><h2>单局得分分布</h2>
 ${['0-2 分', '3-5 分', '6-10 分', '11-20 分', '21-34 分', '35-49 分', '50 分封顶'].map((k, i) => bar(k, bins[i], Math.max(1, ...bins), i >= 4 ? GOLD : BLUE, `${bins[i]} / ${pct(bins[i], wins.length)}`)).join('')}
