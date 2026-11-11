@@ -1692,39 +1692,41 @@ function handDiagnose(pl){
   hand.forEach(t=>{if(t.id!=='Z')sc[t.id[0]]++;});
   const mainSuit=Object.keys(sc).sort((a,b)=>sc[b]-sc[a])[0];
   const wall=wallRemain(),stage=wall>=50?'开局':wall>=25?'中盘':'残局';
+  // 七对口径对子数（2026-11-11 修复）：四张一样算两对（豪华七对）、三张算一对+一孤张——原 pairCount 只数两张的，会低估七对成型度
+  let pPairs=0;for(let i=0;i<27;i++)pPairs+=Math.floor(cnt[i]/2);
   return {zN,zBlocked:blockedByZRule(pl),pairs,pongs,completeMelds,orphans,twoSide,embedded,edge,sc,mainSuit,
-    pairCount:pairs.length,sevenPot:pl.melds.length===0&&(pairs.length>=4||(pairs.length>=3&&zN>=1)),
+    pairCount:pairs.length,pairCount7:pPairs,
+    sevenPot:pl.melds.length===0&&(pPairs>=4||(pPairs>=3&&zN>=1)),
     qingPot:sc[mainSuit]>=9,stage,wall};
 }
 function recommendHandType(d,me){
   const mainN=d.sc[d.mainSuit];
   const suitRem=suitRemaining(d.mainSuit);
   const qingPossible=(mainN+suitRem+d.zN>=13)&&!(d.stage==='残局'&&mainN<11);
-  const sevenPossible=!(d.stage==='残局'&&d.pairCount+d.zN<4);
+  const sevenPossible=!(d.stage==='残局'&&d.pairCount7+d.zN<4);
   const list=[];
   if(me.melds.length===0){
-    const sevenNeed=Math.max(0,7-d.pairCount);
+    const sevenNeed=Math.max(0,7-d.pairCount7);
     list.push({name:'七对',mult:2,feasible:sevenPossible,
-      text:'七对（×2）：现有对子'+d.pairCount+'对'+(d.zN?'，红中'+d.zN+'只可补':'')+'，还差'+sevenNeed+'对'+(sevenPossible?'，留对子、打孤张。':'，但已到'+d.stage+'、来不及凑齐，建议放弃，改走基本胡。')});
+      text:'七对（×2）：现有对子'+d.pairCount7+'对（四张一样算两对）'+(d.zN?'，红中'+d.zN+'只可补':'')+'，还差'+sevenNeed+'对'+(sevenPossible?'，留对子、打孤张。':'，但已到'+d.stage+'、来不及凑齐，建议放弃，改走基本胡。')});
   }
   list.push({name:'清一色',mult:2,feasible:qingPossible,
     text:'清一色（×2）：'+CFG.suitName[d.mainSuit]+'子已有'+mainN+'张，牌墙里还剩'+suitRem+'张'+CFG.suitName[d.mainSuit]+'子可摸'+(qingPossible?'，集中'+CFG.suitName[d.mainSuit]+'子、打其他花色。':'，可进张被别家碰打后不足，硬做容易烂牌，建议放弃。')});
-  list.push({name:'全碰',mult:4,feasible:true,
-    text:me.melds.length>0
-      ?'全碰（×4）：已碰/杠'+me.melds.length+'组，手里刻子'+d.pongs.length+'组、对子'+d.pairCount+'对，继续见对就碰，凑够4组刻子加1对将即成。'
-      :'全碰（×4）：现有刻子'+d.pongs.length+'组、对子'+d.pairCount+'对，见对就碰，凑够4组刻子即成。'});
+  // 全碰可行口径（2026-11-11 修复收紧）：刻型资源=刻型副露+手里刻子+对子，≥3 组才有碰碰胡本钱；
+  // 顺子结构碰一组只是普通加速，不代表在做碰碰胡（原逻辑有副露就锁死全碰且状态粘滞不重置）
+  const meldKan=me.melds.filter(m=>m.type==='peng'||m.type.indexOf('gang')>=0).length;
+  const kanRes=meldKan+d.pongs.length+d.pairCount;
+  list.push({name:'全碰',mult:4,feasible:kanRes>=3,
+    text:kanRes>=3
+      ?'全碰（×4）：刻型本钱（已碰/杠'+meldKan+'组+手里刻子'+d.pongs.length+'+对子'+d.pairCount+'）共'+kanRes+'组，继续见对就碰，凑够4组刻子加1对将即成。'
+      :'全碰（×4）：刻型本钱仅'+kanRes+'组（不足3），这手牌走顺子结构更快——碰只是加速，别硬凑刻子。'});
+  // 主做判定（2026-11-11 修复）：与推荐引擎 teachPick 的大牌姿态 bigHandStance 同源——两套口径合一，
+  // 牌型分析与推荐永不打架；纯函数实时重算，随手牌变化更新，不再有粘滞状态
+  const stance=bigHandStance(me,d,0.5);
   let lead;
-  if(qingPossible&&mainN>=12)lead='清一色';
-  else if(me.melds.length===0&&sevenPossible&&d.pairCount+d.zN>=5)lead='七对';
-  else if(qingPossible&&d.qingPot)lead='清一色';
-  else if(me.melds.length===0&&sevenPossible&&d.sevenPot)lead='七对';
-  else{
-    const pongN=d.pongs.length+d.pairCount;
-    if(me.melds.length>0){G.pongCommit=true;lead='全碰';}
-    else if(G.pongCommit&&pongN>=2){lead='全碰';}
-    else if(pongN>=3){G.pongCommit=true;lead='全碰';}
-    else lead='基本';
-  }
+  if(stance)lead=stance.kind==='qing'?'清一色':stance.kind==='seven'?'七对':'全碰';
+  else if(kanRes>=3)lead='全碰';
+  else lead='基本';
   const PLAN_NAME={清一色:'清一色',七对:'七小对',全碰:'碰碰胡',基本:'普通自摸胡'};
   const PLAN_MULT={清一色:'×2',七对:'×2',全碰:'×4',基本:''};
   const found=list.find(x=>x.name===lead);
@@ -1839,10 +1841,11 @@ function canReachTenpai(handArr,melds){
   return false;
 }
 // 基础牌理角色分：离听牌远、有效进张相同时，越该打的牌分数越高
+// 2026-11-11 补金三银七口径：孤张里 3/7 是筋牌枢纽（郑太顺：金三银七），比普通中张孤张再晚一档出手
 function tileRoleRank(id,d){
   if(id==='Z')return 40;
   const rank=parseInt(id[1],10),isYJ=rank===1||rank===9;
-  if(d.orphans.indexOf(id)>=0)return isYJ?100:90;
+  if(d.orphans.indexOf(id)>=0)return isYJ?100:(rank===3||rank===7?82:90);
   if(d.edge.indexOf(id)>=0)return isYJ?85:80;
   if(d.embedded.indexOf(id)>=0)return 70;
   if(d.twoSide.indexOf(id)>=0)return 60;
@@ -2196,7 +2199,7 @@ function liveWarn(tile){
     const zts=ztsDanger(me);
     if(zts.danger[tile.id])master+='<b>郑太顺读牌：</b>各家弃牌轨迹显示 '+nm+' 是危险信号张（同线加减一/反常对命中）——对手多半快听了。本游戏无点炮，但这是「抢速度还是收杠分」的决策信号。<br>';
     const pairBreak=tile.id!=='Z'&&me.hand.filter(t=>t.id===tile.id).length>=2;
-    if(pairBreak&&d.pairCount>=4)master+='<b>雀学米高·机会成本：</b>拆这个对子=放弃七对/全碰路线的一份价值（手里已有 '+d.pairCount+' 对），机会成本要算进这一打。<br>';
+    if(pairBreak&&d.pairCount7>=4)master+='<b>雀学米高·机会成本：</b>拆这个对子=放弃七对/全碰路线的一份价值（手里已有 '+d.pairCount7+' 对，四张一样算两对），机会成本要算进这一打。<br>';
   }catch(e){}
   if(tile.id===pick.id){
     el.className='liveWarn warnGood';
@@ -2295,7 +2298,7 @@ function buildReviewHTML(rev){
   return h;
 }
 
-function newGame(prev){const dealer=prev==null?0:prev;const wall=buildWall();const names=[humanName,aiNames[0],aiNames[1],aiNames[2]];const ps=[];for(let i=0;i<4;i++)ps.push({seat:i,name:names[i],hand:[],melds:[],discard:[],gangScore:0,human:i===0,auto:false,style:i===0?null:styleOfName(names[i]),drewFromGang:false});let h=0;for(let r=0;r<13;r++)for(let i=0;i<4;i++)ps[i].hand.push(wall[h++]);ps[dealer].hand.push(wall[h++]);for(let i=0;i<4;i++)ps[i].hand=sortTiles(ps[i].hand);ps[0].auto=humanAuto;return{wall,head:h,tail:wall.length-1,players:ps,current:dealer,dealer,firstTurn:true,over:false,humanResolve:null,awaiting:null,justClaim:false,pongCommit:false};}
+function newGame(prev){const dealer=prev==null?0:prev;const wall=buildWall();const names=[humanName,aiNames[0],aiNames[1],aiNames[2]];const ps=[];for(let i=0;i<4;i++)ps.push({seat:i,name:names[i],hand:[],melds:[],discard:[],gangScore:0,human:i===0,auto:false,style:i===0?null:styleOfName(names[i]),drewFromGang:false});let h=0;for(let r=0;r<13;r++)for(let i=0;i<4;i++)ps[i].hand.push(wall[h++]);ps[dealer].hand.push(wall[h++]);for(let i=0;i<4;i++)ps[i].hand=sortTiles(ps[i].hand);ps[0].auto=humanAuto;return{wall,head:h,tail:wall.length-1,players:ps,current:dealer,dealer,firstTurn:true,over:false,humanResolve:null,awaiting:null,justClaim:false};}
 function drawLimit(){return G.wall.length-CFG.keepTiles;}
 function wallRemain(){return G.tail-G.head+1;}
 function p(i){return G.players[i];}
@@ -2628,7 +2631,7 @@ function masterDiscard(pl){
     // 2026-11-11 雀学米高技巧层（按修炼等级加权，等精算 tie-break 级）：
     const sameN=pl.hand.filter(x=>x.id===c.id).length;
     c.score+=(c.saved||0)*4.5*qxLv;                                   // ①死搭止损：这一打消灭的死搭数
-    if(sameN>=2&&d.pairCount>=4)c.score-=(d.pairCount-3)*9*qxLv;      // ②机会成本：对子≥4 拆对=弃七对潜势
+    if(sameN>=2&&d.pairCount7>=4)c.score-=(d.pairCount7-3)*9*qxLv;    // ②机会成本：对子≥4 拆对=弃七对潜势（七对口径，四张算两对）
   }
   cands.sort((a,b)=>b.score-a.score);
   if(!pl.human&&cands[0].saved>0){ // ①触发心法台词：拆死搭时低概率冒一句大师口径（气泡必出，语音缺文件自动跳过）
