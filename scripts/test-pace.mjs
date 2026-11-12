@@ -34,7 +34,7 @@ const page = await browser.newPage();
 
 // 静音：play 立即 resolve，且 30ms 后模拟 onended（vpNext 依赖该事件推进队列）
 await page.addInitScript(() => {
-  window.__noCloudExp = 1; // 禁云钩子：测试跑局数据不得写入真实云端
+  window.__noCloudExp = 1; window.__noSplitBar = 1; // 禁云钩子：测试跑局数据不得写入真实云端
   HTMLMediaElement.prototype.play = function () {
     const self = this;
     setTimeout(() => { if (typeof self.onended === 'function') self.onended(); }, 30);

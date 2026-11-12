@@ -30,6 +30,7 @@ const pageErrors = [];
 page.on('pageerror', e => pageErrors.push(e.message));
 await page.addInitScript(() => {
   window.__noCloudExp = 1; // 千局跑局数据绝不写入真实云端经验
+  window.__noSplitBar = 1; // 千局高速跑局跳过手牌拆解条精算（UI 渲染每打一次的开销）
   HTMLMediaElement.prototype.play = function () {
     const self = this;
     setTimeout(() => { if (typeof self.onended === 'function') self.onended(); }, 30);

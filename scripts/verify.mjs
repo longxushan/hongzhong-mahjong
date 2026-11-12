@@ -41,6 +41,8 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required'],
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+// SDK 已本地化，file:// 下云 SDK 会真正初始化：页面脚本执行前就插禁云/禁拆解钩子，杜绝测试数据写云端
+await page.addInitScript(() => { window.__noCloudExp = 1; window.__noSplitBar = 1; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 page.on('console', m => { if (m.type() === 'error') { const t = m.text();
@@ -57,7 +59,7 @@ function assert(name, ok, detail = '') {
 
 try {
   await page.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
-  await page.evaluate(() => { window.__noCloudExp = 1; __cloudDB = null; }); // 禁云：测试数据不得写入真实云端
+  await page.evaluate(() => { window.__noCloudExp = 1; window.__noSplitBar = 1; __cloudDB = null; }); // 禁云：测试数据不得写入真实云端
   assert('页面加载', true, `${fs.statSync(FILE).size} 字节`);
 
   // 只加速 AI 思考与掷骰动画，不写入文件
@@ -80,6 +82,17 @@ try {
     { timeout: 30000 }
   );
   assert('进入牌局（玩家回合，手牌 14 张）', true);
+
+  // 2026-11-12 手牌拆解：一张牌只归一组，分组张数 + 红中 = 手牌总数；进张必须是合法牌 id
+  const splitChk = await page.evaluate(() => {
+    const me = p(0), b = handBreakdown(me);
+    const n = b.groups.reduce((s, g) => s + g.tiles.length, 0) + b.zN;
+    return { n, total: me.hand.length, types: b.groups.map(g => g.type),
+      okDraws: b.groups.every(g => g.draws.every(d => /^[WTB][1-9]$/.test(d.id))) };
+  });
+  assert('手牌拆解：分组零重叠守恒、进张合法',
+    splitChk.n === splitChk.total && splitChk.okDraws && splitChk.types.length > 0,
+    `${splitChk.total} 张 → ${splitChk.types.join('/')}`);
 
   // 开局掷骰定庄：首局应完整走完（四人掷定东→东掷数位定庄），结果留痕且数位正确、浮层已收起
   const dice = await page.evaluate(() => {
@@ -417,9 +430,10 @@ try {
 
   // 手机竖屏默认竖屏版：390×844 视口下舞台应为 pport（原生上下分割）而非 rot（旋转强制横屏）
   const page2 = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await page2.addInitScript(() => { window.__noCloudExp = 1; window.__noSplitBar = 1; });
   try {
     await page2.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
-    await page2.evaluate(() => { window.__noCloudExp = 1; __cloudDB = null; }); // 禁云：测试数据不得写入真实云端
+    await page2.evaluate(() => { window.__noCloudExp = 1; window.__noSplitBar = 1; __cloudDB = null; }); // 禁云：测试数据不得写入真实云端
     // 与 page1 同等的加速+静音：掷骰/思考提速、跳过语音播放等待，防止开局流程（含 host 台词语音）超 30s 超时线
     await page2.evaluate(() => {
       if (typeof CFG !== 'undefined') {

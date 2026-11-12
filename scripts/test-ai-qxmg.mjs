@@ -35,7 +35,7 @@ const browser = await chromium.launch({ executablePath: findBrowser() });
 const page = await browser.newPage();
 
 await page.addInitScript(() => {
-  window.__noCloudExp = 1; // 禁云钩子：测试跑局数据不得写入真实云端
+  window.__noCloudExp = 1; window.__noSplitBar = 1; // 禁云钩子：测试跑局数据不得写入真实云端
   HTMLMediaElement.prototype.play = function () {
     const self = this;
     setTimeout(() => { if (typeof self.onended === 'function') self.onended(); }, 30);

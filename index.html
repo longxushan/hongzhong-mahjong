@@ -104,6 +104,28 @@
   #hand .just-drew{animation:drawFlash 2s ease-in-out;}
   #handWrap{display:flex;flex-direction:row;align-items:center;gap:8px;width:100%;min-width:0;min-height:0;flex:0 0 auto;}
   #hand{display:flex;gap:5px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;min-width:0;flex:1 1 auto;padding:3px 4px 2px;}
+  /* 手牌拆解条（2026-11-12）：开局自动按牌理分组，实时随牌更新；横向可滑适配手机 */
+  #splitBar{width:100%;box-sizing:border-box;background:#16251d;border:1px solid #3d5a46;border-radius:8px;margin:0 0 3px;padding:2px 6px 3px;flex:0 0 auto;min-width:0;text-align:left;}
+  #splitBar .sbHead{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;min-height:18px;}
+  #splitBar .sbTitle{color:var(--gold);font-size:11.5px;font-weight:800;white-space:nowrap;letter-spacing:.5px;}
+  #splitBar .sbSum{color:#cfe0d6;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;}
+  #splitBar .sbSum b{color:#ffe14d;}
+  #splitBar .sbToggle{color:#9fb4a6;font-size:11px;flex:0 0 auto;}
+  #splitBar .sbBody{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;margin-top:2px;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x;}
+  #splitBar .sbBody::-webkit-scrollbar{height:0;}
+  #splitBar.fold .sbBody{display:none;}
+  .sbGrp{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;background:#22352a;border:1px solid #3a5544;border-radius:6px;padding:1px 6px;font-size:11px;color:#e6efe8;white-space:nowrap;line-height:1.55;}
+  .sbGrp i{font-style:normal;font-size:10px;font-weight:700;color:#101c14;background:#7fd6a0;border-radius:4px;padding:0 4px;}
+  .sbGrp b{color:#ffe14d;font-weight:700;}
+  .sbGrp em{font-style:normal;color:#9fb4a6;font-size:10px;}
+  .sbGrp.g-chow i{background:#9fe0b6;} .sbGrp.g-pong i{background:#7fd6a0;}
+  .sbGrp.g-pair i{background:#ffe14d;} .sbGrp.g-two i{background:#8ecbff;}
+  .sbGrp.g-emb i,.sbGrp.g-edge i{background:#ffb980;}
+  .sbGrp.g-solo{background:#2b2f2c;border-color:#4a4f4b;} .sbGrp.g-solo i{background:#a9b4ad;}
+  .sbGrp.g-joker i,.sbGrp.g-ting i{background:#ff9a9a;} .sbGrp.g-meld i{background:#c9b3ff;}
+  #stage.pport #splitBar{padding:2px 5px 3px;}
+  #stage.pport #splitBar .sbBody{flex-wrap:wrap;overflow-x:visible;overflow-y:visible;} /* 竖屏自动换行，所有分组一次看全、不必横滑 */
+  #stage.pport .sbGrp{font-size:10.5px;padding:1px 5px;}
   #actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto;align-items:center;max-width:48%;}
   #actions:empty{min-height:0;}
   #actions button{height:var(--hand2);min-height:var(--hand2);padding:0 16px;font-size:calc(var(--hand2)*0.32);border-radius:6px;display:flex;align-items:center;justify-content:center;line-height:1;white-space:nowrap;}
@@ -1721,6 +1743,54 @@ function handDiagnose(pl){
     sevenPot:pl.melds.length===0&&(pPairs>=4||(pPairs>=3&&zN>=1)),
     qingPot:sc[mainSuit]>=9,stage,wall};
 }
+// ===== 手牌拆解（2026-11-12 用户需求：开局自动按麻将通常规则分类，快速判断牌型与后续听张）=====
+// 纯函数：一张牌只归一组（不重叠）；分解口径与 calcShanten 同源——四面子一将、2×面子+搭子+将，
+// 因此拆出的组合与向听数、听牌一览不会自相矛盾。红中是百搭，不参与实体分组，单列提示。
+function handBreakdown(pl){
+  const hand=pl.hand||[],cnt=new Array(27).fill(0);let zN=0;
+  for(const t of hand){if(t.id==='Z'){zN++;continue;}const k=keyIndex(t.id);if(k>=0&&k<27)cnt[k]++;}
+  const meldN=(pl.melds||[]).length,memo=new Map();
+  const tn=k=>tileName(tileFromId(idxId(k)));
+  function dfs(c,blocks,hasPair){
+    const key=c.join('')+'|'+blocks+'|'+(hasPair?1:0);
+    if(memo.has(key))return memo.get(key);
+    let i=0;while(i<27&&!c[i])i++;
+    if(i>=27){const z={score:0,m:0,t:0,o:0,groups:[]};memo.set(key,z);return z;}
+    const r=(i%9)+1,free=blocks<4,opts=[];
+    if(free&&c[i]>=3)opts.push({type:'pong',label:'刻子',tiles:[i,i,i],draws:[],cost:1,inc:2,isM:1});
+    if(free&&r<=7&&c[i+1]&&c[i+2])opts.push({type:'chow',label:'顺子',tiles:[i,i+1,i+2],draws:[],cost:1,inc:2,isM:1});
+    if(c[i]>=2){
+      if(!hasPair)opts.push({type:'pair',label:'将牌',tiles:[i,i],draws:[],cost:0,inc:1,isP:1});
+      else if(free)opts.push({type:'pair',label:'对子',tiles:[i,i],draws:[],cost:1,inc:1,isT:1});
+      else opts.push({type:'pair',label:'对子',tiles:[i,i],draws:[],cost:0,inc:0});
+    }
+    if(free){
+      if(r>=2&&r<=7&&c[i+1])opts.push({type:'two',label:'两面搭',tiles:[i,i+1],draws:[i-1,i+2],cost:1,inc:1,isT:1});
+      if(r===1&&c[i+1])opts.push({type:'edge',label:'边张搭',tiles:[i,i+1],draws:[i+2],cost:1,inc:1,isT:1});
+      if(r===8&&c[i+1])opts.push({type:'edge',label:'边张搭',tiles:[i,i+1],draws:[i-1],cost:1,inc:1,isT:1});
+      if(r<=7&&c[i+2])opts.push({type:'emb',label:'嵌张搭',tiles:[i,i+2],draws:[i+1],cost:1,inc:1,isT:1});
+    }
+    opts.push({type:'solo',label:'孤张',tiles:[i],draws:[],cost:0,inc:0,isO:1});
+    let best=null;
+    for(const o of opts){
+      const c2=c.slice();for(const k of o.tiles)c2[k]--;
+      const sub=dfs(c2,blocks+o.cost,hasPair||!!o.isP);
+      const cand={score:sub.score+o.inc,m:sub.m+(o.isM?1:0),t:sub.t+(o.isT?1:0),o:sub.o+(o.isO?1:0),
+        groups:[{type:o.type,label:o.label,tiles:o.tiles,draws:o.draws}].concat(sub.groups)};
+      if(!best||cand.score>best.score
+        ||(cand.score===best.score&&cand.m>best.m)
+        ||(cand.score===best.score&&cand.m===best.m&&cand.t>best.t)
+        ||(cand.score===best.score&&cand.m===best.m&&cand.t===best.t&&cand.o<best.o))best=cand;
+    }
+    memo.set(key,best);return best;
+  }
+  const res=dfs(cnt,meldN,false),ord={chow:0,pong:1,pair:2,two:3,emb:4,edge:5,solo:6};
+  const groups=(res.groups||[]).map(g=>({type:g.type,label:g.label,
+    tiles:g.tiles.map(tn),draws:g.draws.map(k=>({id:idxId(k),name:tn(k)}))}))
+    .sort((a,b)=>(ord[a.type]!=null?ord[a.type]:9)-(ord[b.type]!=null?ord[b.type]:9));
+  let pair7=0;for(let i=0;i<27;i++)pair7+=Math.floor(cnt[i]/2);
+  return {groups,zN,pair7,meldN,score:res.score};
+}
 function recommendHandType(d,me){
   const mainN=d.sc[d.mainSuit];
   const suitRem=suitVisibleLeft(d.mainSuit);
@@ -2115,11 +2185,57 @@ document.addEventListener('pointerdown',function(e){
   document.addEventListener('pointerup',up);
   document.addEventListener('pointercancel',up);
 });
+// 手牌拆解条：常驻显示（不依赖教学模式），每次 render 实时重算；折叠状态持久化；折叠时跳过精算省开销
+let splitOpen=true,__sbSig='';
+try{splitOpen=localStorage.getItem('banshanSplitBar')!=='0';}catch(e){}
+function saveSplitOpen(){try{localStorage.setItem('banshanSplitBar',splitOpen?'1':'0');}catch(e){}}
+function updateSplitBar(){
+  if(typeof window!=='undefined'&&window.__noSplitBar)return;
+  const sb=document.getElementById('splitBar');if(!sb)return;
+  const sumEl=document.getElementById('sbSum'),bodyEl=document.getElementById('sbBody'),tg=document.getElementById('sbToggle');
+  try{
+    const me=p(0);
+    if(!me||!me.hand||!me.hand.length){sb.style.display='none';__sbSig='';return;}
+    // 渲染缓存：手牌/副露/弃牌池不变就跳过重算（托管高速跑局时避免每帧重复穷举听张）
+    let sig='';
+    for(const x of G.players)sig+=x.hand.map(t=>t.id).join('')+'|'+x.melds.length+'|'+(x.discard||[]).length+';';
+    sig+='|'+(splitOpen?'1':'0');
+    if(sig===__sbSig)return;
+    __sbSig=sig;
+    sb.style.display='';
+    sb.classList.toggle('fold',!splitOpen);
+    if(tg)tg.textContent=splitOpen?'▾':'▸';
+    if(!splitOpen){if(sumEl)sumEl.innerHTML='点此展开分组';if(bodyEl)bodyEl.innerHTML='';return;}
+    const b=handBreakdown(me),sh=calcShanten(me.hand,me.melds),ting=calcTing();
+    const dm={};for(const g of b.groups)for(const d of g.draws)if(!dm[d.id])dm[d.id]={name:d.name,left:visibleLeft(d.id),id:d.id};
+    const draws=Object.keys(dm).map(k=>dm[k]).filter(x=>x.left>0);
+    let sumHtml;
+    if(sh<0)sumHtml='<b>已胡牌</b>';
+    else if(sh===0)sumHtml=ting.length
+      ?'<b>已听牌</b> · '+ting.length+' 种 / 可见 '+ting.reduce((n,id)=>n+visibleLeft(id),0)+' 张'
+      :'<b>向听 0 步</b> · 当前无可胡牌（牌墙已无对应张）';
+    else sumHtml='向听 <b>'+sh+'</b> 步 · 有效进张 <b>'+draws.length+'</b> 种 / 可见 <b>'+draws.reduce((n,x)=>n+x.left,0)+'</b> 张';
+    if(b.pair7>=4)sumHtml+=' · 七对 '+b.pair7+'/7 对';
+    if(sumEl)sumEl.innerHTML=sumHtml;
+    let h='';
+    if(b.zN)h+='<span class="sbGrp g-joker"><i>红中×'+b.zN+'</i>百搭'+(b.zN>=2&&!zDiscarded(me)?' <b>须先打 1 只才能胡</b>':' · 可补任意缺口')+'</span>';
+    if(b.meldN)h+='<span class="sbGrp g-meld"><i>副露×'+b.meldN+'</i>已亮面子</span>';
+    for(const g of b.groups){
+      const dl=g.draws.filter(d=>visibleLeft(d.id)>0).map(d=>d.name+'<em>'+visibleLeft(d.id)+'</em>').join(' / ');
+      h+='<span class="sbGrp g-'+g.type+'"><i>'+g.label+'</i>'+g.tiles.join('')+(dl?' <b>→ '+dl+'</b>':'')+'</span>';
+    }
+    if(ting.length)h+='<span class="sbGrp g-ting"><i>已听</i>'+ting.map(id=>tileName(tileFromId(id))+'<em>'+visibleLeft(id)+'</em>').join(' / ')+'</span>';
+    if(bodyEl)bodyEl.innerHTML=h;
+  }catch(e){sb.style.display='none';}
+}
 function updateTeachPanel(){
   if(!teachOn)return;
   const panel=document.getElementById('teachPanel');
   if(!panel)return;
   const me=p(0),d=handDiagnose(me),pick=teachPick(d),rec=tileFromId(pick.id),ht=recommendHandType(d,me);
+  // 2026-11-12：展示层统计与手牌拆解条同源（唯一口径，避免「牌型分析」与拆解条数字打架）
+  const brk=handBreakdown(me),bc={chow:0,pong:0,pair:0,two:0,emb:0,edge:0,solo:0},brkMelds=[];
+  for(const g of brk.groups){bc[g.type]=(bc[g.type]||0)+1;if(g.type==='chow'||g.type==='pong')brkMelds.push(g.tiles.join(''));}
   const meldN=me.melds.reduce((n,m)=>n+m.tiles.length,0);
   const myTurn=G.awaiting==='discard';
   const nowTxt=myTurn
@@ -2132,8 +2248,8 @@ function updateTeachPanel(){
   h+='<div class="tLead">'+ht.leadText+'</div>';
   h+='<div class="tZStrategy">'+ht.zStrategy+'</div>';
   if(ht.gangNote)h+='<div class="tGangNote">'+ht.gangNote+'</div>';
-  if(d.completeMelds.length)h+='<div class="tCompleteMeld">成型面子（已成型、不拆）：'+d.completeMelds.join('、')+'</div>';
-  h+='<div class="tHealth"><span>红中 <b>'+d.zN+'</b></span><span>对子 <b>'+d.pairCount+'</b></span><span>刻子 <b>'+d.pongs.length+'</b></span><span>两面搭 <b>'+d.twoSide.length+'</b></span><span>嵌张 <b>'+d.embedded.length+'</b></span><span>边张 <b>'+d.edge.length+'</b></span><span>孤张 <b>'+d.orphans.length+'</b></span></div>';
+  if(brkMelds.length)h+='<div class="tCompleteMeld">成型面子（已成型、不拆）：'+brkMelds.join('、')+'</div>';
+  h+='<div class="tHealth"><span>红中 <b>'+brk.zN+'</b></span><span>顺子 <b>'+bc.chow+'</b></span><span>对子 <b>'+bc.pair+'</b></span><span>刻子 <b>'+bc.pong+'</b></span><span>两面搭 <b>'+bc.two+'</b></span><span>嵌张 <b>'+bc.emb+'</b></span><span>边张 <b>'+bc.edge+'</b></span><span>孤张 <b>'+bc.solo+'</b></span></div>';
   h+='<div class="tSuitDist"><span>万 <b>'+d.sc.W+'</b></span><span>条 <b>'+d.sc.T+'</b></span><span>筒 <b>'+d.sc.B+'</b></span><span>红中 <b>'+d.zN+'</b></span></div>';
   const opp=readOpponents();
   h+='<div class="tOpp"><div class="tOppHead">别家动态（随动作实时更新）</div>';
@@ -3301,6 +3417,11 @@ function renderSeat(i){
   // 2026-11-10 修复：开局空桌清场（renderEmptySeats）只保留头像，骨架按需补齐——render 幂等
   if(!e.querySelector('.melds')){const melds=document.createElement('div');melds.className='melds';e.appendChild(melds);}
   if(i===0){
+    if(!e.querySelector('#splitBar')){
+      const sb=document.createElement('div');sb.id='splitBar';sb.className='splitBar';
+      sb.innerHTML='<div class="sbHead" id="sbHead"><span class="sbTitle">手牌拆解</span><span class="sbSum" id="sbSum"></span><span class="sbToggle" id="sbToggle">▾</span></div><div class="sbBody" id="sbBody"></div>';
+      e.appendChild(sb);
+    }
     if(!e.querySelector('#handWrap')){
       const hw=document.createElement('div');hw.id='handWrap';
       hw.innerHTML='<div id="hand"></div><div id="actions"></div>';
@@ -3345,7 +3466,7 @@ function renderActions(o){const a=document.getElementById('actions');a.innerHTML
 function renderInfo(){const remain=G.wall.length-G.head-(G.wall.length-1-G.tail);document.getElementById('info').textContent='墙剩'+remain+'张 · 留底6 · 你的杠分'+p(0).gangScore;
   document.getElementById('warnTag').style.display=blockedByZRule(p(0))?'inline-block':'none';
   updateRoundTag();}
-function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();renderInfo();renderActions({});if(teachOn)updateTeachPanel();}
+function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();}
 function restart(sameDealer){if(G&&G.humanResolve)humanRespond({pass:1});run(sameDealer&&G?G.dealer:null);}
 document.getElementById('rulesBtn').onclick=function(){document.getElementById('rulesModal').style.display='flex';try{speechSynthesis.cancel();}catch(e){}};
 document.getElementById('rulesCloseBtn').onclick=function(){document.getElementById('rulesModal').style.display='none';};
@@ -3369,6 +3490,7 @@ document.getElementById('reviewModal').onclick=function(e){if(e.target===this)th
 // 积分排行已并入底部教学列；清零入口放在底部列内，用事件委托适配面板重建
 document.addEventListener('click',function(){try{ensureAudioPlaying();}catch(e){}}); // 移动端：任意点击都尝试恢复音频通道（iOS 切后台后通道会被系统挂起）
 document.addEventListener('click',function(e){
+  if(e.target&&e.target.closest&&e.target.closest('#sbHead')){splitOpen=!splitOpen;saveSplitOpen();updateSplitBar();sndClick();return;}
   if(e.target&&e.target.id==='tRankReset'){
     resetCumForCurrent();
     if(teachOn)updateTeachPanel();
@@ -3578,8 +3700,7 @@ tableEl.addEventListener('touchcancel',endTouch,{passive:false});
 tableEl.addEventListener('wheel',e=>{if(TABLE_PAN){/* 备查：原滚轮缩放逻辑 */}e.preventDefault();},{passive:false});
 
 layout();
-// 角色经验云同步：CDN SDK（单文件零构建走全局 WorkBuddyCloud）；失败/离线静默走本地，联网后自动补传
-initCloudExp();
+// 角色经验云同步：双源异步加载（详见下方脚本），不阻塞首屏；离线/加载失败静默走本地，联网后自动补传
 </script>
 <script>
 // 2026-11-11 可靠性修复（本机调试发现）：云 SDK 双源异步加载——jsdelivr CDN 优先、失败回落本地 cloud-sdk.js 副本。

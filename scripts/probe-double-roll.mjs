@@ -22,7 +22,7 @@ const page = await browser.newPage();
 
 // 静音 + 30ms 后模拟 onended，并大幅缩短 diceAuto 让流程快走
 await page.addInitScript(() => {
-  window.__noCloudExp = 1; // 禁云钩子：测试跑局数据不得写入真实云端
+  window.__noCloudExp = 1; window.__noSplitBar = 1; // 禁云钩子：测试跑局数据不得写入真实云端
   HTMLMediaElement.prototype.play = function () {
     const self = this;
     setTimeout(() => { if (typeof self.onended === 'function') self.onended(); }, 30);
