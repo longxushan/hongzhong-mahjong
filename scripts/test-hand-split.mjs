@@ -1,7 +1,7 @@
 // 2026-11-12 手牌拆解回归测试（用户需求：按麻将通常规则分类；后续追加「拆牌方式」开关：默认正常打，点开才分组摆牌）
 // 断言：①分组零重叠且覆盖全部手牌 ②标准牌型分类准确（顺子/刻子/对子/两面搭/嵌张搭/边张搭/孤张/红中）
 //       ③每组进张正确 ④默认正常打牌（无拆解条、手牌原样）⑤点开后拆解条+手牌按同源分组分开摆放、可点选出牌
-//       ⑥关闭恢复、状态持久化 ⑦实时刷新/折叠/竖屏不遮挡/教学面板统计同源
+//       ⑥关闭恢复、默认态恒定（历史记忆/刷新都不会自动开启） ⑦实时刷新/折叠/竖屏不遮挡/教学面板统计同源
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -55,6 +55,7 @@ const def = await page.evaluate(() => {
 chk('顶部有「拆牌方式」按钮', def.btn && def.label === '拆牌方式', def.label);
 chk('默认关闭：按钮未高亮、拆解条隐藏', !def.mode && !def.active && def.barHidden, JSON.stringify(def));
 chk('默认正常打牌：手牌不分组、牌数与手牌一致', !def.grouped && def.grpN === 0 && def.tiles === def.handN, JSON.stringify(def));
+chk('默认态不写/不读 localStorage 开关记忆', def.stored === null, JSON.stringify(def));
 
 // ---------- ② 纯函数层 ----------
 const pure = await page.evaluate(() => {
@@ -131,7 +132,8 @@ const on = await page.evaluate(() => {
   };
 });
 chk('点开后模式生效：按钮高亮、拆解条出现、手牌进入分组态',
-  on.mode && on.active && on.barShown && on.grouped && on.stored === '1', JSON.stringify({ mode: on.mode, active: on.active, barShown: on.barShown, grouped: on.grouped, stored: on.stored }));
+  on.mode && on.active && on.barShown && on.grouped, JSON.stringify({ mode: on.mode, active: on.active, barShown: on.barShown, grouped: on.grouped, stored: on.stored }));
+chk('点开只是本次有效，不写入持久记忆', on.stored === null, JSON.stringify(on.stored));
 chk('手牌分组数 = 拆解条实体组数 + 红中组', on.dom.length === on.src.length + (on.zN ? 1 : 0), JSON.stringify(on.dom.map(x => x.label)));
 chk('每组牌面与 handBreakdown 的 ids 逐一对应（零重叠、不丢牌）',
   on.dom.filter(x => x.type !== 'h-joker' && x.type !== 'h-other').every((x, i) => x.ids === on.src[i].ids)
@@ -217,20 +219,34 @@ const off = await page.evaluate(() => {
   };
 });
 chk('关闭后恢复正常打牌：拆解条隐藏、手牌不分组、牌数不丢',
-  !off.mode && !off.active && off.barHidden && !off.grouped && off.grpN === 0 && off.tiles === off.handN && off.stored === '0',
+  !off.mode && !off.active && off.barHidden && !off.grouped && off.grpN === 0 && off.tiles === off.handN && off.stored === null,
   JSON.stringify(off));
 
-// ---------- ⑥ 模式跨会话持久化 ----------
+// ---------- ⑥ 默认态恒定：旧记忆 / 刷新 都不会自动开启 ----------
 const page2 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 page2.on('pageerror', e => pageErrors.push('page2: ' + e.message));
 await page2.addInitScript(() => {
   window.__noCloudExp = 1;
-  localStorage.setItem('banshanSplitMode', '1');
+  localStorage.setItem('banshanSplitMode', '1'); // 模拟旧版本里用户曾点开过、留下了记忆
 });
 await page2.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
-const persisted = await page2.evaluate(() => ({ mode: splitMode, active: document.getElementById('splitBtn').classList.contains('btnActive') }));
-chk('拆牌方式状态跨会话持久化并同步按钮高亮', persisted.mode && persisted.active, JSON.stringify(persisted));
+const persisted = await page2.evaluate(() => ({
+  mode: splitMode, active: document.getElementById('splitBtn').classList.contains('btnActive'),
+  stored: localStorage.getItem('banshanSplitMode'), tableCls: document.getElementById('table').classList.contains('splitMode'),
+}));
+chk('旧版本遗留的「已开启」记忆不生效，重新打开仍默认正常打牌',
+  !persisted.mode && !persisted.active && persisted.stored === null && !persisted.tableCls, JSON.stringify(persisted));
 await page2.close();
+
+// 本页刚点开过，再刷新也应回到默认关闭（拆牌方式不跨刷新记忆）
+await page.click('#splitBtn');
+await page.reload({ waitUntil: 'load', timeout: 30000 });
+const reloadState = await page.evaluate(() => ({
+  mode: splitMode, active: document.getElementById('splitBtn').classList.contains('btnActive'),
+  stored: localStorage.getItem('banshanSplitMode'), tableCls: document.getElementById('table').classList.contains('splitMode'),
+}));
+chk('刷新页面后回到默认关闭态', !reloadState.mode && !reloadState.active && reloadState.stored === null && !reloadState.tableCls,
+  JSON.stringify(reloadState));
 
 chk('无页面脚本错误', pageErrors.length === 0, pageErrors.join(' | '));
 

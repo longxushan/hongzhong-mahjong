@@ -2318,17 +2318,19 @@ document.addEventListener('pointerdown',function(e){
   document.addEventListener('pointerup',up);
   document.addEventListener('pointercancel',up);
 });
-// 手牌拆解条 + 分组摆牌（2026-11-12 用户需求）：默认关闭＝正常打牌；顶部「拆牌方式」按钮打开后，
-// 才显示拆解条并把实体手牌按同源分组分开摆放。模式与折叠状态各自持久化，互不干扰。
+// 手牌拆解条 + 分组摆牌（2026-11-12 用户需求）：默认状态恒为「正常打牌」——每次打开/刷新页面
+// 拆牌方式都不开启；只有点了顶部「拆牌方式」按钮，本页才显示拆解条并按同源分组摆放实体手牌。
+// 模式刻意不持久化：不因上次点开过就被记住而变成「默认开启」；只保留拆解条折叠状态。
 let splitMode=false,splitOpen=true,__sbSig='',__handSig='';
-try{splitMode=localStorage.getItem('banshanSplitMode')==='1';}catch(e){}
+try{localStorage.removeItem('banshanSplitMode');}catch(e){} // 清理旧版本遗留的开关记忆
 try{splitOpen=localStorage.getItem('banshanSplitBar')!=='0';}catch(e){}
-function saveSplitMode(){try{localStorage.setItem('banshanSplitMode',splitMode?'1':'0');}catch(e){}}
+function saveSplitMode(){} // 不写 localStorage：默认态永远是关闭
 function saveSplitOpen(){try{localStorage.setItem('banshanSplitBar',splitOpen?'1':'0');}catch(e){}}
 function syncSplitModeUI(){
   const b=document.getElementById('splitBtn');if(b)b.classList.toggle('btnActive',splitMode);
   const t=document.getElementById('table');if(t)t.classList.toggle('splitMode',splitMode);
 }
+syncSplitModeUI(); // 载入即明确落在默认关闭态（按钮不高亮、牌桌不加拆牌类）
 function toggleSplitMode(){
   splitMode=!splitMode;saveSplitMode();__sbSig='';__handSig='';
   syncSplitModeUI();
