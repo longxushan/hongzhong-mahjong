@@ -427,10 +427,21 @@
   #stage.pport #hand .tp-hand.sel{z-index:2;position:relative;} /* 两行时选中牌上移与上一行重叠，置顶显示 */
   #stage.pport #discardPool{zoom:1;} /* 2026-11-09 用户需求：手机竖屏弃牌再小一点（撤销该场景下的 1.5 倍放大） */
   #stage.pport #actions{width:100%;max-width:none;justify-content:center;flex:0 0 auto;}
-  /* 2026-11-11 用户需求：手牌与教学模式之间的空挡专供打错提醒文字——
-     绝对定位钉在牌桌底缘（#table 已 position:relative），位置恒定不跳动、不参与流式布局，
-     手牌区整体上移后留出的中央空挡即提醒文字的固定展示位；教学模式区域保持不动 */
-  #stage.pport #seat0 #liveWarn{position:absolute;left:3%;right:3%;bottom:4px;margin-top:0;max-width:none;z-index:5;font-size:12px;padding:5px 10px;line-height:1.45;max-height:88px;overflow:hidden;}
+  /* 2026-11-12 用户需求：师傅点评内容再往上一些——
+     不再死钉牌桌最底缘：底边上抬一段、框顶贴着操作行下方往上长（高度由 fitLiveWarnBox() 按本局可用空挡实时计算），
+     内容排不下时框内上滑看全，不再把最后几行硬切一半；各尺寸 / 教学模式 / 拆牌模式均自适应不遮挡手牌与出牌按钮 */
+  #stage.pport #seat0 #liveWarn{position:absolute;left:3%;right:3%;bottom:14px;margin-top:0;max-width:none;z-index:5;
+    font-size:11.5px;padding:5px 10px 6px;line-height:1.38;max-height:120px;
+    overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  #stage.pport #seat0 #liveWarn::-webkit-scrollbar{width:0;height:0;display:none;}
+  /* 还有下文时底边渐隐，提示可上滑；滑到底自动恢复完整显示 */
+  #stage.pport #seat0 #liveWarn.warnMore{
+    -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 13px),rgba(0,0,0,.18) 100%);
+    mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 13px),rgba(0,0,0,.18) 100%);
+  }
+  #stage.pport #seat0 #liveWarn .wFacts,#stage.pport #seat0 #liveWarn .wWhy{font-size:11px;line-height:1.35;}
+  #stage.pport #seat0 #liveWarn .wWhy{margin-top:1px;}
+  #stage.pport #seat0 #liveWarn .wMaster{font-size:10.5px;line-height:1.35;margin-top:1px;}
   /* 启动页 */
   #splash{position:fixed;inset:0;z-index:80;background:linear-gradient(160deg,#13352a,#0a1f18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:28px;}
   #splash h1{color:var(--gold);font-size:32px;margin:0;letter-spacing:4px;}
@@ -2594,8 +2605,43 @@ function liveWarn(tile){
   el.innerHTML=head+facts+judge+master;
   if(warnTimer){clearTimeout(warnTimer);warnTimer=null;}
   el.style.display='block';
-  el.onclick=clearWarn;
+  el.scrollTop=0;
+  fitLiveWarnBox(el);
+  const syncWarnMore=()=>{
+    const more=el.scrollHeight-el.clientHeight>2;
+    el.classList.toggle('warnMore',more&&el.scrollTop+el.clientHeight<el.scrollHeight-2);
+  };
+  el.onscroll=syncWarnMore;
+  syncWarnMore();
+  // 框内可上滑看全文：滑动手势不误关提醒，轻点仍可收起
+  el.onpointerdown=e=>{el._wx=e.clientX;el._wy=e.clientY;};
+  el.onclick=e=>{
+    if(el._wx!=null&&(Math.abs(e.clientX-el._wx)>8||Math.abs(e.clientY-el._wy)>8))return;
+    clearWarn();
+  };
 }
+// 竖屏：按「操作行下沿 → 牌桌底缘」这段真实空挡计算点评框的上抬量与最大高度，
+// 让内容尽量往上长、底边离开下方提示条；可用空挡小的高屏设备也不会盖住出牌按钮。
+function fitLiveWarnBox(el){
+  try{
+    const stage=document.getElementById('stage');
+    if(!stage||!stage.classList.contains('pport')){
+      el.style.removeProperty('bottom');el.style.removeProperty('max-height');return;
+    }
+    const tb=document.getElementById('table'),act=document.querySelector('#seat0 #actions');
+    if(!tb||!act)return;
+    const t=tb.getBoundingClientRect(),a=act.getBoundingClientRect();
+    const lift=Math.max(8,Math.min(20,Math.round(t.height*0.028)));
+    const topMin=(a.bottom-t.top)+7;                  // 与出牌按钮留 7px 视觉间隙
+    const maxH=Math.max(72,Math.min(190,Math.round(t.height-lift-topMin)));
+    el.style.bottom=lift+'px';
+    el.style.maxHeight=maxH+'px';
+  }catch(e){}
+}
+window.addEventListener('resize',()=>{
+  const el=document.getElementById('liveWarn');
+  if(el&&el.style.display==='block')fitLiveWarnBox(el);
+});
 function clearWarn(){
   if(warnTimer){clearTimeout(warnTimer);warnTimer=null;}
   const el=document.getElementById('liveWarn');
