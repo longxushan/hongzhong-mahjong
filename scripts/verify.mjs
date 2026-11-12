@@ -162,7 +162,8 @@ try {
   const masterOk = await page.evaluate(() => ({
     warnWired: typeof liveWarn === 'function' && liveWarn.toString().includes('ztsDanger') && liveWarn.toString().includes('机会成本') && liveWarn.toString().includes('早打无周边'),
     kouWired: typeof teachPick === 'function' && /雀学米高/.test(teachPick.toString()),
-    thinkWired: typeof buildThinkHTML === 'function' && buildThinkHTML.toString().includes('郑太顺同线读牌') && buildThinkHTML.toString().includes('存量口径') && buildThinkHTML.toString().includes('交集区域'),
+    // 2026-11-12：讲思路第三步改为读本局废牌区实况（不再套固定口诀），断言同步改为检查实况层接入
+    thinkWired: typeof buildThinkHTML === 'function' && buildThinkHTML.toString().includes('poolStageText') && buildThinkHTML.toString().includes('poolFactLine') && buildThinkHTML.toString().includes('郑太顺同线读牌'),
     reviewPool: typeof MASTER_KOU !== 'undefined' && MASTER_KOU.length >= 19,
     reviewPoolN: typeof MASTER_KOU !== 'undefined' ? MASTER_KOU.length : 0,
     reviewWired: typeof buildReviewHTML === 'function' && buildReviewHTML.toString().includes('大师心法'),

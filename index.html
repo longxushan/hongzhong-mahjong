@@ -299,9 +299,8 @@
   .tHealth b{color:var(--gold);font-size:14px;}
   .tCompleteMeld{font-size:11.5px;color:#ffe9b8;background:#33402f;border-left:3px solid #8fbf6a;border-radius:0 6px 6px 0;padding:4px 7px;margin-bottom:5px;text-align:left;line-height:1.4;}
   .tRule{background:#4a2b2b;border:1px solid #7a4444;color:#ffd9d9;border-radius:8px;padding:6px 10px;font-size:13px;line-height:1.5;margin-bottom:7px;}
-  /* 推荐打出、积分排行用 auto 只占内容所需宽度并设上限；其余三列用 minmax(0,fr) 瓜分剩余空间，随容器自适应、不溢出 */
-  .tGrid{display:grid;grid-template-columns:minmax(0,1.6fr) auto minmax(0,1.25fr) minmax(0,1.25fr) auto;gap:6px;align-items:stretch;}
-  .tColLeft{max-width:118px;}
+  /* 2026-11-12：用户需求「推荐打出」与「打牌建议」合并为一栏 → 底部四列；积分排行用 auto 占内容宽度，前三列按 fr 瓜分 */
+  .tGrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.55fr) minmax(0,1.2fr) auto;gap:6px;align-items:stretch;}
   .tColRank{max-width:134px;}
   .tCol{background:#24352c;border:1px solid #38503f;border-radius:9px;padding:2px 7px;min-width:0;display:flex;flex-direction:column;position:relative;overflow:hidden;}
   /* 手动拖拽列宽：分隔条独立挂在 tGrid 上绝对定位（不被列的 overflow:hidden 裁剪），覆盖列间 gap，平时隐形、悬停高亮 */
@@ -313,7 +312,7 @@
   body.colResizing{cursor:col-resize!important;-webkit-user-select:none;user-select:none!important;}
   body.colResizing .colSplitter::before{background:#ffd27a;}
   /* 进入手动像素模式后取消窄列上限，允许自由拖宽 */
-  .tGrid.manual .tColLeft,.tGrid.manual .tColRank{max-width:none;}
+  .tGrid.manual .tColRank{max-width:none;}
   /* 第5栏积分排行：窄列内紧凑显示，第一名金色、正绿负红沿用全局规则 */
   .tColRank .rankGrid{gap:0;}
   .tColRank .rankGrid .row{font-size:11px;padding:2px 0;gap:4px;}
@@ -325,8 +324,25 @@
   .tRecBig{display:flex;justify-content:center;}
   .tRecBig .tp-sm{width:calc(var(--sm)*0.78);height:calc(var(--sm)*1.03);}
   .tRecName{color:var(--gold);font-weight:bold;font-size:14px;margin:4px 0 6px;}
+  /* 合并栏：推荐牌与牌名横排，腾出纵向空间给牌河实况 */
+  .tRecRow{display:flex;align-items:center;justify-content:center;gap:9px;}
+  .tRecRow .tRecName{margin:2px 0 5px;}
   .tWhy{font-size:12px;color:#cfe0d6;line-height:1.5;text-align:left;}
   .tWhy b{display:block;color:#ffe9b0;margin-bottom:2px;}
+  /* 废牌区实况（数字随牌局变化，替代固定口诀成为主判据） */
+  .tPool{font-size:11.5px;line-height:1.45;color:#cfe0d6;background:#1d2f27;border-left:3px solid #6fa9d6;border-radius:0 6px 6px 0;padding:4px 6px;margin:0 0 5px;text-align:left;}
+  .tPool b{color:#ffe9b0;}
+  .tPoolNum{color:#ffd27a;font-weight:bold;}
+  .tStageLive{font-size:11.5px;line-height:1.45;color:#cfe0d6;background:#2b3f33;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:4px 6px;margin-bottom:5px;text-align:left;}
+  .tStageLive .tStageTag{margin-right:6px;}
+  .tKouNote{font-size:10.5px;line-height:1.4;color:#9bb8ab;margin-top:auto;text-align:left;border-top:1px dashed #3a5546;padding-top:3px;}
+  .tKouNote b{color:#d8b878;}
+  /* 打错提醒：实况数字段落（竖屏 88px 高度内优先显示） */
+  .liveWarn .wFacts{font-size:11.5px;line-height:1.4;}
+  .liveWarn .wWhy{font-size:11.5px;line-height:1.4;margin-top:2px;}
+  .liveWarn .wWhy b{display:inline;margin:0;}
+  .liveWarn .wMaster{font-size:11px;line-height:1.4;margin-top:2px;opacity:.92;}
+  .liveWarn .wM{font-weight:bold;color:inherit;}
   .tLead{font-size:11.5px;color:#e6e6e6;line-height:1.45;text-align:left;background:#2b3f33;border-radius:7px;padding:5px;margin-bottom:4px;}
   .tPlanTag{font-size:12px;color:#ffe9b0;background:linear-gradient(135deg,#7a2e1f,#a94a2b);border-radius:7px;padding:4px 9px;margin-bottom:4px;}
   .tPlanTag b{font-size:14px;color:#fff;}
@@ -366,6 +382,13 @@
   #stage.pport #bottomDock{flex:0 0 auto;}
   #stage.pport .tGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:5px;}
   #stage.pport .tColMid{grid-column:1/3;}  /* 牌型分析内容多，跨整行独占一行 */
+  #stage.pport .tColAdv{grid-column:1/3;} /* 合并后的推荐+建议栏独占一行，听牌一览与积分排行并排 */
+  /* 2026-11-12：合并栏内容变多，竖屏压缩冗余排版（隐藏口诀附注、听张改横滑），底部面板仍可上下滑动查看全部 */
+  #stage.pport .tKouNote{display:none;}
+  #stage.pport .tPool,#stage.pport .tStageLive{font-size:10.5px;line-height:1.35;padding:3px 5px;}
+  #stage.pport .tRecBig .tp-sm{width:calc(var(--sm)*0.62);height:calc(var(--sm)*0.82);}
+  #stage.pport .tCol .teachTings{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:3px;}
+  #stage.pport .tCol .teachTile{flex:0 0 auto;}
   #stage.pport .tCol{max-width:none!important;overflow:visible;}
   #stage.pport .tColRank{max-width:none!important;}
   #stage.pport .colSplitWrap{display:none;}
@@ -1931,6 +1954,96 @@ const STAGE_KOU={
   '中盘':'中盘看方向：定牌型、留熟张，该碰该杠要果断，生张出手要思量。',
   '残局':'残局近留底：早听牌、打熟张，生张危险不乱打，留底六张即流局。'
 };
+// ===== 废牌区（牌河）实况层 · 2026-11-12 =====
+// 用户需求：打错提醒不能照抄麻将口诀，要看这局实际打过的牌。
+// 口径：只用玩家看得见的公开信息（四家废牌区 + 明面副露 + 自己手牌），不偷看牌墙与别家暗手牌。
+function poolTotal(){let n=0;for(const pl of G.players)n+=(pl.discard||[]).length;return n;}
+function poolSeen(id){let n=0;for(const pl of G.players)n+=(pl.discard||[]).filter(t=>t.id===id).length;return n;}
+function poolScan(id){
+  const me=p(0),s=id==='Z'?'Z':id[0],r=id==='Z'?0:parseInt(id[1],10),near=[];
+  if(id!=='Z')for(const q of [r-2,r-1,r+1,r+2])if(q>=1&&q<=9)near.push(s+q);
+  let out=0,suitOut=0,nearOut=0,zOut=0,meldOut=0;
+  const bySeat=[0,0,0,0];
+  for(const pl of G.players){
+    for(const t of (pl.discard||[])){
+      if(t.id===id){out++;bySeat[pl.seat]++;}
+      if(s!=='Z'&&t.id[0]===s){suitOut++;if(near.indexOf(t.id)>=0)nearOut++;}
+      if(t.id==='Z')zOut++;
+    }
+    for(const m of pl.melds){
+      const vis=(m.type==='angang'&&pl.seat!==0)?m.tiles.slice(0,1):m.tiles;
+      for(const t of vis)if(t.id===id)meldOut++;
+    }
+  }
+  let nearLeft=0;for(const x of near)nearLeft+=visibleLeft(x);
+  const inHand=me.hand.filter(t=>t.id===id).length;
+  return {id,total:poolTotal(),wall:wallRemain(),out,bySeat,meldOut,inHand,
+    left:visibleLeft(id),outsideSame:Math.max(0,visibleLeft(id)-inHand),
+    near,nearOut,nearLeft,suitOut,suitLeft:s==='Z'?0:suitVisibleLeft(s),zOut,zLeft:visibleLeft('Z')};
+}
+// 留牌价值：贴张可见剩余为主，同牌外部剩余与已成型的对/搭加权；只用于两张牌的相对比较
+function poolKeepValue(id,d){
+  if(id==='Z')return 99;
+  const f=poolScan(id);
+  let v=f.nearLeft+2*f.outsideSame;
+  if(d.pongs.indexOf(id)>=0)v+=5;
+  else if(d.pairs.indexOf(id)>=0)v+=3;
+  if(d.twoSide.indexOf(id)>=0)v+=2;
+  else if(d.embedded.indexOf(id)>=0||d.edge.indexOf(id)>=0)v+=1;
+  return v;
+}
+// 一句话实况（brief 给窄横幅用）
+function poolFactLine(id,brief){
+  const f=poolScan(id),nm=tileName(tileFromId(id)),n=x=>'<span class="tPoolNum">'+x+'</span>';
+  if(id==='Z')return '红中：废牌区已打 '+n(f.out)+' 张、你手里 '+n(f.inHand)+' 张、可见剩 '+n(f.left)+' 张';
+  if(brief)return nm+' 河里 '+n(f.out)+' 张/手里 '+n(f.inHand)+' 张/可见剩 '+n(f.left)+' 张，贴张剩 '+n(f.nearLeft)+' 张（河里已打 '+n(f.nearOut)+' 张）';
+  return nm+'：废牌区已打 '+n(f.out)+' 张'+(f.meldOut?'、副露亮出 '+n(f.meldOut)+' 张':'')+'，你手里 '+n(f.inHand)+' 张、可见剩 '+n(f.left)+' 张；贴张（'+f.near.map(x=>tileName(tileFromId(x))).join('/')+'）河里已打 '+n(f.nearOut)+' 张、可见剩 '+n(f.nearLeft)+' 张；该花色河里 '+n(f.suitOut)+' 张、可见剩 '+n(f.suitLeft)+' 张';
+}
+// 按本局牌河得出的具体判据（不是口诀）
+function poolJudgeLine(id){
+  const f=poolScan(id);
+  if(id==='Z')return f.left<=1?'红中快见底，百搭补位难再指望。':'红中可见还剩 '+f.left+' 张，留着能顶任意进张。';
+  if(f.nearLeft===0)return '贴张已被废牌区打绝，留着是死搭，先拆不亏。';
+  if(f.out>=3)return '这张河里已见 '+f.out+' 张、几乎打绝，再靠它成对成刻机会很小。';
+  if(f.nearLeft<=3)return '贴张只剩 '+f.nearLeft+' 张、门子将枯，早处理比拖着好。';
+  if(f.out===0&&f.nearLeft>=9)return '河里 0 张、贴张还剩 '+f.nearLeft+' 张，是活门子，别急着丢。';
+  return '贴张还剩 '+f.nearLeft+' 张，门子活着，按向听与进张取舍。';
+}
+// 全局实况：替代 STAGE_KOU 的三段固定口诀
+function poolStageText(d){
+  const total=poolTotal(),wall=d?d.wall:wallRemain();
+  const so={W:0,T:0,B:0},sl={W:0,T:0,B:0};
+  for(const pl of G.players)for(const t of (pl.discard||[]))if(t.id!=='Z'&&so[t.id[0]]!==undefined)so[t.id[0]]++;
+  for(const s of CFG.suits)sl[s]=suitVisibleLeft(s);
+  const order=CFG.suits.slice().sort((a,b)=>sl[b]-sl[a]);
+  const z=poolScan('Z');
+  let txt='全场废牌区 '+total+' 张、牌墙还剩 '+wall+' 张；河里 万'+so.W+'/条'+so.T+'/筒'+so.B+' 张，可见存量 '+order.map(s=>CFG.suitName[s]+sl[s]).join('＞')+'，'+CFG.suitName[order[0]]+'门子最活。红中河里 '+z.out+' 张、你手里 '+z.inHand+' 张、可见剩 '+z.left+' 张。';
+  const foes=[];
+  for(let k=1;k<4;k++){
+    const q=p(k),last=q.discard.slice(-6),c={W:0,T:0,B:0};
+    for(const t of last)if(t.id!=='Z'&&c[t.id[0]]!==undefined)c[t.id[0]]++;
+    const ms=Object.keys(c).sort((a,b)=>c[b]-c[a])[0],mc=c[ms];
+    if(q.melds.length||mc>=3)foes.push(q.name+(q.melds.length?'副露'+q.melds.length+'组':'')+(mc>=3?'近6张里'+mc+'张'+CFG.suitName[ms]:''));
+  }
+  if(foes.length)txt+='别家：'+foes.join('；')+'。';
+  else txt+='别家尚未副露、弃牌花色也未集中，按自家牌河存量推进即可。';
+  return txt;
+}
+function poolStageHTML(d){return '<span class="tStageTag">'+(d?d.stage:'')+'</span>'+poolStageText(d);}
+// 大师心法短句：一律挂在本局牌河数字上，不套口诀模板
+function poolMasterLine(id){
+  let dg=0;try{const z=ztsDanger(p(0));dg=(z.danger&&z.danger[id])||0;}catch(e){}
+  const f=poolScan(id),nm=tileName(tileFromId(id));
+  if(dg>=3)return '郑太顺读牌：'+nm+' 在别家弃牌轨迹里同线/反常对信号命中 '+dg+' 次，对方多半快听，别拖进度。';
+  if(f.nearOut>=4)return '郑太顺读牌（早打无周边）：该张周边已被打掉 '+f.nearOut+' 张、贴张只剩 '+f.nearLeft+' 张，同线存量枯了。';
+  return '郑太顺读牌：全场废牌区 '+f.total+' 张，'+nm+' 暂无同线危险信号，按可见贴张 '+f.nearLeft+' 张算。';
+}
+// 复盘用：带本局牌河数字的理由，替代照抄口诀
+function poolReasonText(chosenId,bestId){
+  const cm=tileName(tileFromId(chosenId)),bm=tileName(tileFromId(bestId));
+  return '废牌区共 '+poolTotal()+' 张；你打的 '+cm+'：'+poolJudgeLine(chosenId)
+    +(chosenId===bestId?'。':'；师傅建议 '+bm+'：'+poolJudgeLine(bestId)+'。');
+}
 function allTileIds(){const a=[];for(const s of CFG.suits)for(let r=1;r<=9;r++)a.push(s+r);a.push('Z');return a;}
 // 有效听牌进张：只统计牌墙里还摸得到（剩余>0）的牌
 function validTingIds(handArr,melds){
@@ -2292,15 +2405,13 @@ function updateTeachPanel(){
   for(const o of opp)h+='<div class="tOppRow"><span class="tOppName">'+o.name+'</span><span>'+o.text+'</span></div>';
   h+='</div>';
   h+='</div>';
-  // 第2栏：推荐打出
-  h+='<div class="tCol tColLeft"><div class="tColHead">推荐打出</div>';
-  h+='<div class="tRecBig">'+tileDiv(rec,true)+'</div><div class="tRecName">'+tileName(rec)+'</div>';
+  // 第2栏：推荐打出 · 打牌建议（2026-11-12 用户需求：两栏合并；主判据改为本局废牌区实况，口诀降为参考）
+  h+='<div class="tCol tColAdv"><div class="tColHead">推荐打出 · 打牌建议</div>';
+  h+='<div class="tRecRow"><div class="tRecBig">'+tileDiv(rec,true)+'</div><div class="tRecName">'+tileName(rec)+'</div></div>';
   if(pick.rule)h+='<div class="tRule">'+pick.kou+'</div>';
-  else h+='<div class="tWhy"><b>为什么打这张</b><span>'+pick.kou+'</span></div>';
-  h+='</div>';
-  // 第3栏：打牌建议
-  h+='<div class="tCol tColRight"><div class="tColHead">打牌建议</div>';
-  h+='<div class="tStage"><span class="tStageTag">'+d.stage+'</span>'+STAGE_KOU[d.stage]+'</div>';
+  else h+='<div class="tWhy"><b>为什么打这张（按本局废牌区）</b><span>'+poolJudgeLine(pick.id)+'</span></div>';
+  h+='<div class="tPool"><b>废牌区实况</b>：'+poolFactLine(pick.id)+'。</div>';
+  h+='<div class="tStageLive">'+poolStageHTML(d)+'</div>';
   if(pick.ting){
     const b=pick.ting,prob=Math.min(100,Math.round(b.iw/d.wall*100));
     h+='<div class="tTingHead">打出后听 <b>'+b.vt.length+'</b> 种，成胡约 <b>'+prob+'%</b></div><div class="teachTings">';
@@ -2320,8 +2431,9 @@ function updateTeachPanel(){
       h+='</div>';
     }
   }
+  if(!pick.rule)h+='<div class="tKouNote"><b>牌理通则（参考）</b>：'+pick.kou+'</div>';
   h+='</div>';
-  // 第4栏：听牌一览（当前真实听牌状态，自动显示听哪些牌、各剩几张）
+  // 第3栏：听牌一览（当前真实听牌状态，自动显示听哪些牌、各剩几张）
   const curTing=calcTing();
   h+='<div class="tCol tColTing"><div class="tColHead">听牌一览</div>';
   if(!curTing.length){
@@ -2336,7 +2448,7 @@ function updateTeachPanel(){
     h+='</div>';
   }
   h+='</div>';
-  // 第5栏：积分排行（实时读取累计分，窄列紧凑显示；顶栏“积分排行”按钮仍可打开弹窗并清零）
+  // 第4栏：积分排行（实时读取累计分，窄列紧凑显示；顶栏“积分排行”按钮仍可打开弹窗并清零）
   h+='<div class="tCol tColRank"><div class="tColHead">积分排行<span id="tRankReset" class="tRankReset">清零</span></div><div class="tRankInner">'+rankListHTML()+'</div></div>';
   h+='</div>';
   panel.innerHTML=h;
@@ -2375,54 +2487,65 @@ function recordMove(chosenTile){
     const me=p(0),d=handDiagnose(me),pick=teachPick(d);
     const good=chosenTile.id===pick.id||(pick.stance&&stanceFit(pick.stance,chosenTile.id,d)>0)
       ||notWorse(discardQuality(me,chosenTile.id),discardQuality(me,pick.id));
-    moveLog.push({chosen:chosenTile.id,best:pick.id,good:good,stage:d.stage,reason:pick.kou});
+    moveLog.push({chosen:chosenTile.id,best:pick.id,good:good,stage:d.stage,reason:poolReasonText(chosenTile.id,pick.id)});
   }catch(e){}
 }
-// 点选一张牌时实时分析：选对正向确认、选错提醒并给出建议，持续显示直到改选或出牌
-// 大牌姿态下的自主决断：所选牌符合大牌方向即视为方向正确，不按向听数报错
+// 点选一张牌时实时分析：结论一律由「本局废牌区实况 + 首推独立复核」得出，不再照抄麻将口诀。
+// 2026-11-12 升级：河里已见几张、贴张还剩几张、别家弃牌花色集中在哪里，都直接参与「打亏/不亏」判定。
 function liveWarn(tile){
   if(!mistakeWarnOn)return;
   const me=p(0),d=handDiagnose(me),pick=teachPick(d);
   const el=document.getElementById('liveWarn');if(!el)return;
-  const nm=tileName(tile);
-  // 2026-11-11 双大师心法实时点评：郑太顺读牌（同线/反常对危险信号）+ 雀学米高机会成本
-  let master='';
-  try{
-    const zts=ztsDanger(me);
-    if(zts.danger[tile.id])master+='<b>郑太顺读牌：</b>各家弃牌轨迹显示 '+nm+' 是危险信号张（同线加减一/反常对命中）——对手多半快听了。本游戏无点炮，但这是「抢速度还是收杠分」的决策信号。<br>';
-    const pairBreak=tile.id!=='Z'&&me.hand.filter(t=>t.id===tile.id).length>=2;
-    if(pairBreak&&d.pairCount7>=4)master+='<b>雀学米高·机会成本：</b>拆这个对子=放弃七对/全碰路线的一份价值（手里已有 '+d.pairCount7+' 对，四张一样算两对），机会成本要算进这一打。<br>';
-    // 2026-11-11 实战篇存量点评：前期跟打（打出多家交集不要区的牌 = 丢最容易进张的方向）
-    if(tile.id!=='Z'){
-      const s=tile.id[0],r=parseInt(tile.id[1],10);
-      let hit=0;
-      for(let k=1;k<4;k++){if(p(k).discard.some(t=>t.id!=='Z'&&t.id[0]===s&&Math.abs(parseInt(t.id[1],10)-r)<=2))hit++;}
-      const totalD=G.players.reduce((a,x)=>a+x.discard.length,0);
-      if(hit>=2&&totalD<30)master+='<b>实战篇·存量：</b>'+nm+' 周边已有 '+hit+' 家弃过——「早打无周边」，这区域的牌多半还在牌墙里，是你最容易进张的方向；前期跟打丢掉它，后面就是「打啥接啥」的回手掏循环。<br>';
-    }
-  }catch(e){}
-  // 独立复核：玩家这打是否真的比首推差（避免把同分/更快的一打误报成「打亏」）
+  const nm=tileName(tile),best=tileName(tileFromId(pick.id));
+  const jl=id=>poolJudgeLine(id).replace(/。$/,'');
+  // 独立复核：同分不同选不误报（沿用玩家可见口径，与「听牌一览」同源）
   let qMine=null,qPick=null,shMin=99;
   try{qMine=discardQuality(me,tile.id);qPick=discardQuality(me,pick.id);shMin=shMinOf(me);}catch(e){}
   const fair=notWorse(qMine,qPick);
-  const best=tileName(tileFromId(pick.id));
+  // 本局废牌区：这一打的留牌价值 vs 首推的留牌价值
+  const fm=poolScan(tile.id),fp=poolScan(pick.id);
+  const kvMine=poolKeepValue(tile.id,d),kvPick=poolKeepValue(pick.id,d);
+  // 牌河宽恕：你打掉的是已被打枯的死张、首推反倒是活门子时，不能按口诀报错
+  const poolSave=!pick.rule&&tile.id!=='Z'&&pick.id!=='Z'&&tile.id!==pick.id&&!fair
+    &&kvMine+2<kvPick&&(fm.nearLeft<=fp.nearLeft-3||fm.out>=3);
+  // 郑太顺读牌：同线/反常对信号；「早打无周边」只在河里周边真被打掉时才成立
+  let dg=0,zts=null;try{zts=ztsDanger(me);dg=(zts.danger&&zts.danger[tile.id])||0;}catch(e){}
+  let mLab='郑太顺读牌',m1;
+  if(dg>=3)m1=nm+' 同线/反常对信号命中 '+dg+' 次，别家多半快听（本游戏无点炮，这是抢速度的信号）。';
+  else if(fm.nearOut>=4){mLab='郑太顺读牌（早打无周边）';m1='周边已被打掉 '+fm.nearOut+' 张、贴张只剩 '+fm.nearLeft+' 张，这一路存量枯了。';}
+  else m1='废牌区 '+fm.total+' 张，'+nm+' 暂无同线危险信号，按可见贴张 '+fm.nearLeft+' 张算。';
+  // 雀学米高机会成本：拿本局两打的贴张存量算差值，不套固定口诀
+  const pairBreak=tile.id!=='Z'&&me.hand.filter(t=>t.id===tile.id).length>=2;
+  const m2=pairBreak&&d.pairCount7>=4
+    ?'拆对子=放弃七对/全碰一份价值（手里 '+d.pairCount7+' 对，'+nm+' 河里已打 '+fm.out+' 张、可见剩 '+fm.left+' 张）。'
+    :(tile.id===pick.id
+      ?nm+' 贴张可见剩 '+fm.nearLeft+' 张，是这手牌里代价最小的一打（河里已打 '+fm.nearOut+' 张）。'
+      :nm+' 贴张可见剩 '+fm.nearLeft+' 张、'+best+' 剩 '+fp.nearLeft+' 张，差 '+(fp.nearLeft-fm.nearLeft)+' 张就是这一打的真实代价。');
+  const facts='<div class="wFacts">废牌区 '+fm.total+' 张｜你选 '+poolFactLine(tile.id,true)
+    +(tile.id!==pick.id?'；首推 '+best+' 河里 '+fp.out+' 张、贴张剩 '+fp.nearLeft+' 张':'')+'</div>';
+  // 选错时给首推牌的对照判据；选对时不再重复同一句
+  const judge=tile.id!==pick.id?'<div class="wWhy">对照 '+best+'：'+jl(pick.id)+'。</div>':'';
+  const master='<div class="wMaster"><span class="wM">'+mLab+'：</span>'+m1
+    +' <span class="wM">雀学米高·机会成本：</span>'+m2+'</div>';
+  let head,cls;
   if(tile.id===pick.id){
-    el.className='liveWarn warnGood';
-    const valueLine=(qPick&&qPick.sh<=shMin)
-      ?'<br><b>雀学米高·综合价值：</b>这一打向听不倒退，巡内净值是正的——进张价值覆盖了弃牌损失，手牌价值在累积。'
-      :'<br><b>雀学米高·综合价值：</b>这一打是路线取舍（做大牌 / 先解红中限制），向听会慢一步；净值要按该路线算，别套最快胡牌的尺子。';
-    el.innerHTML='<b>师傅点评：这张选得对，可放心打出</b>你选的 '+nm+' 正是我推荐的牌。'+pick.kou+valueLine+master;
+    cls='warnGood';
+    head='<b>师傅点评：这张选得对，可放心打出</b>'+nm+' 正是首推，'+(qPick&&qPick.sh<=shMin?'向听不倒退':'按路线取舍')+'；本局牌河：'+jl(tile.id)+'。';
+  }else if(poolSave){
+    cls='warnGood';
+    head='<b>师傅点评：这一打不亏（按本局废牌区）</b>'+nm+' 贴张剩 '+fm.nearLeft+' 张、河里已打 '+fm.nearOut+' 张，留着价值已枯；首推 '+best+' 是按最快听牌算的，这局按存量先清它更对。';
   }else if(fair&&tile.id!=='Z'){
-    el.className='liveWarn warnGood';
-    const why=pick.rule?'规则要求先解红中限制':(pick.stance?'按'+pick.stance.name+'大牌路线':'综合牌理口径');
-    el.innerHTML='<b>师傅点评：这一打不亏</b>你选的 '+nm+' 按最快听牌口径并不比我首推的 '+best+' 差'+(qMine.sh<qPick.sh?'（还快一步）':'（同向听、进张相当）')+'；我推荐 '+best+' 是'+why+'，两条路线取向不同，按你的判断走没问题。<br><b>雀学米高·综合价值：</b>两打效率相当、巡内净值都不为负，机会成本算清即可，不必硬改。'+pick.kou+master;
+    cls='warnGood';
+    head='<b>师傅点评：这一打不亏</b>'+nm+' 不比 '+best+' 差'+(qMine.sh<qPick.sh?'（还快一步）':'（同向听、进张相当）')+'；牌河：'+jl(tile.id)+'。';
   }else if(pick.stance&&stanceFit(pick.stance,tile.id,d)>0&&tile.id!=='Z'){
-    el.className='liveWarn warnGood';
-    el.innerHTML='<b>师傅点评：大牌方向，打得通</b>你正在做'+pick.stance.name+'，选的 '+nm+' 符合大牌路线，做牌不为最快胡、这步走得通；我同路线的首推是 '+best+'。'+pick.kou+master;
+    cls='warnGood';
+    head='<b>师傅点评：大牌方向，打得通</b>做'+pick.stance.name+'时 '+nm+' 符合路线，同路线首推 '+best+'；牌河：'+jl(tile.id)+'。';
   }else{
-    el.className='liveWarn warnBad';
-    el.innerHTML='<b>师傅提醒：这张可能打亏了，先别急着出牌</b>你选的是 '+nm+'，我更建议打 '+best+'。'+pick.kou+master;
+    cls='warnBad';
+    head='<b>师傅提醒：这张可能打亏了，先别急着出牌</b>建议改打 '+best+'：'+nm+' '+jl(tile.id)+'，而 '+best+' '+jl(pick.id)+'。';
   }
+  el.className='liveWarn '+cls;
+  el.innerHTML=head+facts+judge+master;
   if(warnTimer){clearTimeout(warnTimer);warnTimer=null;}
   el.style.display='block';
   el.onclick=clearWarn;
@@ -2444,24 +2567,19 @@ function buildThinkHTML(){
   if(pick.effWeight>0)h+='这手打出后，还有 '+pick.effWeight+' 张有效进张能推进听牌。';
   else h+='目前离听牌还远，先按基础牌理把孤张和死搭清掉。';
   h+='</div>';
-  h+='<div class="thinkStep"><b>第三步，我看牌局阶段和别家在做什么</b>';
-  h+='现在是“'+d.stage+'”。'+STAGE_KOU[d.stage];
+  h+='<div class="thinkStep"><b>第三步，我看这一局废牌区实际打过什么</b>';
+  h+=poolStageText(d);
+  h+='首推 '+tileName(tileFromId(pick.id))+'：'+poolFactLine(pick.id)+'。'+poolJudgeLine(pick.id);
   for(const o of opp)h+=' '+o.name+'：'+o.text+'。';
-  // 2026-11-11 双大师读牌研判：郑太顺危险信号张 + 雀学米高存量口径
+  // 双大师研判同样挂在本局弃牌轨迹与存量数字上（不再套固定口诀）
   try{
     const zts=ztsDanger(me),dz=Object.keys(zts.danger||{});
-    if(dz.length)h+='按郑太顺同线读牌，'+dz.slice(0,3).map(x=>tileName(tileFromId(x))).join('、')+'是危险信号张——有人弃牌轨迹反常、多半快听了，你若牌差就转收杠分。';
-    else h+='按郑太顺读牌：各家弃牌轨迹暂无明显等张信号。';
-    h+='雀学米高存量口径：牌墙可见存量 '+wallRemain()+' 张，存量越高自摸概率越大，拆搭先拆存量小的。';
-    // 2026-11-11 实战篇交集区域：对手弃牌最集中的花色半区 = 你的进攻区（牌墙存量高）
-    const halfKey={};
-    for(let k=1;k<4;k++)for(const t of p(k).discard){if(t.id==='Z')continue;const r=parseInt(t.id[1],10);const key=t.id[0]+(r>=5?'大':'小');halfKey[key]=(halfKey[key]||0)+1;}
-    const hkeys=Object.keys(halfKey);
-    if(hkeys.length){hkeys.sort((a,b)=>halfKey[b]-halfKey[a]);const hk=hkeys[0];
-      h+='实战篇交集区域：对手弃牌最集中在'+(hk[0]==='W'?'万':hk[0]==='T'?'条':'筒')+(hk[1]==='大'?'大字(5-9)':'小字(1-5)')+'——「早打无周边」，这半区牌多半还躺牌墙里，是你的进攻区。';}
+    if(dz.length)h+='郑太顺同线读牌：'+dz.slice(0,3).map(x=>tileName(tileFromId(x))).join('、')+' 命中别家弃牌轨迹的反常信号（河里共 '+poolTotal()+' 张），对方多半快听。';
+    else h+='郑太顺同线读牌：这 '+poolTotal()+' 张弃牌里暂无明显等张信号。';
+    h+='雀学米高机会成本：这一打贴张可见剩 '+poolScan(pick.id).nearLeft+' 张，牌墙还剩 '+wallRemain()+' 张，按存量比过另几门再定。';
   }catch(e){}
   h+='</div>';
-  h+='<div class="thinkFinal">综合这三步，我建议打 <b>'+tileName(tileFromId(pick.id))+'</b>。'+pick.kou+'</div>';
+  h+='<div class="thinkFinal">综合这三步，我建议打 <b>'+tileName(tileFromId(pick.id))+'</b>。本局牌河判据：'+poolJudgeLine(pick.id)+'（牌理细则：'+pick.kou+'）</div>';
   return h;
 }
 const REVIEW_KNOWLEDGE={
