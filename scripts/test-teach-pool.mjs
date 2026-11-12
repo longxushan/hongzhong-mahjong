@@ -56,6 +56,14 @@ const r = await page.evaluate(() => {
   const advHasKouNote = advHTML.includes('牌理通则');
   const advEl = document.querySelector('.tColAdv');
   const advGeom = { client: advEl.clientHeight, scroll: advEl.scrollHeight };
+  const mainEl = document.querySelector('.tColMain');
+  const mainSecs = mainEl ? mainEl.querySelectorAll('.tSec').length : 0;
+  const mainHasBoth = !!mainEl && !!mainEl.querySelector('.tPlanTag') && !!mainEl.querySelector('.tPool');
+  const oppEl = document.querySelector('.tColOpp');
+  const oppEmpty = (oppEl || {}).textContent || '';
+  const oppCards = oppEl ? oppEl.querySelectorAll('.tOppCard').length : 0;
+  const oppHasTwoLines = !!oppEl && oppEl.textContent.includes('牌型') && oppEl.textContent.includes('打法')
+    && oppEl.textContent.includes('别家暗牌不可见');
   const panelEmpty = document.getElementById('teachPanel').textContent;
   const splitters = grid.querySelectorAll('.colSplitter').length;
   const scanEmpty = poolScan('W1');
@@ -80,8 +88,11 @@ const r = await page.evaluate(() => {
   const warnFull = { cls: document.getElementById('liveWarn').className, txt: document.getElementById('liveWarn').textContent };
   updateTeachPanel();
   const panelFull = document.getElementById('teachPanel').textContent;
+  const oppFull = (document.querySelector('.tColOpp') || {}).textContent || '';
   return {
     cols, heads: cols.map(c => c.head), splitters,
+    mainSecs, mainHasBoth, oppCards, oppHasTwoLines,
+    oppEmpty: oppEmpty.slice(0, 200), oppFull: oppFull.slice(0, 200),
     advHasPool, advHasStage, advHasKouNote, advLen: advHTML.length, advGeom,
     panelEmpty: panelEmpty.slice(0, 500), panelFull: panelFull.slice(0, 500),
     scanEmpty: { out: scanEmpty.out, nearLeft: scanEmpty.nearLeft, total: scanEmpty.total },
@@ -97,6 +108,12 @@ const checks = [
   ['存在合并栏「推荐打出 · 打牌建议」', r.heads.some(h => h.includes('推荐打出') && h.includes('打牌建议'))],
   ['不再有独立的「推荐打出」「打牌建议」两栏', !r.heads.includes('推荐打出') && !r.heads.includes('打牌建议')],
   ['拖拽分隔条数量随列数变为 3', r.splitters === 3],
+  ['四栏从左到右：牌型+推荐 → 对手分析 → 听牌一览 → 积分排行',
+    /牌型分析/.test(r.heads[0]) && /推荐打出/.test(r.heads[0]) && /打牌建议/.test(r.heads[0])
+    && /对手分析/.test(r.heads[1]) && /听牌一览/.test(r.heads[2]) && /积分排行/.test(r.heads[3])],
+  ['第1栏内两块并存：牌型分析与推荐打出同栏、不再各自成栏', r.mainSecs === 2 && r.mainHasBoth],
+  ['第2栏对手分析含三家卡片、牌型/打法两行与可见口径说明', r.oppCards === 3 && r.oppHasTwoLines],
+  ['对手分析随本局废牌区实时刷新', r.oppFull.includes('20 张') && r.oppFull !== r.oppEmpty],
   ['合并栏含废牌区实况块与数字高亮', r.advHasPool === true],
   ['合并栏含本局阶段实况（替代固定口诀）', r.advHasStage === true],
   ['合并栏把口诀降级为参考', r.advHasKouNote === true],
@@ -151,7 +168,8 @@ const port = await page2.evaluate(() => {
   return { scrollReachable, afterTop: Math.round(after.top), dockTop: Math.round(dr.top), dockBottom: Math.round(dr.bottom),
     pport: document.getElementById('stage').classList.contains('pport'),
     cols: document.querySelectorAll('.tGrid .tCol').length,
-    span: cs.gridColumn, client: adv.clientHeight, scroll: adv.scrollHeight,
+    span: cs.gridColumn, oppSpan: getComputedStyle(document.querySelector('.tColOpp')).gridColumn,
+    client: adv.clientHeight, scroll: adv.scrollHeight,
     inViewport: rect.left >= -1 && rect.right <= window.innerWidth + 1 && rect.bottom <= window.innerHeight + 1,
     gridW: Math.round(grid.width), advW: Math.round(rect.width),
     rect: { top: Math.round(rect.top), bottom: Math.round(rect.bottom), left: Math.round(rect.left), right: Math.round(rect.right) },
@@ -165,6 +183,12 @@ const port = await page2.evaluate(() => {
 const portChecks = [
   ['竖屏四栏布局', port.pport && port.cols === 4],
   ['竖屏合并栏跨整行且可滑动查看完整内容', /1\s*\/\s*3|span 2/.test(port.span) && port.scrollReachable],
+  ['竖屏对手分析栏也跨整行', /1\s*\/\s*3|span 2/.test(port.oppSpan)],
+  ['竖屏四栏自上而下顺序正确、听牌与积分并排',
+    /牌型分析/.test(port.rows[0].head) && /对手分析/.test(port.rows[1].head)
+    && /听牌一览/.test(port.rows[2].head) && /积分排行/.test(port.rows[3].head)
+    && port.rows[0].top < port.rows[1].top && port.rows[1].top < port.rows[2].top
+    && Math.abs(port.rows[2].top - port.rows[3].top) < 3],
   ['竖屏合并栏显示废牌区实况', port.hasPool],
   ['竖屏无 JS 报错', p2Errors.length === 0],
 ];

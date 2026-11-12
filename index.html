@@ -318,6 +318,9 @@
   .teachLabel{background:var(--gold);color:#1c1c1c;font-weight:bold;border-radius:6px;padding:3px 8px;font-size:12px;white-space:nowrap;}
   .teachProb{font-size:13px;color:#cfe0d6;white-space:nowrap;}
   .teachTings{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px;}
+  /* 2026-11-12：听张/进张列表统一横滑，窄列不再换行把整个教学面板撑高 */
+  .tCol .teachTings{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:3px;}
+  .tCol .teachTile{flex:0 0 auto;}
   .teachTile{display:flex;align-items:center;gap:5px;background:#2f2f2f;border:1px solid #3d3d3d;border-radius:7px;padding:3px 7px;}
   .teachTile .tp-sm{width:calc(var(--sm)*0.7);height:calc(var(--sm)*0.92);}
   .teachTile span{font-size:12px;color:#e8e8e8;white-space:nowrap;}
@@ -328,10 +331,16 @@
   .tHealth b{color:var(--gold);font-size:14px;}
   .tCompleteMeld{font-size:11.5px;color:#ffe9b8;background:#33402f;border-left:3px solid #8fbf6a;border-radius:0 6px 6px 0;padding:4px 7px;margin-bottom:5px;text-align:left;line-height:1.4;}
   .tRule{background:#4a2b2b;border:1px solid #7a4444;color:#ffd9d9;border-radius:8px;padding:6px 10px;font-size:13px;line-height:1.5;margin-bottom:7px;}
-  /* 2026-11-12：用户需求「推荐打出」与「打牌建议」合并为一栏 → 底部四列；积分排行用 auto 占内容宽度，前三列按 fr 瓜分 */
-  .tGrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.55fr) minmax(0,1.2fr) auto;gap:6px;align-items:stretch;}
+  /* 2026-11-12 用户需求：牌型分析 + 推荐打出合并为第 1 栏，新增第 2 栏「对手分析」；
+     从左到右：合并栏 → 对手分析 → 听牌一览 → 积分排行。积分排行 auto 占内容宽度，前三列按 fr 瓜分 */
+  .tGrid{display:grid;grid-template-columns:minmax(0,2.15fr) minmax(0,1.8fr) minmax(0,1.05fr) auto;gap:6px;align-items:stretch;}
   .tColRank{max-width:134px;}
   .tCol{background:#24352c;border:1px solid #38503f;border-radius:9px;padding:2px 7px;min-width:0;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+  /* 合并栏内部：默认上下堆叠，两块都用满整栏宽度（左右并排实测会把 227px 窄块的长文案挤成多行，反而更高且难读）；
+     听张/进张列表横滑，避免换行把整个教学面板撑高 */
+  .tMainGrid{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;flex:1 1 auto;min-height:0;}
+  .tSec{min-width:0;}
+  .tSecRec{border-top:1px dashed #3a5546;padding-top:4px;margin-top:4px;}
   /* 手动拖拽列宽：分隔条独立挂在 tGrid 上绝对定位（不被列的 overflow:hidden 裁剪），覆盖列间 gap，平时隐形、悬停高亮 */
   .tGrid{position:relative;}
   .colSplitWrap{position:absolute;inset:0;pointer-events:none;z-index:7;}
@@ -384,6 +393,17 @@
   .tOppHead{font-size:10.5px;color:#ffe9b0;margin-bottom:3px;text-align:center;}
   .tOppRow{display:flex;justify-content:flex-start;gap:7px;font-size:10.5px;color:#aec6b9;line-height:1.5;}
   .tOppName{color:#fff;font-weight:bold;flex:0 0 auto;}
+  /* 2026-11-12：独立「对手分析」栏——牌型倾向 + 打法，全部只取玩家可见信息 */
+  .tOppSum{font-size:11px;color:#cfe0d6;line-height:1.4;background:#1d2f27;border-left:3px solid #6fa9d6;border-radius:0 6px 6px 0;padding:3px 6px;margin-bottom:5px;text-align:left;}
+  .tOppSum b{color:#ffd27a;}
+  .tOppCard{background:#1c2b24;border:1px solid #3a5546;border-radius:7px;padding:4px 6px;margin-bottom:5px;text-align:left;}
+  .tOppTitle{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px;}
+  .tOppStyle{font-size:10px;color:#ffe9b0;background:#3a5546;border-radius:8px;padding:0 6px;line-height:1.5;}
+  .tOppRisk{font-size:10px;color:#a9d6bb;background:#254236;border-radius:8px;padding:0 6px;line-height:1.5;margin-left:auto;}
+  .tOppRisk.riskFast{color:#ffd9d9;background:#5a2b2b;}
+  .tOppLine{font-size:10.5px;color:#cfe0d6;line-height:1.45;}
+  .tOppLine b{color:#ffe9b0;}
+  .tOppNote{font-size:10px;line-height:1.4;color:#9bb8ab;border-top:1px dashed #3a5546;padding-top:3px;margin-top:auto;text-align:left;}
   .tTingHead{font-size:12px;color:#cfe0d6;line-height:1.5;margin-bottom:4px;}
   .tTingHead b{color:var(--gold);}
   .tTingNone{color:#9bb8ab;}
@@ -410,8 +430,13 @@
   #stage.pport #hSplitter{flex-basis:14px;}
   #stage.pport #bottomDock{flex:0 0 auto;}
   #stage.pport .tGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:5px;}
-  #stage.pport .tColMid{grid-column:1/3;}  /* 牌型分析内容多，跨整行独占一行 */
-  #stage.pport .tColAdv{grid-column:1/3;} /* 合并后的推荐+建议栏独占一行，听牌一览与积分排行并排 */
+  /* 新四栏竖屏顺序：①合并栏 ②对手分析 各跨整行，③听牌一览与④积分排行并排 */
+  #stage.pport .tColMain{grid-column:1/3;}
+  #stage.pport .tColOpp{grid-column:1/3;}
+  #stage.pport .tColAdv{grid-column:1/3;}
+  #stage.pport .tMainGrid{grid-template-columns:minmax(0,1fr);}  /* 合并栏内部上下堆叠 */
+  #stage.pport .tSecRec{border-left:none;border-top:1px dashed #3a5546;padding-left:0;padding-top:4px;margin-top:4px;}
+  #stage.pport .tOppNote{display:none;}  /* 竖屏省一行，口径说明留在横屏 */
   /* 2026-11-12：合并栏内容变多，竖屏压缩冗余排版（隐藏口诀附注、听张改横滑），底部面板仍可上下滑动查看全部 */
   #stage.pport .tKouNote{display:none;}
   #stage.pport .tPool,#stage.pport .tStageLive{font-size:10.5px;line-height:1.35;padding:3px 5px;}
@@ -2078,6 +2103,65 @@ function poolStageText(d){
   return txt;
 }
 function poolStageHTML(d){return '<span class="tStageTag">'+(d?d.stage:'')+'</span>'+poolStageText(d);}
+// ===== 对手分析层 · 2026-11-12 =====
+// 口径：只用玩家可见信息——四家弃牌 + 明面副露（暗杠只算亮出的 1 张）+ 自己手牌 + 角色公开打法。
+// 不读别家 hand、不读牌墙；结论一律是「倾向」，用于抢速度与收杠分（本游戏无点炮）。
+function opponentAnalysis(){
+  const list=[];let meldTotal=0,sigTotal=0;
+  for(let i=1;i<4;i++){
+    const pl=p(i);
+    const ds=pl.discard||[],nz=ds.filter(t=>t.id!=='Z');
+    const all={W:0,T:0,B:0},last={W:0,T:0,B:0};
+    for(const t of nz)if(all[t.id[0]]!==undefined)all[t.id[0]]++;
+    for(const t of nz.slice(-6))if(last[t.id[0]]!==undefined)last[t.id[0]]++;
+    const zOut=ds.length-nz.length;
+    const melds=pl.melds||[];meldTotal+=melds.length;
+    const ms={W:0,T:0,B:0};let pongN=0,chowN=0;
+    for(const m of melds){
+      const vis=(m.type==='angang')?m.tiles.slice(0,1):m.tiles;  // 暗杠只亮 1 张，不能按 4 张推花色
+      for(const t of vis)if(t.id!=='Z'&&ms[t.id[0]]!==undefined)ms[t.id[0]]++;
+      if(m.type==='chow')chowN++;else pongN++;
+    }
+    // 按家统计郑太顺同线/反常对等张信号（只取近 12 张弃牌，避免 O(n²) 膨胀）
+    const q=nz.slice(-12);let sig=0;
+    for(let a=0;a<q.length-1;a++)for(let b=a+1;b<q.length;b++){
+      if(q[a].id[0]!==q[b].id[0])continue;
+      const ra=parseInt(q[a].id[1],10),rb=parseInt(q[b].id[1],10);
+      if(Math.abs(rb-ra)===2)sig+=3;
+      else if(ra!==rb&&ztsJinGroup(ra)===ztsJinGroup(rb))sig+=2;
+    }
+    sigTotal+=sig;
+    const sc=CFG.suits.slice().sort((a,b)=>all[b]-all[a]);
+    const most=sc[0],least=sc[2],meldMain=Object.keys(ms).sort((a,b)=>ms[b]-ms[a])[0];
+    let plan,basis;
+    if(pongN>=2&&chowN===0){plan='碰碰胡（对对胡）倾向';basis='明面 '+pongN+' 组副露全是刻/杠、无吃顺';}
+    else if(all[most]>=5&&all[least]<=1){plan='清一色/混一色倾向';basis='河里已打 万'+all.W+'/条'+all.T+'/筒'+all.B+' 张，'+CFG.suitName[least]+'子几乎没打，像在留一门';}
+    else if(ms[meldMain]>=4&&pongN>=1){plan='主攻一门';basis='明面副露里 '+CFG.suitName[meldMain]+'子占 '+ms[meldMain]+' 张';}
+    else if(melds.length===0&&ds.length>=6&&zOut===0){plan='门清路线（七对/平胡）';basis='尚未副露、红中未弃，可能在等对子';}
+    else{plan='常规胡牌（平胡/自摸）';basis='副露 '+melds.length+' 组、弃牌花色分散，未见明显大牌方向';}
+    // 打法：角色公开风格 + 本局弃牌轨迹 + 进度信号
+    const st=styleOfName(pl.name),prof=AI_STYLE_PROFILE[st]||{};
+    const lm=CFG.suits.slice().sort((a,b)=>last[b]-last[a])[0];
+    const lastTxt=last[lm]>=3?'近 6 张集中打 '+CFG.suitName[lm]+'子 '+last[lm]+' 张（这一门多半已不要）':'近 6 张花色分散、仍在理牌';
+    const fast=(melds.length>=2||sig>=4||ds.length>=18);
+    const play=(AI_STYLE_NAME[st]||'')+'，'+(prof.plan||'')+'；已打 '+ds.length+' 张、明面副露 '+melds.length+' 组、弃红中 '+zOut+' 张；'+lastTxt
+      +(sig>=4?'；弃牌轨迹同线/反常对信号 '+sig+' 次，可能已近听牌':'。');
+    list.push({name:pl.name,style:AI_STYLE_NAME[st]||'',plan,basis,play,fast,sig,
+      melds:melds.length,discardN:ds.length,zOut,suits:all,lastSuits:last,meldSuits:ms});
+  }
+  return {list:list,total:poolTotal(),wall:wallRemain(),meldTotal:meldTotal,sigTotal:sigTotal};
+}
+function opponentAnalysisHTML(){
+  const a=opponentAnalysis();
+  let h='<div class="tOppSum">全场废牌区 <b>'+a.total+'</b> 张｜牌墙剩 <b>'+a.wall+'</b> 张｜明面副露 <b>'+a.meldTotal+'</b> 组｜等张信号 <b>'+a.sigTotal+'</b> 次</div>';
+  for(const o of a.list){
+    h+='<div class="tOppCard"><div class="tOppTitle"><span class="tOppName">'+o.name+'</span><span class="tOppStyle">'+o.style+'</span><span class="tOppRisk'+(o.fast?' riskFast':'')+'">进度'+(o.fast?'偏快':'中/慢')+'</span></div>';
+    h+='<div class="tOppLine"><b>牌型</b>：'+o.plan+'（'+o.basis+'）</div>';
+    h+='<div class="tOppLine"><b>打法</b>：'+o.play+'</div></div>';
+  }
+  h+='<div class="tOppNote">依据：四家废牌区＋明面副露（暗杠只算亮出的 1 张）＋自己手牌＋角色公开打法；别家暗牌不可见，结论为倾向而非定论。本游戏无点炮，信号用于抢速度与收杠分。</div>';
+  return h;
+}
 // 大师心法短句：一律挂在本局牌河数字上，不套口诀模板
 function poolMasterLine(id){
   let dg=0;try{const z=ztsDanger(p(0));dg=(z.danger&&z.danger[id])||0;}catch(e){}
@@ -2230,7 +2314,7 @@ function scheduleTeachRefresh(){
     if(teachOn)updateTeachPanel();
   });
 }
-// ===== 底部五列可手动拖拽列宽（鼠标/触摸通用，持久化，窗口缩放等比适配）=====
+// ===== 底部教学栏可手动拖拽列宽（按 .tCol 数量自动，鼠标/触摸通用，持久化；V2 键对应新四栏语义）=====
 function attachColSplitters(){
   const tg=document.querySelector('.tGrid');if(!tg)return;
   let wrap=tg.querySelector('.colSplitWrap');
@@ -2255,10 +2339,10 @@ function positionSplitters(){
     sp.style.left=(c.offsetLeft+c.offsetWidth)+'px';
   });
 }
-function saveColWidths(widths){try{localStorage.setItem('banshanColWidths',JSON.stringify({widths:widths.map(w=>Math.round(w))}));}catch(e){}}
+function saveColWidths(widths){try{localStorage.setItem('banshanColWidthsV2',JSON.stringify({widths:widths.map(w=>Math.round(w))}));}catch(e){}}
 function applyColWidths(){
   const tg=document.querySelector('.tGrid');if(!tg)return;
-  let saved;try{saved=JSON.parse(localStorage.getItem('banshanColWidths')||'null');}catch(e){saved=null;}
+  let saved;try{saved=JSON.parse(localStorage.getItem('banshanColWidthsV2')||'null');}catch(e){saved=null;}
   const n=tg.querySelectorAll('.tCol').length;
   if(!saved||!saved.widths||saved.widths.length!==n)return;
   const cs=getComputedStyle(tg);
@@ -2448,8 +2532,10 @@ function updateTeachPanel(){
     ?'轮到你出牌：手里'+me.hand.length+'张 + 副露'+meldN+'张 = '+(me.hand.length+meldN)+'张，碰/杠后不摸牌、直接打出一张'
     :'当前手里'+me.hand.length+'张、副露'+meldN+'张，等待抓牌';
   let h='<div class="tNow">'+nowTxt+'</div><div class="tGrid">';
-  // 第1栏：牌型分析
-  h+='<div class="tCol tColMid"><div class="tColHead">牌型分析 · 本局定调</div>';
+  // 第1栏（2026-11-12 用户需求）：牌型分析 + 推荐打出·打牌建议 合并为一栏。
+  // 内部 .tMainGrid 宽屏左右两块并排、竖屏上下堆叠，避免合并后高度翻倍被裁切。
+  h+='<div class="tCol tColMain tColAdv"><div class="tColHead">牌型分析 · 推荐打出 · 打牌建议</div><div class="tMainGrid">';
+  h+='<div class="tSec tSecPlan">';
   h+='<div class="tPlanTag">本局主做：<b>'+ht.planName+'</b>'+(ht.planMult?' <span class="tPlanMult">'+ht.planMult+'</span>':'')+'</div>';
   h+='<div class="tLead">'+ht.leadText+'</div>';
   h+='<div class="tZStrategy">'+ht.zStrategy+'</div>';
@@ -2457,13 +2543,9 @@ function updateTeachPanel(){
   if(brkMelds.length)h+='<div class="tCompleteMeld">成型面子（已成型、不拆）：'+brkMelds.join('、')+'</div>';
   h+='<div class="tHealth"><span>红中 <b>'+brk.zN+'</b></span><span>顺子 <b>'+bc.chow+'</b></span><span>对子 <b>'+bc.pair+'</b></span><span>刻子 <b>'+bc.pong+'</b></span><span>两面搭 <b>'+bc.two+'</b></span><span>嵌张 <b>'+bc.emb+'</b></span><span>边张 <b>'+bc.edge+'</b></span><span>孤张 <b>'+bc.solo+'</b></span></div>';
   h+='<div class="tSuitDist"><span>万 <b>'+d.sc.W+'</b></span><span>条 <b>'+d.sc.T+'</b></span><span>筒 <b>'+d.sc.B+'</b></span><span>红中 <b>'+d.zN+'</b></span></div>';
-  const opp=readOpponents();
-  h+='<div class="tOpp"><div class="tOppHead">别家动态（随动作实时更新）</div>';
-  for(const o of opp)h+='<div class="tOppRow"><span class="tOppName">'+o.name+'</span><span>'+o.text+'</span></div>';
   h+='</div>';
-  h+='</div>';
-  // 第2栏：推荐打出 · 打牌建议（2026-11-12 用户需求：两栏合并；主判据改为本局废牌区实况，口诀降为参考）
-  h+='<div class="tCol tColAdv"><div class="tColHead">推荐打出 · 打牌建议</div>';
+  // 推荐打出 · 打牌建议（主判据为本局废牌区实况，口诀降为参考）
+  h+='<div class="tSec tSecRec">';
   h+='<div class="tRecRow"><div class="tRecBig">'+tileDiv(rec,true)+'</div><div class="tRecName">'+tileName(rec)+'</div></div>';
   if(pick.rule)h+='<div class="tRule">'+pick.kou+'</div>';
   else h+='<div class="tWhy"><b>为什么打这张（按本局废牌区）</b><span>'+poolJudgeLine(pick.id)+'</span></div>';
@@ -2489,7 +2571,9 @@ function updateTeachPanel(){
     }
   }
   if(!pick.rule)h+='<div class="tKouNote"><b>牌理通则（参考）</b>：'+pick.kou+'</div>';
-  h+='</div>';
+  h+='</div></div></div>'; // 关闭 tSecRec / tMainGrid / tColMain
+  // 第2栏（2026-11-12 用户需求新增）：对手牌型分析 + 打牌分析，只用玩家可见信息
+  h+='<div class="tCol tColOpp"><div class="tColHead">对手分析 · 牌型与打法</div>'+opponentAnalysisHTML()+'</div>';
   // 第3栏：听牌一览（当前真实听牌状态，自动显示听哪些牌、各剩几张）
   const curTing=calcTing();
   h+='<div class="tCol tColTing"><div class="tColHead">听牌一览</div>';
