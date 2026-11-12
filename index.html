@@ -95,8 +95,9 @@
   .tile-back::after{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;transform:translate(-50%,-50%) rotate(45deg);background:var(--gold);}
   #hand .tp-hand.sel{transform:translateY(-12px);}
   /* 手牌按住拖动配牌（2026-11-12）：长按抬起跟随手指、目标位置显示金色插入线；两行竖屏同样可跨行排 */
-  #hand .tile-photo{touch-action:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none;}
-  #hand .tile-photo img{-webkit-user-drag:none;}
+  /* 手指按住牌：禁 iOS/微信长按图片弹「保存图片」菜单、禁文字选择与原生拖图，否则会触发 pointercancel 让配牌拖动失效 */
+  #hand .tile-photo{touch-action:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+  #hand .tile-photo img{-webkit-user-drag:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;pointer-events:none;}
   #hand.hDragOn{cursor:grabbing;}
   #hand .tile-photo.hDragging{z-index:30;opacity:.94;filter:drop-shadow(0 7px 9px rgba(0,0,0,.6));outline:2px solid var(--gold);outline-offset:1px;border-radius:6px;}
   #hand .tile-photo.hDropBefore::before,#hand .tile-photo.hDropAfter::after{content:'';position:absolute;top:1px;bottom:1px;width:3px;background:var(--gold);border-radius:2px;box-shadow:0 0 6px var(--gold);z-index:31;}
@@ -534,7 +535,15 @@
   body.pport #diceSum{font-size:24px;min-width:36px;}
   body.pport #diceRollBtn{width:72px;height:72px;font-size:14px;}
   body.pport #diceResult{font-size:13px;max-width:204px;padding:4px 8px;}
+  /* 2026-11-12 用户要求：讲思路 / 复盘 两个模块暂时隐藏，功能代码全部保留 */
+  html.masterHidden #thinkBtn,html.masterHidden #reviewBtn,html.masterHidden #mReview,
+  html.masterHidden #thinkContent,html.masterHidden #reviewModal{display:none!important;}
 </style>
+<script>
+  // 恢复方法：把 MASTER_PANELS_HIDDEN 改成 false（或去掉 html.masterHidden 类），按钮、面板与复盘弹窗立即回来。
+  const MASTER_PANELS_HIDDEN=true;
+  if(MASTER_PANELS_HIDDEN)document.documentElement.classList.add('masterHidden');
+</script>
 </head>
 <body>
 <div id="stage">
@@ -2193,6 +2202,7 @@ function toggleTeach(){
   refreshDock();sndClick();
 }
 function toggleThink(){
+  if(typeof MASTER_PANELS_HIDDEN!=='undefined'&&MASTER_PANELS_HIDDEN){thinkOn=false;return;} // 讲思路暂时隐藏，函数体保留
   thinkOn=!thinkOn;
   if(thinkOn){teachOn=false;saveTeach();document.getElementById('thinkContent').innerHTML=buildThinkHTML();}
   const kbtn=document.getElementById('thinkBtn');if(kbtn)kbtn.classList.toggle('btnActive',thinkOn);
@@ -3575,6 +3585,7 @@ function presentResult(r){return new Promise(res=>{
   }
   mk.querySelector('#mResetCum').onclick=()=>{if(autoTimer)clearTimeout(autoTimer);resetCumForCurrent();roundNum=1;saveRound();updateRoundTag();r._cumAdded=true;mk.remove();res();presentResult(r);};
   mk.querySelector('#mReview').onclick=()=>{
+    if(typeof MASTER_PANELS_HIDDEN!=='undefined'&&MASTER_PANELS_HIDDEN)return; // 结算面板的复盘入口同步隐藏
     if(autoTimer)clearTimeout(autoTimer);
     if(!lastReview){toast('暂无复盘数据');return;}
     document.getElementById('reviewContent').innerHTML=buildReviewHTML(lastReview);
@@ -3782,6 +3793,14 @@ document.addEventListener('pointermove',function(e){
 });
 document.addEventListener('pointerup',function(e){if(__hd&&e.pointerId===__hd.id)hdEnd(true);});
 document.addEventListener('pointercancel',function(e){if(__hd&&e.pointerId===__hd.id)hdEnd(false);});
+// 2026-11-12 用户反馈：手指按住手牌会弹出「右键菜单 / 保存图片」，随之中断 pointer 序列导致牌拖不动。
+// 只在手牌区拦截（其它区域右键行为不受影响）：禁上下文菜单、禁原生拖图、禁长按选中，配合 CSS 的 -webkit-touch-callout:none。
+(function(){
+  const inHand=function(t){return t&&t.closest?t.closest('#hand'):null;};
+  document.addEventListener('contextmenu',function(e){if(inHand(e.target)){e.preventDefault();e.stopPropagation();}},false);
+  document.addEventListener('dragstart',function(e){if(inHand(e.target))e.preventDefault();},false);
+  document.addEventListener('selectstart',function(e){if(inHand(e.target))e.preventDefault();},false);
+})();
 ['click','dblclick'].forEach(function(t){document.addEventListener(t,function(e){
   if(Date.now()>__hdUntil)return;
   if(e.target instanceof Element&&e.target.closest('#hand')){e.stopPropagation();e.preventDefault();}
@@ -3807,6 +3826,7 @@ document.getElementById('teachBtn').onclick=toggleTeach;
 document.getElementById('splitBtn').onclick=toggleSplitMode;
 document.getElementById('thinkBtn').onclick=toggleThink;
 document.getElementById('reviewBtn').onclick=function(){
+  if(typeof MASTER_PANELS_HIDDEN!=='undefined'&&MASTER_PANELS_HIDDEN)return; // 复盘暂时隐藏，函数体保留
   let rev=lastReview;
   if(!rev){
     if(moveLog.length)rev={resultText:'本局还在进行中，以下是到目前为止的出牌点评。',knowledge:REVIEW_KNOWLEDGE.basic,moves:moveLog.slice()};
