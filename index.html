@@ -476,7 +476,9 @@
   #stage.pport .colSplitWrap{display:none;}
   /* 手牌在上、出牌按钮在下方居中（听牌按钮已删除） */
   #stage.pport #handWrap{flex-direction:column;gap:4px;}
-  #stage.pport #hand{width:100%;flex:1 1 auto;justify-content:center;flex-wrap:wrap;row-gap:6px;overflow:visible;} /* 2026-11-09 用户需求：竖屏手牌两行（7+7），牌放大近一倍 */
+  /* 2026-11-13 用户需求：按「一行 16 张」放大手牌——列间距收紧到 3px 把宽度尽量让给牌面；
+     14 张牌自然排成单行，拆牌分组或超 16 张时才换行/横滑，不再压成两行小牌 */
+  #stage.pport #hand{width:100%;flex:1 1 auto;justify-content:center;flex-wrap:wrap;column-gap:3px;row-gap:6px;overflow:visible;}
   #stage.pport #hand .tp-hand.sel{z-index:2;position:relative;} /* 两行时选中牌上移与上一行重叠，置顶显示 */
   #stage.pport #discardPool{zoom:1;} /* 2026-11-09 用户需求：手机竖屏弃牌再小一点（撤销该场景下的 1.5 倍放大） */
   #stage.pport #actions{width:100%;max-width:none;justify-content:center;flex:0 0 auto;}
@@ -2385,6 +2387,7 @@ function refreshDock(){
   if(thinkEl)thinkEl.style.display=thinkOn?'block':'none';
   syncSplitter();
   syncSplitModeUI(); // 教学模式切换后同步牌桌布局类（组合模式行比例）
+  fit(); // 2026-11-13：牌桌行比例变化后立即按新桌高重算「一行 16 张」牌面（同步，避免组合切换瞬间用旧尺寸裁切）
 }
 function toggleTeach(){
   teachOn=!teachOn;saveTeach();
@@ -2582,6 +2585,7 @@ function toggleSplitMode(){
   splitMode=!splitMode;saveSplitMode();__sbSig='';__handSig='';
   syncSplitModeUI();
   renderHand();updateSplitBar();
+  fit(); // 2026-11-13：拆解条出现/消失改变下排可用高度，立即重算牌面避免裁切
   toast(splitMode?'拆牌方式：手牌已按牌理分组摆放':'正常打牌：手牌恢复原样');sndClick();
 }
 function updateSplitBar(){
@@ -4082,7 +4086,14 @@ function renderActions(o){
 function renderInfo(){const remain=G.wall.length-G.head-(G.wall.length-1-G.tail);document.getElementById('info').textContent='墙剩'+remain+'张 · 留底6 · 你的杠分'+p(0).gangScore;
   document.getElementById('warnTag').style.display=blockedByZRule(p(0))?'inline-block':'none';
   updateRoundTag();}
-function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);syncSplitModeUI();for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();}
+let __renderFitSig='';
+function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);syncSplitModeUI();for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();
+  // 2026-11-13：视口/教学/拆牌任一变化后立刻按新几何重算「一行 16 张」牌面；
+  // 只在签名变化时算，避免每次出牌都重复读写布局（跑局脚本不受影响）
+  try{const tb=document.getElementById('table'),dk=document.getElementById('bottomDock');
+    const sig=innerWidth+'x'+innerHeight+'|'+(tb?tb.className:'')+'|'+(dk?dk.style.display+'/'+dk.style.height:'');
+    if(sig!==__renderFitSig){__renderFitSig=sig;fit();}
+  }catch(e){}}
 function restart(sameDealer){if(G&&G.humanResolve)humanRespond({pass:1});run(sameDealer&&G?G.dealer:null);}
 document.getElementById('rulesBtn').onclick=function(){document.getElementById('rulesModal').style.display='flex';try{speechSynthesis.cancel();}catch(e){}};
 document.getElementById('rulesCloseBtn').onclick=function(){document.getElementById('rulesModal').style.display='none';};
@@ -4155,12 +4166,36 @@ function fit(){
     hand=Math.min(hand,budget);
   }
   hand=Math.max(pp?(wide?24:18):28,Math.min(cap,hand));
+  // 2026-11-13 用户需求：我的牌太小——按「一行 16 张」的尺度最大化显示。
+  // .tp-hand 宽 = --hand2*0.75，故由手牌区实测可用宽反推 --hand2 = (可用宽/16)/0.75；
+  // 只放大自己的手牌（--hand 仍驱动别家小牌/教学面板），并用竖向预算与旧尺寸下限兜底，任何组合都不裁切。
+  const HAND_SLOTS=16;
+  let hand2=hand*0.8;
+  const handEl=document.getElementById('hand'),seat0El=document.getElementById('seat0');
+  if(handEl&&seat0El&&handEl.clientWidth>40){
+    const hcs=getComputedStyle(handEl);
+    const gx=parseFloat(hcs.columnGap)||5;
+    const padX=(parseFloat(hcs.paddingLeft)||0)+(parseFloat(hcs.paddingRight)||0);
+    const usable=handEl.clientWidth-padX-gx*(HAND_SLOTS-1)-2; // 留 2px 舍入余量，保证 16 张确实排得进一行
+    const byW=Math.max(16,usable/HAND_SLOTS/0.75);
+    const whoEl=seat0El.querySelector('.who'),actEl=document.getElementById('actions'),sbEl=document.getElementById('splitBar');
+    const whoH=whoEl?whoEl.offsetHeight:0,actH=actEl?actEl.offsetHeight:0;
+    const sbH=(sbEl&&sbEl.style.display!=='none')?sbEl.offsetHeight:0;
+    // 竖屏点评框钉在座位下沿且最小可读 72px（fitLiveWarnBox 口径），横屏在流内可收缩到 0；
+    // 预留 96/110px 即可，过大反而会把小屏手牌压回小尺寸
+    const warnReserve=pp?(wide?110:96):10;
+    // 拆牌方式下每张牌上方还有分组标签 + 框内边距，约 22px，必须从竖向预算里扣掉
+    const splitExtra=handEl.classList.contains('splitHand')?22:0;
+    const byH=seat0El.clientHeight-whoH-actH-sbH-splitExtra-warnReserve-(pp?14:10);
+    const cap2=large?72:(wide?64:(pp?46:56));
+    hand2=Math.max(hand*0.8,Math.min(byW,byH,cap2));
+  }
   const sm=Math.max(pp?(wide?17:13):17,hand*0.5), disc=Math.max(pp?(wide?15:11):14,hand*0.4), back=Math.max(pp?(wide?16:12):15,hand*0.44);
   const gap=Math.max(2,Math.min(large?10:(wide?9:7),hand*0.09));
   let sideMin=large?130:96, sideMax=large?172:118;
   if(pp){sideMin=wide?92:58;sideMax=wide?136:80;}
   const rs=document.documentElement.style;
-  rs.setProperty('--hand',hand+'px');rs.setProperty('--hand2',(hand*0.8)+'px');rs.setProperty('--sm',sm+'px');rs.setProperty('--disc',disc+'px');rs.setProperty('--back',back+'px');rs.setProperty('--seatgap',gap+'px');
+  rs.setProperty('--hand',hand+'px');rs.setProperty('--hand2',hand2+'px');rs.setProperty('--sm',sm+'px');rs.setProperty('--disc',disc+'px');rs.setProperty('--back',back+'px');rs.setProperty('--seatgap',gap+'px');
   rs.setProperty('--sideMin',sideMin+'px');rs.setProperty('--sideMax',sideMax+'px');
   if(large||wide){
     rs.setProperty('--topfs','13px');rs.setProperty('--tagfs','11.5px');rs.setProperty('--btnfs','13px');
