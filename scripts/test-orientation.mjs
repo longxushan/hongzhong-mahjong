@@ -64,7 +64,7 @@ const snap = () => page.evaluate(() => {
     const r = e.getBoundingClientRect();
     return r.top < seat.top - 2 || r.bottom > seat.bottom + 2 || r.left < seat.left - 2 || r.right > seat.right + 2;
   }).length;
-  const actBtn = document.querySelector('#actions button');
+  const actBtn = document.querySelector('#playBtn'); // 2026-11-13：出牌按钮已移到头像右侧
   const actInside = !!actBtn && (() => {
     const r = actBtn.getBoundingClientRect();
     return r.top >= seat.top - 2 && r.bottom <= seat.bottom + 2 && r.right <= seat.right + 2;

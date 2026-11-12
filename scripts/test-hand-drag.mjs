@@ -178,7 +178,7 @@ chk('教学模式开启时照样能按住配牌', afterTeach.uids.join() !== bef
 async function layoutProbe() {
   return await page.evaluate(() => {
     const box = s => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right, h: b.height }; };
-    const seat = box('#seat0'), hand = box('#hand'), act = box('#actions button'), sb = box('#splitBar'), dock = box('#bottomDock');
+    const seat = box('#seat0'), hand = box('#hand'), act = box('#playBtn'), sb = box('#splitBar'), dock = box('#bottomDock'); // 2026-11-13：出牌按钮已移到头像右侧
     const sbEl = document.getElementById('splitBar');
     const tiles = [...document.querySelectorAll('#hand .tile-photo')];
     const clipped = tiles.filter(t => { const b = t.getBoundingClientRect(); return seat && (b.top < seat.t - 2 || b.bottom > seat.b + 2 || b.left < seat.l - 2 || b.right > seat.r + 2); }).length;

@@ -125,9 +125,12 @@ const on = await page.evaluate(() => {
     zN: b.zN,
     // 竖屏分组占两块高度：确保「出牌」按钮没被挤出座位区（overflow:hidden 会直接裁掉）
     actVisible: (() => {
-      const a = document.getElementById('actions').getBoundingClientRect(), s = document.getElementById('seat0').getBoundingClientRect();
-      const btn = document.querySelector('#actions button');
-      return !!btn && a.height > 0 && a.top >= s.top - 2 && a.bottom <= s.bottom + 2;
+      // 2026-11-13：出牌按钮已移到头像右侧，直接查 #playBtn 是否完整落在 seat0 内
+      const s = document.getElementById('seat0').getBoundingClientRect();
+      const btn = document.getElementById('playBtn');
+      if (!btn || getComputedStyle(btn).display === 'none') return false;
+      const b = btn.getBoundingClientRect();
+      return b.height > 0 && b.top >= s.top - 2 && b.bottom <= s.bottom + 2;
     })(),
   };
 });

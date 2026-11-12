@@ -44,7 +44,7 @@ async function probe() {
     const w = el.getBoundingClientRect();
     const tb = document.getElementById('table').getBoundingClientRect();
     const hw = document.querySelector('#seat0 #handWrap').getBoundingClientRect();
-    const act = document.querySelector('#seat0 #actions').getBoundingClientRect();
+    const act = document.querySelector('#seat0 #handWrap').getBoundingClientRect(); // 2026-11-13：基准与 fitLiveWarnBox 一致
     const dock = document.getElementById('bottomDock').getBoundingClientRect();
     const inter = (a, b) => a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2;
     const before = { hidden: el.scrollHeight - el.clientHeight, over: getComputedStyle(el).overflowY, more: el.classList.contains('warnMore') };

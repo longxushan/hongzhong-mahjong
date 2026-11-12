@@ -52,6 +52,16 @@
   .who .turn{width:8px;height:8px;border-radius:50%;background:#888;flex:0 0 auto;}
   .who .whoAvatar{width:20px;height:20px;border-radius:50%;object-fit:cover;flex:0 0 auto;}
   .large .who .whoAvatar{width:26px;height:26px;}
+  /* 2026-11-13 用户需求：我的头像左侧「听」、右侧「出牌」，与头像同一行，不再占手牌区 */
+  .whoBtn{flex:0 0 auto;border-radius:999px;padding:3px 10px;font-size:11px;line-height:1.25;
+    min-height:24px;border:1px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,.35);}
+  .whoBtn.ting{background:#204a3c;color:#d8f3e6;border-color:#4f8f76;}
+  .whoBtn.play{background:linear-gradient(180deg,#ffd873,#e8a92c);color:#7a1b12;font-weight:800;border-color:#f0c65a;}
+  .whoBtn:active{transform:scale(.94);}
+  #table.dicePhase .whoBtn{display:none!important;} /* 掷骰阶段头像竖排放大，两个按钮先隐藏 */
+  #stage.pport .whoBtn{font-size:10.5px;padding:3px 9px;min-height:22px;}
+  #stage.pport.pportWide .whoBtn{font-size:12.5px;padding:4px 12px;min-height:28px;}
+  .large .whoBtn{font-size:13px;padding:5px 14px;min-height:30px;}
   .who.active .turn{background:#ffe14d;animation:turnPulse 1.2s ease-in-out infinite;box-shadow:0 0 6px 2px #ffe14d,0 0 12px 3px rgba(255,225,77,.4);}
   #seat1 .who.active .turn,#seat2 .who.active .turn,#seat3 .who.active .turn{animation-name:turnPulseS;box-shadow:0 0 4px 1px #ffe14d,0 0 7px 2px rgba(255,225,77,.35);}
   @keyframes turnPulse{0%,100%{box-shadow:0 0 5px 2px #ffe14d,0 0 10px 2px rgba(255,225,77,.35);}50%{box-shadow:0 0 9px 4px #ffe14d,0 0 18px 6px rgba(255,225,77,.7);}}
@@ -167,8 +177,9 @@
   #stage:not(.pport) #table.teachSplit:not(.dicePhase){grid-template-rows:minmax(0,.42fr) minmax(0,.6fr) minmax(0,2.3fr);}
   /* 组合模式下底部教学面板让位给牌桌，内容仍可纵向滚动查看；短横屏更紧凑。
      :not(.dockFixed) 保证用户手动拖拽分隔条设定的高度不被覆盖 */
-  #stage #bottomDock:not(.dockFixed){max-height:34vh;}
+  #stage #bottomDock:not(.dockFixed){max-height:38vh;} /* 2026-11-13 用户需求：底部教学模块再往上提一些（34vh→38vh） */
   @media (max-height:520px){
+    /* 短横屏（≤520px 高）本就紧张，教学区维持 24vh 不上提，避免牌桌下排手牌被裁 */
     #stage #bottomDock:not(.dockFixed){max-height:24vh;}
     #splitBar .sbTitle,#splitBar .sbSum{font-size:10px;}
     #splitBar .sbGrp{font-size:10px;padding:1px 4px;}
@@ -255,6 +266,19 @@
   #histModal .histNote{font-size:11.5px;color:#bdbdbd;margin:6px 0 0;}
   #histModal .histHands{margin-top:10px;}
   #histModal .histHandsHead{color:#f3d9a4;font-size:13px;font-weight:700;margin-bottom:4px;}
+  /* 2026-11-13：点头像左侧「听」——列出我胡哪些牌、各剩几张、绝张标注 */
+  #tingModal .tingHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
+  #tingModal .tingHead h3{margin:0;color:var(--gold);font-size:15px;}
+  #tingModal .tingClose{background:#555;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:13px;cursor:pointer;flex:0 0 auto;}
+  #tingModal .tingSum{font-size:13px;color:#e8e8e8;line-height:1.6;margin-bottom:8px;}
+  #tingModal .tingSum b{color:var(--gold);font-size:15px;}
+  #tingModal .tingGrid{display:flex;flex-wrap:wrap;gap:7px;}
+  #tingModal .tingItem{display:flex;align-items:center;gap:6px;background:#1f2a25;border:1px solid #355040;border-radius:9px;padding:5px 8px;}
+  #tingModal .tingItem.dead{opacity:.45;border-style:dashed;}
+  #tingModal .tingItem .tp-sm{width:calc(var(--sm)*0.92);height:calc(var(--sm)*1.22);}
+  #tingModal .tingLabel{font-size:12px;color:#e8e8e8;white-space:nowrap;}
+  #tingModal .tingNote{font-size:11.5px;color:#bdbdbd;line-height:1.6;margin-top:10px;border-top:1px dashed #3a5546;padding-top:8px;}
+  #tingModal .tingEmpty{background:#2a3230;border:1px solid #45534d;border-radius:9px;padding:10px;font-size:13px;color:#cfe0d8;line-height:1.6;}
   #histModal .histHandRow{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px dashed rgba(255,255,255,.1);flex-wrap:wrap;}
   #histModal .hhTag{color:#f3d9a4;font-size:12px;flex:0 0 auto;}
   #histModal .hhName{color:#e8e8e8;font-size:12px;flex:0 0 auto;}
@@ -619,7 +643,7 @@
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="bgmBtn">音乐:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -638,6 +662,14 @@
   <div class="modal">
     <div class="ruleHead"><h3 style="margin:0">对局账单 · 本轮（1~8 局）</h3><button class="ruleClose" id="histCloseBtn">关闭</button></div>
     <div id="histBody"></div>
+  </div>
+</div>
+<!-- 2026-11-13：听牌浮层（点头像左侧「听」打开，内容与教学面板「听牌一览」同源 calcTing/visibleLeft） -->
+<div class="mask" id="tingModal" style="display:none">
+  <div class="modal">
+    <div class="tingHead"><h3>我胡哪些牌 · 听牌一览</h3><button class="tingClose" id="tingCloseBtn">关闭</button></div>
+    <div id="tingBody"></div>
+    <div class="tingNote">剩余张数按玩家可见口径：4 − 全桌废牌区已打出的 − 全桌副露亮出的 − 自己手里已有的；别家暗牌看不见，按仍在场上计，故为可见上限。标「绝张」的牌理论上能胡，但明面上已无剩余。</div>
   </div>
 </div>
 <div class="mask" id="rulesModal" style="display:none">
@@ -1269,8 +1301,11 @@ function sndClick(){if(!soundOn)return;ensureAudioPlaying();tone(620,0.04,'sine'
 // WebAudio 程序化合成：C 宫五声音阶欢快小曲（扬琴式拨弦音色 + 低音根音 + 轻木鱼节拍），
 // 8 小节 ~15 秒循环；独立增益通道挂 masterGain 下（受全局声音开关/音量控制），语音播报时自动压低（ducking）。
 // 零文件依赖（单文件架构不变），切后台自动重同步防恢复时音符挤成一团。
-let bgmOn=true,bgmTimer=null,bgmGainNode=null;
-try{if(localStorage.getItem('banshanBgm')==='0')bgmOn=false;}catch(e){}
+// 2026-11-13 用户需求：去掉独立「音乐」开关，音效 / 语音 / 背景音乐统一由「声音」总开关控制。
+// bgmOn 不再独立持久化，恒跟随 soundOn；旧偏好 banshanBgm 必须清掉，否则界面已无按钮可恢复、
+// 音乐会被永久锁死在关态。函数体 bgmStart/bgmStop/bgmSchedule/bgmResync 全部保留。
+let bgmOn=soundOn,bgmTimer=null,bgmGainNode=null;
+try{localStorage.removeItem('banshanBgm');}catch(e){}
 const mf=m=>440*Math.pow(2,(m-69)/12); // MIDI → 频率
 const BGM_MELODY=[ // 8 小节 × 8 个八分音位（0=休止）；C 宫五声：C D E G A
   [72,69,67,69,72,0,69,67],[64,67,69,67,64,62,60,0],
@@ -1792,6 +1827,36 @@ function calcTing(){
   }
   return ting;
 }
+// 2026-11-13 用户需求：点头像左侧「听」——直接列出「我胡哪些牌」。
+// 与教学面板「听牌一览」同源（calcTing + visibleLeft），额外区分明面已无剩余的绝张，
+// 避免把「理论上能胡但场上已绝」的牌误当成还能摸到的胡牌张。
+function buildTingHTML(){
+  if(typeof G==='undefined'||!G||!G.players)return '<div class="tingEmpty">牌局尚未开始，先入座开局。</div>';
+  const me=p(0),ting=calcTing();
+  if(!ting.length){
+    let sh=null;try{sh=calcShanten(me.hand,me.melds);}catch(e){}
+    return '<div class="tingEmpty">当前还没听牌'+(sh!=null?'（向听 '+sh+' 步）':'')+'。先把搭子凑齐，一旦听牌，这里会列出所有能胡的牌与各自剩余张数。</div>';
+  }
+  const list=ting.map(id=>({id,left:visibleLeft(id)})).sort((x,y)=>y.left-x.left);
+  let total=0,dead=0;
+  for(const x of list){total+=x.left;if(x.left<=0)dead++;}
+  let h='<div class="tingSum">当前听 <b>'+ting.length+'</b> 种，玩家可见还剩 <b>'+total+'</b> 张可胡'+(dead?'；其中 '+dead+' 种已绝张':'')+'。</div><div class="tingGrid">';
+  for(const x of list){
+    const t=tileFromId(x.id);
+    h+='<div class="tingItem'+(x.left<=0?' dead':'')+'">'+tileDiv(t,true)+'<span class="tingLabel">'+tileName(t)+' · 剩'+x.left+'张'+(x.left<=0?'（绝张）':'')+'</span></div>';
+  }
+  return h+'</div>';
+}
+function openTingModal(){
+  const m=document.getElementById('tingModal'),b=document.getElementById('tingBody');
+  if(!m||!b)return;
+  b.innerHTML=buildTingHTML();
+  m.style.display='flex';
+  try{speechSynthesis.cancel();}catch(e){}
+}
+function closeTingModal(){const m=document.getElementById('tingModal');if(m)m.style.display='none';}
+document.getElementById('tingCloseBtn').onclick=closeTingModal;
+document.getElementById('tingModal').onclick=function(e){if(e.target===this)closeTingModal();};
 function countAppeared(id){
   let n=0;
   for(const pl of G.players){
@@ -2446,9 +2511,9 @@ function resetOrientation(){__orientPort=null;}
 // 竖屏且宽度 ≥600：平板 / 大屏竖放，按平板尺度放大字号与牌面（手机竖屏维持紧凑尺度）
 function isWidePort(){return innerWidth>=600&&isPhonePort();}
 function dockKey(){
-  // 2026-11-11 用户需求：竖屏打牌提醒露出更多——换新存储键 V2，让上调后的默认高度生效
-  // （旧键 banshanDockHPort 里拖拽保存的小高度不再覆盖新默认；此后手动拖拽仍照常记忆）
-  return isPhonePort()?'banshanDockHPortV2':'banshanDockH';
+  // 2026-11-13 用户需求：底部教学模块再往上提——升级存储键（竖屏 V3 / 横屏 HV2），
+  // 避免旧会话手动拖拽保存的偏低高度覆盖新默认；此后手动拖拽仍照常记忆
+  return isPhonePort()?'banshanDockHPortV3':'banshanDockHV2';
 }
 function syncSplitter(){
   const sp=document.getElementById('hSplitter'),dock=document.getElementById('bottomDock'),stage=document.getElementById('stage');
@@ -2755,11 +2820,13 @@ function fitLiveWarnBox(el){
     if(!stage||!stage.classList.contains('pport')){
       el.style.removeProperty('bottom');el.style.removeProperty('max-height');return;
     }
-    const tb=document.getElementById('table'),act=document.querySelector('#seat0 #actions');
+    // 2026-11-13：出牌按钮移到头像行后 #actions 可能只剩倒计时甚至为空，
+    // 基准改用「手牌 + 操作区」整体下沿，点评框仍不遮挡手牌
+    const tb=document.getElementById('table'),act=document.querySelector('#seat0 #handWrap')||document.querySelector('#seat0 #actions');
     if(!tb||!act)return;
     const t=tb.getBoundingClientRect(),a=act.getBoundingClientRect();
     const lift=Math.max(8,Math.min(20,Math.round(t.height*0.028)));
-    const topMin=(a.bottom-t.top)+7;                  // 与出牌按钮留 7px 视觉间隙
+    const topMin=(a.bottom-t.top)+7;                  // 与手牌/操作行留 7px 视觉间隙
     // 2026-11-12：平板竖放可用空挡更大，点评框上限同步放宽；手机竖屏维持 190px 口径
     const cap=stage.classList.contains('pportWide')?240:190;
     const maxH=Math.max(72,Math.min(cap,Math.round(t.height-lift-topMin)));
@@ -3782,6 +3849,22 @@ function winnerWholeTiles(pl){
   h+='<div class="wtHand">'+sortTiles(pl.hand).map(t=>tileDiv(t,true)).join('')+'</div></div>';
   return h;
 }
+// 2026-11-13：我的头像行常驻「听」（左）与「出牌」（右）。幂等补建——
+// renderEmptySeats() 重建 .who 后按钮会丢失，下一次 renderSeat(0) 自动补回。
+function ensureWhoButtons(who){
+  if(!who.querySelector('#tingBtn')){
+    const b=document.createElement('button');
+    b.id='tingBtn';b.className='whoBtn ting';b.type='button';b.textContent='听';b.title='看我胡哪些牌';
+    b.onclick=openTingModal;
+    who.insertBefore(b,who.firstChild);
+  }
+  if(!who.querySelector('#playBtn')){
+    const b=document.createElement('button');
+    b.id='playBtn';b.className='whoBtn play';b.type='button';b.textContent='出牌';b.title='打出选中的牌';
+    b.style.display='none'; // 仅轮到自己打牌时由 renderActions() 显示
+    who.appendChild(b);
+  }
+}
 function renderSeat(i){
   const pl=p(i),e=document.getElementById('seat'+i),act=G.current===i&&!G.over;
   let who=e.querySelector('.who');
@@ -3806,6 +3889,7 @@ function renderSeat(i){
     if(!e.querySelector('#liveWarn')){
       const lw=document.createElement('div');lw.id='liveWarn';lw.className='liveWarn';lw.style.display='none';e.appendChild(lw);
     }
+    ensureWhoButtons(who);
   }
   who.className='who'+(act?' active':'')+(pl._justDiscarded?' flashNow':'');
   who.querySelector('.whoName').textContent=pl.name;
@@ -3981,9 +4065,18 @@ document.addEventListener('pointercancel',function(e){if(__hd&&e.pointerId===__h
   if(e.target instanceof Element&&e.target.closest('#hand')){e.stopPropagation();e.preventDefault();}
 },true);});
 document.addEventListener('dragstart',function(e){if(e.target instanceof Element&&e.target.closest('#hand'))e.preventDefault();});
-function renderActions(o){const a=document.getElementById('actions');a.innerHTML='';const k=G.awaiting;const mk=(l,v,c)=>{const b=document.createElement('button');if(c)b.className=c;b.textContent=l;b.onclick=()=>humanRespond(v);a.appendChild(b);return b;};
+function renderActions(o){
+  const a=document.getElementById('actions');a.innerHTML='';const k=G.awaiting;
+  // 2026-11-13：出牌按钮常驻头像右侧，只在轮到自己打牌时显示；其余操作（胡/碰/杠/过）仍在 #actions
+  const pb=document.getElementById('playBtn');
+  if(pb){
+    const show=(k==='discard');
+    pb.style.display=show?'':'none';
+    pb.onclick=show?function(){if(G._sel){const t=G._sel;G._sel=null;clearWarn();humanRespond(t);}else toast('先点选一张牌');}:null;
+  }
+  const mk=(l,v,c)=>{const b=document.createElement('button');if(c)b.className=c;b.textContent=l;b.onclick=()=>humanRespond(v);a.appendChild(b);return b;};
   if(k==='zimo'){mk('胡牌',{hu:'hu'},'primary');mk('过',{pass:1});}else if(k==='gangself'){for(const t of o.an)mk('暗杠 '+tileName(t),{kind:'an',id:t.id},'danger');for(const id of o.bu)mk('补杠 '+id,{kind:'bu',id},'danger');mk('不杠',{pass:1});}
-  else if(k==='discard'){const b=mk('出牌',null,'primary');b.onclick=()=>{if(G._sel){const t=G._sel;G._sel=null;clearWarn();humanRespond(t);}else toast('先点选一张牌');};}
+  else if(k==='discard'){/* 出牌按钮已移到头像右侧（#playBtn）；#actions 仅留倒计时 #cd 容器 */}
   else if(k==='qiang'){mk('抢杠胡',{hu:'hu'},'primary');mk('放弃',{pass:1});}
   else if(k==='claim'){const id=o.id;if(canMingGang(p(0),id))mk('杠',{kind:'gang'},'danger');if(canPeng(p(0),id))mk('碰',{kind:'peng'},'primary');mk('过',{pass:1});}}
 function renderInfo(){const remain=G.wall.length-G.head-(G.wall.length-1-G.tail);document.getElementById('info').textContent='墙剩'+remain+'张 · 留底6 · 你的杠分'+p(0).gangScore;
@@ -4112,7 +4205,7 @@ function applyPhonePortDock(){
   if(!restoreDockH()){
     const stage=document.getElementById('stage');
     const avail=stage.clientHeight-document.getElementById('topbar').offsetHeight;
-    setDockHeightPx(avail*0.36); // 2026-11-11 用户需求：手机竖屏底牌区域上移，打牌提醒（教学区）露出更多——默认占比 0.30→0.36
+    setDockHeightPx(avail*0.42); // 2026-11-13 用户需求：底部教学模块再往上提一些——竖屏默认占比 0.36→0.42
   }
   // 2026-11-11 修复：掷骰阶段教学区隐藏、牌桌全高，fit 算的是旧尺寸；
   // 进局设置教学区高度后必须重算牌面（手牌预算/提醒空挡依赖真实桌高）
@@ -4122,7 +4215,7 @@ let started=false;
 function startGame(){
   if(started)return;started=true;
   initAudio();
-  if(bgmOn)bgmStart(); // 2026-11-10 默认欢快背景音乐（在此手势内启动，规避手机自动播放限制）
+  if(soundOn)bgmStart(); // 2026-11-10 默认欢快背景音乐（在此手势内启动，规避手机自动播放限制）
   primeSpeech();
   vpUnlock(); // 语音包音频元素在此手势内解锁（手机自动播放限制）
   const root=document.documentElement;
@@ -4137,28 +4230,23 @@ function startGame(){
 document.getElementById('startBtn').addEventListener('click',startGame);
 const soundBtn=document.getElementById('soundBtn');
 if(appVolume<=0)soundOn=false;
+bgmOn=soundOn; // 单一开关：初始化即严格同步
 function syncSoundUI(){soundBtn.textContent='声音:'+(soundOn?'开':'关');soundBtn.classList.toggle('btnActive',soundOn);}
 soundBtn.addEventListener('click',function(){
   if(!soundOn){
     soundOn=true;
     if(appVolume<=0)appVolume=0.6;
   }else soundOn=false;
+  // 逻辑修复：旧版两个开关各存各的状态，关「声音」后 bgmOn 仍为 true，
+  // bgmResync() 切回前台会重新排程空转；删掉音乐按钮后更会把音乐锁死在旧状态。
+  bgmOn=soundOn;
   initAudio();applyAppVolume();syncSoundUI();
   try{localStorage.setItem('banshanVol',String(appVolume));}catch(e){}
-  if(soundOn){sndClick();if(bgmOn)bgmStart();}else{try{speechSynthesis.cancel();}catch(e){}vpStop();bgmStop();}
+  if(soundOn){sndClick();bgmStart();}
+  else{try{speechSynthesis.cancel();}catch(e){}vpStop();bgmStop();}
 });
 syncSoundUI();
-// 背景音乐开关（2026-11-10：默认开，独立于声音总开关，偏好存 localStorage）
-const bgmBtn=document.getElementById('bgmBtn');
-function syncBgmUI(){bgmBtn.textContent='音乐:'+(bgmOn?'开':'关');bgmBtn.classList.toggle('btnActive',bgmOn);}
-bgmBtn.addEventListener('click',function(){
-  bgmOn=!bgmOn;
-  if(bgmOn)bgmStart();else bgmStop();
-  syncBgmUI();
-  try{localStorage.setItem('banshanBgm',bgmOn?'1':'0');}catch(e){}
-  if(bgmOn)sndClick();
-});
-syncBgmUI();
+// 2026-11-13：独立「音乐」按钮与 banshanBgm 偏好已移除；背景音乐随「声音」总开关启停。
 // 保持 AudioContext 活跃：系统据此识别为媒体播放，音量键控制游戏声音
 ['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(AC&&AC.state==='suspended')AC.resume();},{passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume();if(!document.hidden&&bgmTimer)bgmResync();});

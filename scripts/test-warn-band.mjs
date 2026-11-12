@@ -50,7 +50,7 @@ const result = await page.evaluate(() => {
     const rect = el => el ? el.getBoundingClientRect() : null;
     const table = rect(document.getElementById('table'));
     const handWrap = rect(document.querySelector('#seat0 #handWrap'));
-    const actions = rect(document.querySelector('#seat0 #actions'));
+    const actions = rect(document.querySelector('#seat0 #handWrap')); // 2026-11-13：点评框基准改为手牌+操作区整体下沿
     const warn = rect(document.getElementById('liveWarn'));
     const dock = rect(document.getElementById('bottomDock'));
     const inter = (a, b) => a && b && a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2;
