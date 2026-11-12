@@ -126,6 +126,26 @@
   #stage.pport #splitBar{padding:2px 5px 3px;}
   #stage.pport #splitBar .sbBody{flex-wrap:wrap;overflow-x:visible;overflow-y:visible;} /* 竖屏自动换行，所有分组一次看全、不必横滑 */
   #stage.pport .sbGrp{font-size:10.5px;padding:1px 5px;}
+  /* 拆牌方式：打开后手牌按与拆解条同源的分组分开摆放（默认关闭＝正常打牌） */
+  #hand.splitHand{align-items:flex-end;gap:6px;justify-content:flex-start;}
+  #hand.splitHand>.hGrp:first-child{margin-left:auto;}
+  #hand.splitHand>.hGrp:last-child{margin-right:auto;}
+  .hGrp{display:inline-flex;flex-direction:column;align-items:center;gap:1px;flex:0 0 auto;padding:1px 4px 2px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(217,164,65,.30);}
+  .hGrp>.hLab{font-size:10px;line-height:1.15;font-weight:700;color:#101c14;background:#7fd6a0;border-radius:4px;padding:0 4px;white-space:nowrap;}
+  .hGrp>.hTiles{display:inline-flex;align-items:flex-end;gap:3px;}
+  .hGrp.h-chow{border-color:#9fe0b6;} .hGrp.h-chow>.hLab{background:#9fe0b6;}
+  .hGrp.h-pong{border-color:#7fd6a0;} .hGrp.h-pong>.hLab{background:#7fd6a0;}
+  .hGrp.h-pair{border-color:#ffe14d;} .hGrp.h-pair>.hLab{background:#ffe14d;}
+  .hGrp.h-two{border-color:#8ecbff;} .hGrp.h-two>.hLab{background:#8ecbff;}
+  .hGrp.h-emb,.hGrp.h-edge{border-color:#ffb980;} .hGrp.h-emb>.hLab,.hGrp.h-edge>.hLab{background:#ffb980;}
+  .hGrp.h-solo{background:rgba(255,255,255,.03);border-color:#6c746e;} .hGrp.h-solo>.hLab{background:#a9b4ad;}
+  .hGrp.h-joker{border-color:#ff9a9a;} .hGrp.h-joker>.hLab{background:#ff9a9a;}
+  .hGrp.h-other{border-color:#c9b3ff;} .hGrp.h-other>.hLab{background:#c9b3ff;}
+  #stage.pport #hand.splitHand{justify-content:center;row-gap:3px;}
+  #stage.pport #hand.splitHand>.hGrp:first-child,#stage.pport #hand.splitHand>.hGrp:last-child{margin-left:0;margin-right:0;}
+  #stage.pport .hGrp>.hLab{font-size:10px;}
+  /* 竖屏拆牌方式：手牌分组占两块高度，牌桌下排多分一点空间，保证「出牌」按钮不被挤出座位区 */
+  #stage.pport #table.splitMode{grid-template-rows:minmax(0,.48fr) minmax(0,.78fr) minmax(0,2.14fr);}
   #actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto;align-items:center;max-width:48%;}
   #actions:empty{min-height:0;}
   #actions button{height:var(--hand2);min-height:var(--hand2);padding:0 16px;font-size:calc(var(--hand2)*0.32);border-radius:6px;display:flex;align-items:center;justify-content:center;line-height:1;white-space:nowrap;}
@@ -471,7 +491,7 @@
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="bgmBtn">音乐:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="bgmBtn">音乐:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -1786,7 +1806,7 @@ function handBreakdown(pl){
   }
   const res=dfs(cnt,meldN,false),ord={chow:0,pong:1,pair:2,two:3,emb:4,edge:5,solo:6};
   const groups=(res.groups||[]).map(g=>({type:g.type,label:g.label,
-    tiles:g.tiles.map(tn),draws:g.draws.map(k=>({id:idxId(k),name:tn(k)}))}))
+    tiles:g.tiles.map(tn),ids:g.tiles.map(idxId),draws:g.draws.map(k=>({id:idxId(k),name:tn(k)}))}))
     .sort((a,b)=>(ord[a.type]!=null?ord[a.type]:9)-(ord[b.type]!=null?ord[b.type]:9));
   let pair7=0;for(let i=0;i<27;i++)pair7+=Math.floor(cnt[i]/2);
   return {groups,zN,pair7,meldN,score:res.score};
@@ -2185,13 +2205,29 @@ document.addEventListener('pointerdown',function(e){
   document.addEventListener('pointerup',up);
   document.addEventListener('pointercancel',up);
 });
-// 手牌拆解条：常驻显示（不依赖教学模式），每次 render 实时重算；折叠状态持久化；折叠时跳过精算省开销
-let splitOpen=true,__sbSig='';
+// 手牌拆解条 + 分组摆牌（2026-11-12 用户需求）：默认关闭＝正常打牌；顶部「拆牌方式」按钮打开后，
+// 才显示拆解条并把实体手牌按同源分组分开摆放。模式与折叠状态各自持久化，互不干扰。
+let splitMode=false,splitOpen=true,__sbSig='',__handSig='';
+try{splitMode=localStorage.getItem('banshanSplitMode')==='1';}catch(e){}
 try{splitOpen=localStorage.getItem('banshanSplitBar')!=='0';}catch(e){}
+function saveSplitMode(){try{localStorage.setItem('banshanSplitMode',splitMode?'1':'0');}catch(e){}}
 function saveSplitOpen(){try{localStorage.setItem('banshanSplitBar',splitOpen?'1':'0');}catch(e){}}
+function syncSplitModeUI(){
+  const b=document.getElementById('splitBtn');if(b)b.classList.toggle('btnActive',splitMode);
+  const t=document.getElementById('table');if(t)t.classList.toggle('splitMode',splitMode);
+}
+function toggleSplitMode(){
+  splitMode=!splitMode;saveSplitMode();__sbSig='';__handSig='';
+  syncSplitModeUI();
+  renderHand();updateSplitBar();
+  toast(splitMode?'拆牌方式：手牌已按牌理分组摆放':'正常打牌：手牌恢复原样');sndClick();
+}
 function updateSplitBar(){
-  if(typeof window!=='undefined'&&window.__noSplitBar)return;
-  const sb=document.getElementById('splitBar');if(!sb)return;
+  const sb=document.getElementById('splitBar');
+  if(!splitMode||(typeof window!=='undefined'&&window.__noSplitBar)){
+    if(sb)sb.style.display='none';__sbSig='';return;   // 正常打牌：拆解条完全不出现；跑局脚本禁拆解钩子亦不渲染
+  }
+  if(!sb)return;
   const sumEl=document.getElementById('sbSum'),bodyEl=document.getElementById('sbBody'),tg=document.getElementById('sbToggle');
   try{
     const me=p(0);
@@ -3418,7 +3454,7 @@ function renderSeat(i){
   if(!e.querySelector('.melds')){const melds=document.createElement('div');melds.className='melds';e.appendChild(melds);}
   if(i===0){
     if(!e.querySelector('#splitBar')){
-      const sb=document.createElement('div');sb.id='splitBar';sb.className='splitBar';
+      const sb=document.createElement('div');sb.id='splitBar';sb.className='splitBar';sb.style.display='none';
       sb.innerHTML='<div class="sbHead" id="sbHead"><span class="sbTitle">手牌拆解</span><span class="sbSum" id="sbSum"></span><span class="sbToggle" id="sbToggle">▾</span></div><div class="sbBody" id="sbBody"></div>';
       e.appendChild(sb);
     }
@@ -3455,9 +3491,36 @@ function renderDiscardPool(){
   }
   e.innerHTML=h;
 }
-function renderHand(){const me=p(0),e=document.getElementById('hand');e.innerHTML=me.hand.map(t=>{const c=['tile-photo','tp-hand'];if(t.id==='Z')c.push('joker');if(t.uid===me._lastUid)c.push('just-drew');return '<span class="'+c.join(' ')+'" data-uid="'+t.uid+'"><img alt="'+tileName(t)+'" src="'+TILES[t.id]+'"></span>';}).join('');
+function renderHand(){
+  const me=p(0),e=document.getElementById('hand');
+  const tileHTML=t=>{const c=['tile-photo','tp-hand'];if(t.id==='Z')c.push('joker');if(t.uid===me._lastUid)c.push('just-drew');return '<span class="'+c.join(' ')+'" data-uid="'+t.uid+'"><img alt="'+tileName(t)+'" src="'+TILES[t.id]+'"></span>';};
+  // 拆牌方式打开时：实体手牌按与拆解条同一套 handBreakdown 分组分开摆放；关闭时保持原样顺序（正常打牌）
+  const grouped=splitMode&&!(typeof window!=='undefined'&&window.__noSplitBar);
+  e.classList.toggle('splitHand',grouped);
+  // 手牌签名缓存：牌面/模式不变就不重建 DOM（分组模式下尤其重要，避免每帧重跑拆解、且保留横向滚动位置）
+  const hSig=(grouped?'1':'0')+'|'+me.hand.map(t=>t.uid+':'+t.id).join(',')+'|'+(me._lastUid||'');
+  if(hSig!==__handSig){
+    __handSig=hSig;
+    let html='';
+    if(grouped){
+    const pool=me.hand.slice(),take=id=>{const i=pool.findIndex(t=>t.id===id);return i>=0?pool.splice(i,1)[0]:null;},parts=[];
+    const zs=[];for(let i=pool.length-1;i>=0;i--)if(pool[i].id==='Z')zs.unshift(pool.splice(i,1)[0]);
+    if(zs.length)parts.push({type:'joker',label:'红中百搭×'+zs.length,tiles:zs});
+    try{
+      for(const g of handBreakdown(me).groups){
+        const ts=[];for(const id of (g.ids||[])){const t=take(id);if(t)ts.push(t);}
+        if(ts.length)parts.push({type:g.type,label:g.label,tiles:ts});
+      }
+    }catch(err){}
+    if(pool.length)parts.push({type:'other',label:'其余',tiles:pool.splice(0)});
+    html=parts.map(q=>'<span class="hGrp h-'+q.type+'"><span class="hLab">'+q.label+'</span><span class="hTiles">'+q.tiles.map(tileHTML).join('')+'</span></span>').join('');
+    }else html=me.hand.map(tileHTML).join('');
+    e.innerHTML=html;
+    e.querySelectorAll('.tile-photo').forEach(d=>{d.onclick=()=>{if(G.awaiting!=='discard')return;e.querySelectorAll('.tile-photo').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');const picked=me.hand.find(t=>t.uid==parseInt(d.dataset.uid,10));G._sel=picked;liveWarn(picked);};d.ondblclick=()=>{if(G.awaiting==='discard'){clearWarn();humanRespond(me.hand.find(x=>x.uid==parseInt(d.dataset.uid,10)));}};});
+    e.scrollLeft=0;
+  }
   me._lastUid=null;
-  e.querySelectorAll('.tile-photo').forEach(d=>{d.onclick=()=>{if(G.awaiting!=='discard')return;e.querySelectorAll('.tile-photo').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');const picked=me.hand.find(t=>t.uid==parseInt(d.dataset.uid,10));G._sel=picked;liveWarn(picked);};d.ondblclick=()=>{if(G.awaiting==='discard'){clearWarn();humanRespond(me.hand.find(x=>x.uid==parseInt(d.dataset.uid,10)));}};});e.scrollLeft=0;}
+}
 function renderActions(o){const a=document.getElementById('actions');a.innerHTML='';const k=G.awaiting;const mk=(l,v,c)=>{const b=document.createElement('button');if(c)b.className=c;b.textContent=l;b.onclick=()=>humanRespond(v);a.appendChild(b);return b;};
   if(k==='zimo'){mk('胡牌',{hu:'hu'},'primary');mk('过',{pass:1});}else if(k==='gangself'){for(const t of o.an)mk('暗杠 '+tileName(t),{kind:'an',id:t.id},'danger');for(const id of o.bu)mk('补杠 '+id,{kind:'bu',id},'danger');mk('不杠',{pass:1});}
   else if(k==='discard'){const b=mk('出牌',null,'primary');b.onclick=()=>{if(G._sel){const t=G._sel;G._sel=null;clearWarn();humanRespond(t);}else toast('先点选一张牌');};}
@@ -3466,7 +3529,7 @@ function renderActions(o){const a=document.getElementById('actions');a.innerHTML
 function renderInfo(){const remain=G.wall.length-G.head-(G.wall.length-1-G.tail);document.getElementById('info').textContent='墙剩'+remain+'张 · 留底6 · 你的杠分'+p(0).gangScore;
   document.getElementById('warnTag').style.display=blockedByZRule(p(0))?'inline-block':'none';
   updateRoundTag();}
-function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();}
+function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);syncSplitModeUI();for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();}
 function restart(sameDealer){if(G&&G.humanResolve)humanRespond({pass:1});run(sameDealer&&G?G.dealer:null);}
 document.getElementById('rulesBtn').onclick=function(){document.getElementById('rulesModal').style.display='flex';try{speechSynthesis.cancel();}catch(e){}};
 document.getElementById('rulesCloseBtn').onclick=function(){document.getElementById('rulesModal').style.display='none';};
@@ -3475,6 +3538,7 @@ document.getElementById('tipsBtn').onclick=function(){document.getElementById('t
 document.getElementById('tipsCloseBtn').onclick=function(){document.getElementById('tipsModal').style.display='none';};
 document.getElementById('tipsModal').onclick=function(e){if(e.target===this)this.style.display='none';};
 document.getElementById('teachBtn').onclick=toggleTeach;
+document.getElementById('splitBtn').onclick=toggleSplitMode;
 document.getElementById('thinkBtn').onclick=toggleThink;
 document.getElementById('reviewBtn').onclick=function(){
   let rev=lastReview;
@@ -3700,6 +3764,8 @@ tableEl.addEventListener('touchcancel',endTouch,{passive:false});
 tableEl.addEventListener('wheel',e=>{if(TABLE_PAN){/* 备查：原滚轮缩放逻辑 */}e.preventDefault();},{passive:false});
 
 layout();
+// 拆牌方式：启动时按持久化状态同步按钮高亮与牌桌行高（render() 只在进局后跑，启动页也要一致）
+syncSplitModeUI();
 // 角色经验云同步：双源异步加载（详见下方脚本），不阻塞首屏；离线/加载失败静默走本地，联网后自动补传
 </script>
 <script>
