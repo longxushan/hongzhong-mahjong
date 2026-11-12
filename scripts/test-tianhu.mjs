@@ -1,8 +1,18 @@
-// 天胡/地胡计分端到端测试（临时）：npm 不挂，直接 node scripts/_tmp-tianhu.mjs
+// 天胡/地胡计分端到端测试（临时）：npm 不挂，直接 node scripts/test-tianhu.mjs
+// 2026-11-12 修复：改用脚本所在仓库的相对路径，旧版硬编码的 D 盘路径已失效
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const EXE = [
+  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+  'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
+].find(p => fs.existsSync(p));
 const { chromium } = await import('playwright-core');
-const browser = await chromium.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true, args: ['--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: EXE, headless: true, args: ['--no-sandbox'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-await page.goto('file:///D:/2-workbuddy/5-红中麻将/hongzhong-mahjong/index.html', { waitUntil: 'load' });
+await page.goto(pathToFileURL(path.join(ROOT, 'index.html')).href, { waitUntil: 'load' });
 await page.evaluate(() => { CFG.diceAuto = 100; CFG.diceMs = 50; CFG.diceGap = 40; CFG.diceHold = 50; });
 await page.click('#startBtn');
 await page.locator('.roleBtn').first().click();

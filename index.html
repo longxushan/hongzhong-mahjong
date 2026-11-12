@@ -154,7 +154,11 @@
   #stage.pport #hand.splitHand>.hGrp:first-child,#stage.pport #hand.splitHand>.hGrp:last-child{margin-left:0;margin-right:0;}
   #stage.pport .hGrp>.hLab{font-size:10px;}
   /* 竖屏拆牌方式：手牌分组占两块高度，牌桌下排多分一点空间，保证「出牌」按钮不被挤出座位区 */
-  #stage.pport #table.splitMode{grid-template-rows:minmax(0,.48fr) minmax(0,.78fr) minmax(0,2.14fr);}
+  #stage.pport #table.splitMode:not(.dicePhase){grid-template-rows:minmax(0,.48fr) minmax(0,.78fr) minmax(0,2.14fr);}
+  /* 2026-11-12 方向自适应：竖屏（含平板竖放）下教学 / 拆牌叠加也按方向统一分配三行，
+     :not(.dicePhase) 保护掷骰阶段的独立网格，避免下排手牌与出牌按钮被裁 */
+  #stage.pport #table.teachMode:not(.dicePhase){grid-template-rows:minmax(0,.5fr) minmax(0,.78fr) minmax(0,2.1fr);}
+  #stage.pport #table.teachSplit:not(.dicePhase){grid-template-rows:minmax(0,.44fr) minmax(0,.7fr) minmax(0,2.26fr);}
   /* 组合模式布局最大化（2026-11-12）：教学模式 / 拆牌方式 / 两者叠加时，按模式重新分配牌桌三行，
      优先保证「拆解条 + 手牌（含分组框）+ 出牌按钮」完整落在下排座位内，不被 .seat{overflow:hidden} 裁掉。
      :not(.dicePhase) 保护掷骰阶段的独立网格；竖屏已有专属比例，这里只管横屏与桌面。 */
@@ -467,6 +471,20 @@
   #stage.pport #seat0 #liveWarn .wFacts,#stage.pport #seat0 #liveWarn .wWhy{font-size:11px;line-height:1.35;}
   #stage.pport #seat0 #liveWarn .wWhy{margin-top:1px;}
   #stage.pport #seat0 #liveWarn .wMaster{font-size:10.5px;line-height:1.35;margin-top:1px;}
+  /* 2026-11-12 用户需求：iPad / 大屏竖放与手机竖向排版同构，但按平板尺度放大字号、牌面与间距，
+     不沿用手机竖屏的紧凑小字；结构仍为「合并栏 → 对手分析 → 听牌 / 积分」两列竖排 */
+  #stage.pport.pportWide #topbar{padding:5px 10px;column-gap:7px;row-gap:3px;}
+  #stage.pport.pportWide #topbar .topTag{font-size:11.5px;}
+  #stage.pport.pportWide #topbar button{font-size:13px;padding:5px 10px;}
+  #stage.pport.pportWide #hSplitter{flex-basis:16px;}
+  #stage.pport.pportWide .tGrid{gap:8px;}
+  #stage.pport.pportWide .tCol,#stage.pport.pportWide .tOppCard{font-size:12px;}
+  #stage.pport.pportWide .tPool,#stage.pport.pportWide .tStageLive{font-size:12.5px;line-height:1.5;padding:5px 8px;}
+  #stage.pport.pportWide .tRecBig .tp-sm{width:calc(var(--sm)*0.72);height:calc(var(--sm)*0.95);}
+  #stage.pport.pportWide #splitBar .sbGrp{font-size:12px;padding:2px 7px;}
+  #stage.pport.pportWide #seat0 #liveWarn{left:4%;right:4%;font-size:13.5px;padding:7px 14px 8px;max-height:170px;}
+  #stage.pport.pportWide #seat0 #liveWarn .wFacts,#stage.pport.pportWide #seat0 #liveWarn .wWhy{font-size:13px;line-height:1.45;}
+  #stage.pport.pportWide #seat0 #liveWarn .wMaster{font-size:12.5px;line-height:1.45;}
   /* 启动页 */
   #splash{position:fixed;inset:0;z-index:80;background:linear-gradient(160deg,#13352a,#0a1f18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:28px;}
   #splash h1{color:var(--gold);font-size:32px;margin:0;letter-spacing:4px;}
@@ -571,6 +589,20 @@
   body.pport #diceSum{font-size:24px;min-width:36px;}
   body.pport #diceRollBtn{width:72px;height:72px;font-size:14px;}
   body.pport #diceResult{font-size:13px;max-width:204px;padding:4px 8px;}
+  /* 平板竖放：掷骰面板同比放大，避免 768~1024px 宽竖屏里只剩手机尺寸的一小团 */
+  body.pport.pportWide .seatDice{padding:2px 10px;}
+  body.pport.pportWide .seatDice .dsVal{font-size:17px;min-height:21px;}
+  body.pport.pportWide #diceCard{width:300px;max-width:300px;}
+  body.pport.pportWide #diceTitle{font-size:22px;}
+  body.pport.pportWide #diceNote{font-size:14px;max-width:280px;}
+  body.pport.pportWide .diceSeat{min-width:58px;}
+  body.pport.pportWide .diceSeat img{width:30px;height:30px;}
+  body.pport.pportWide .diceSeat .dsName{font-size:11.5px;max-width:54px;}
+  body.pport.pportWide .diceSeat .dsVal{font-size:15px;min-height:18px;}
+  body.pport.pportWide .diceSeat .dsTag{font-size:10px;}
+  body.pport.pportWide #diceSum{font-size:28px;}
+  body.pport.pportWide #diceRollBtn{width:88px;height:88px;font-size:16px;}
+  body.pport.pportWide #diceResult{font-size:14.5px;max-width:270px;}
   /* 2026-11-12 用户要求：讲思路 / 复盘 两个模块暂时隐藏，功能代码全部保留 */
   html.masterHidden #thinkBtn,html.masterHidden #reviewBtn,html.masterHidden #mReview,
   html.masterHidden #thinkContent,html.masterHidden #reviewModal{display:none!important;}
@@ -2397,11 +2429,22 @@ window.addEventListener('resize',function(){
   if(_rszT)clearTimeout(_rszT);_rszT=setTimeout(function(){try{layout();}catch(e){}},120);
 });
 // ===== 牌桌/教学区水平分割线（鼠标/触摸上下拖拽）=====
+// 2026-11-12 用户需求：方向排版统一按「设备实际朝向」自适应——竖着放一律竖向排版，
+// 横着放一律横向排版；不再按设备类型 / 宽度分档，平板竖屏也不再强制旋转成横屏。
+// 判据只取视口几何（与 CSS 真正可用的排版空间一致），手机、iPad、安卓平板、桌面窄窗口同一套规则。
+// 近正方形（宽高差 ≤2%）沿用上一次状态，避免地址栏显隐 / 软键盘 / 分屏拖拽引发反复重排。
+// 函数名 isPhonePort 为历史沿用，语义已等同「当前是否竖向排版」。
+let __orientPort=null;
 function isPhonePort(){
-  // 2026-11-09 用户需求恢复：手机竖屏打开默认走竖屏版（原生上下分割布局，不旋转）
-  // 判定：窄屏（≤560px，覆盖主流手机）且竖屏（高>宽）；平板竖屏（≥600px 宽）仍走旋转横屏
-  return innerWidth<=560&&innerHeight>innerWidth;
+  const w=innerWidth||1,h=innerHeight||1;
+  if(h>w*1.02)__orientPort=true;
+  else if(w>h*1.02)__orientPort=false;
+  else if(__orientPort===null)__orientPort=h>=w;
+  return __orientPort;
 }
+function resetOrientation(){__orientPort=null;}
+// 竖屏且宽度 ≥600：平板 / 大屏竖放，按平板尺度放大字号与牌面（手机竖屏维持紧凑尺度）
+function isWidePort(){return innerWidth>=600&&isPhonePort();}
 function dockKey(){
   // 2026-11-11 用户需求：竖屏打牌提醒露出更多——换新存储键 V2，让上调后的默认高度生效
   // （旧键 banshanDockHPort 里拖拽保存的小高度不再覆盖新默认；此后手动拖拽仍照常记忆）
@@ -2717,7 +2760,9 @@ function fitLiveWarnBox(el){
     const t=tb.getBoundingClientRect(),a=act.getBoundingClientRect();
     const lift=Math.max(8,Math.min(20,Math.round(t.height*0.028)));
     const topMin=(a.bottom-t.top)+7;                  // 与出牌按钮留 7px 视觉间隙
-    const maxH=Math.max(72,Math.min(190,Math.round(t.height-lift-topMin)));
+    // 2026-11-12：平板竖放可用空挡更大，点评框上限同步放宽；手机竖屏维持 190px 口径
+    const cap=stage.classList.contains('pportWide')?240:190;
+    const maxH=Math.max(72,Math.min(cap,Math.round(t.height-lift-topMin)));
     el.style.bottom=lift+'px';
     el.style.maxHeight=maxH+'px';
   }catch(e){}
@@ -3995,6 +4040,7 @@ function fit(){
   const table=document.getElementById('table');
   const sw=stage.clientWidth, sh=stage.clientHeight;
   const pp=isPhonePort();
+  const wide=pp&&isWidePort();     // 2026-11-12：平板/大屏竖放按平板尺度放大牌面
   const large=sh>=600&&sw>=1000;  // 平板/大屏判定
   // 牌桌可用高度：手机竖屏用实际 table 高度（下半区已让给教学），其余用舞台减顶栏
   const availH=pp?table.clientHeight:sh-document.getElementById('topbar').offsetHeight;
@@ -4006,24 +4052,24 @@ function fit(){
   const actReserve=large?210:(pp?10:140);  // 预留手牌右侧操作按钮区
   const maxByW=(tableW*0.94-perRow*5-actReserve)/(perRow*0.75);
   hand=Math.min(hand,maxByW);
-  const cap=large?80:(pp?46:54);  // 大屏放开牌面上限；竖屏两行手牌上限同步放大
+  const cap=large?80:(wide?68:(pp?46:54));  // 大屏放开牌面上限；宽竖屏介于大屏与手机竖屏之间
   if(pp){
     // 2026-11-11 用户需求：手牌上移+打错提醒空挡——seat0 行（约 51% 桌高，扣 20px 网格间隙）要装下：
     // 头像条+手牌两行+操作行 ≈ 3×hand+装饰 35px，再扣除钉底提醒带 88px（与 CSS max-height 对齐）
     // 与可见空挡 24px；教学区拖得越高手牌越小，保证不溢出、不遮挡弃牌区与提醒带
     const tH=table.clientHeight||0;
-    const budget=((tH-20)*0.51-147)/3;
+    const budget=((tH-20)*0.51-(wide?168:147))/3; // 宽竖屏提醒带更高，多留一点余量
     hand=Math.min(hand,budget);
   }
-  hand=Math.max(pp?18:28,Math.min(cap,hand));
-  const sm=Math.max(pp?13:17,hand*0.5), disc=Math.max(pp?11:14,hand*0.4), back=Math.max(pp?12:15,hand*0.44);
-  const gap=Math.max(2,Math.min(large?10:7,hand*0.09));
+  hand=Math.max(pp?(wide?24:18):28,Math.min(cap,hand));
+  const sm=Math.max(pp?(wide?17:13):17,hand*0.5), disc=Math.max(pp?(wide?15:11):14,hand*0.4), back=Math.max(pp?(wide?16:12):15,hand*0.44);
+  const gap=Math.max(2,Math.min(large?10:(wide?9:7),hand*0.09));
   let sideMin=large?130:96, sideMax=large?172:118;
-  if(pp){sideMin=58;sideMax=80;}
+  if(pp){sideMin=wide?92:58;sideMax=wide?136:80;}
   const rs=document.documentElement.style;
   rs.setProperty('--hand',hand+'px');rs.setProperty('--hand2',(hand*0.8)+'px');rs.setProperty('--sm',sm+'px');rs.setProperty('--disc',disc+'px');rs.setProperty('--back',back+'px');rs.setProperty('--seatgap',gap+'px');
   rs.setProperty('--sideMin',sideMin+'px');rs.setProperty('--sideMax',sideMax+'px');
-  if(large){
+  if(large||wide){
     rs.setProperty('--topfs','13px');rs.setProperty('--tagfs','11.5px');rs.setProperty('--btnfs','13px');
     rs.setProperty('--btnpad','6px 11px');rs.setProperty('--topgap','8px');rs.setProperty('--volw','92px');
   }else{
@@ -4037,23 +4083,18 @@ function layout(){
   // transform 恒 identity，杜绝旧会话/旧版本残留在牌桌上的平移与缩放
   try{if(typeof view!=='undefined'&&typeof tableEl!=='undefined'){view.s=1;view.x=0;view.y=0;tableEl.style.transform='none';}}catch(e){}
   const stage=document.getElementById('stage');
-  const pp=isPhonePort();
+  const pp=isPhonePort(),wide=pp&&isWidePort();
   stage.classList.toggle('pport',pp);
-  document.body.classList.toggle('pport',pp); // 2026-11-10：掷骰浮层竖屏上移定位用
+  stage.classList.toggle('pportWide',wide);
+  document.body.classList.toggle('pport',pp);      // 2026-11-10：掷骰浮层竖屏上移定位用
+  document.body.classList.toggle('pportWide',wide); // 2026-11-12：平板竖放放大尺度
+  // 2026-11-12：方向统一按视口几何——竖屏一律原生上下布局，横屏一律横屏布局；
+  // 旧「平板竖屏强制旋转 90°」的 rot 分支停用（CSS 与坐标函数保留备查，不再 add('rot')）
+  stage.classList.remove('rot');
+  stage.style.width='100%';stage.style.height='100%';
   if(pp){
-    // 手机竖屏：原生上下布局，不旋转
-    stage.classList.remove('rot');
-    stage.style.width='100%';stage.style.height='100%';
     applyPhonePortDock();
-  }else if(innerHeight>innerWidth){
-    // 平板竖屏：保持旋转强制横屏
-    stage.classList.add('rot');
-    stage.style.width=innerHeight+'px';
-    stage.style.height=innerWidth+'px';
-    clearDockHeight();
   }else{
-    stage.classList.remove('rot');
-    stage.style.width='100%';stage.style.height='100%';
     if(!restoreDockH())clearDockHeight();
   }
   syncSplitter();
@@ -4123,7 +4164,20 @@ syncBgmUI();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume();if(!document.hidden&&bgmTimer)bgmResync();});
 if(AC)AC.addEventListener('statechange',()=>{if(AC.state==='suspended')AC.resume();});
 addEventListener('resize',layout);
-addEventListener('orientationchange',()=>setTimeout(layout,120));
+// 2026-11-12 方向自适应：旋转时先清掉方向滞回再重排。部分浏览器只发 resize 不发
+// orientationchange，故同时监听 matchMedia 的 orientation 变化；320ms 二次校正覆盖 iPad Safari
+// 旋转过程中视口尺寸的滞后更新。window.resize 的即时 + 120ms 两路兜底保持原样。
+function onOrientationChange(){
+  resetOrientation();
+  setTimeout(layout,120);
+  setTimeout(layout,320);
+}
+addEventListener('orientationchange',onOrientationChange);
+try{
+  const mq=window.matchMedia&&matchMedia('(orientation: portrait)');
+  if(mq&&mq.addEventListener)mq.addEventListener('change',onOrientationChange);
+  else if(mq&&mq.addListener)mq.addListener(onOrientationChange);
+}catch(e){}
 
 /* 牌桌双指缩放 + 单指拖动 */
 /* 2026-11-09 用户需求：牌桌调成不可移动、不可缩放——手势系统整体停用（保留代码备查，改回 true 即恢复） */
