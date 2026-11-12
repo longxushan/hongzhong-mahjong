@@ -136,7 +136,7 @@ td:nth-child(n+3){font-variant-numeric:tabular-nums}.up{color:var(--red)}.down{c
 .bl{color:var(--txt)}.bv{color:var(--gold);font-variant-numeric:tabular-nums}.note{color:var(--sub);font-size:11.5px;margin-top:9px;line-height:1.7}
 .foot{color:var(--sub);font-size:11.5px;text-align:center;margin-top:20px;border-top:1px solid var(--line);padding-top:12px}
 </style></head><body><div class="wrap">
-<a class="back" href="./">← 返回游戏</a>
+<a class="back" href="https://hongzhong-mahjong-61408.app.workbuddy.host/?sharecode=L3V3A4Y345">← 返回游戏</a>
 <h1>红中麻将 · 20 局自检数据</h1>
 <div class="sub">生成于 ${esc(at)}｜托管全自动 ${R.length} 局，用时 ${(d.elapsedMin || 0).toFixed(1)} 分钟｜四家均由 AI 决策｜跑局数据不写云端经验｜单文件自包含页面</div>
 <div class="kpis">${kpi.map(k => `<div class="kpi"><b>${esc(k[1])}</b><span>${esc(k[0])} · ${esc(k[2])}</span></div>`).join('')}</div>
