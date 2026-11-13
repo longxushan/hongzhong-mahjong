@@ -16,13 +16,17 @@
 | --- | --- |
 | `index.html` | **唯一主文件**，即原来的 `红中麻将.html`。所有优化与调试只改这一个文件，避免多副本版本漂移 |
 | `docs/跨智能体复刻与调试手册.md` | 规则基线、算法规格、状态机、调试与验证方法（改动前必读） |
-| `docs/游戏策略与代码说明.md` | 当前版本的策略与规则备份说明 |
+| `docs/游戏策略与代码说明.md` | 当前版本的策略与规则备份说明（含逐版要点日志） |
+| `docs/最优打法建议.md` | 攻略三件套之一：面向玩家的打法攻略 |
+| `voice/` | 语音包 mp3（`scripts/gen-voice.py` 用 Edge TTS 生成；台词从 index.html 解析，防双份文本漂移） |
+| `cloud-sdk.js` | 云端经验累加 SDK 本地副本（线上 jsdelivr 失败时回落加载，必须随仓库部署） |
 | `scripts/serve.mjs` | 零依赖本地静态服务器 |
-| `scripts/verify.mjs` | Playwright 冒烟验证：牌数守恒 112、剩余张数口径、零 JS 报错 |
+| `scripts/verify.mjs` | Playwright 冒烟验证：牌数守恒 112、规则弹窗同步、零 JS 报错 |
+| `scripts/test-*.mjs` | 30+ 个专项回归（布局/拖动/教学/规则/听牌/方向自适应等），改哪块跑哪块 |
 | `scripts/publish.mjs` | 免凭证发布脚本（在 WorkBuddy 环境内使用） |
 | `.github/workflows/pages.yml` | Pages 自动部署（`configure-pages` 会自动启用 Pages） |
 
-原始头像素材（`*头像.png`）不入库：游戏内头像已 base64 内联，素材原图仍保留在本地 `D:\2-workbuddy\5-红中麻将\` 下，需要换头像时再取用。
+原始头像素材（`*头像.png`）不入库：游戏内头像已 base64 内联，素材原图留存在本地工作区，需要换头像时再取用。
 
 ## 日常改动与上线
 
@@ -34,7 +38,7 @@ git commit -m "fix: 调整教学推荐逻辑"
 git push origin main
 ```
 
-首次 `git push` 需要在弹出的浏览器中登录一次 GitHub（本机使用 Git Credential Manager，目前尚未保存凭证），授权一次之后就免登录了。
+GitHub 凭证已保存在本机凭据管理器（Git Credential Manager + gh CLI），`git push` 免登录；若凭证失效，用 `gh auth login` 设备授权流恢复。
 
 ### 方式 B：WorkBuddy 内让我代发
 
@@ -57,7 +61,7 @@ npm run verify     # 用本机 Edge 跑冒烟验证
 1. **规则基线锁定**：112 张牌、红中硬规则、五步计分、留底 6 张、8 局一轮等口径见 `docs/跨智能体复刻与调试手册.md` 第二部分，改动不得漂移。
 2. **守恒优先**：任意时刻 `所有 hand + melds + discard + 牌墙区间 == 112`。
 3. **真实闭环**：改真实文件 → 真实浏览器验证（零 pageerror、守恒、口径、教学推荐向听最优）→ 再提交上线。
-4. **听牌剩余数**只数牌墙 `G.wall[head..tail]`，不含别家手牌、副露、弃牌。
+4. **听牌剩余数双口径**：玩家教学侧（听牌一览/浮层/对手分析）用可见口径 `visibleLeft`（4 − 自己手牌 − 四家弃牌 − 明面副露）；AI 精算仍用牌墙真实口径 `tileRemaining`。玩家界面不偷看别家暗牌。
 
 ## 版本记录
 

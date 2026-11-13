@@ -245,7 +245,7 @@
   .large .winPlanFold .winPlan{display:block;}
   .winPlan p{margin:0 0 6px;font-size:12.5px;line-height:1.6;color:#dce8f0;}
   .winPlan p:last-child{margin-bottom:0;}
-  .modalBtns{display:flex;gap:10px;margin-top:8px;position:sticky;bottom:-10px;background:#262626;padding:8px 0 4px;box-shadow:0 -6px 10px rgba(0,0,0,.35);}.modalBtns button{flex:1;padding:7px 10px;font-size:13px;} /* 2026-11-10：按钮吸底——内容滚动时「再来一局」始终可见 */
+  .modalBtns{display:flex;gap:10px;margin-top:8px;position:sticky;bottom:-10px;background:#262626;padding:8px 0 4px;box-shadow:0 -6px 10px rgba(0,0,0,.35);}.modalBtns button{flex:1;padding:7px 10px;font-size:13px;} /* 2026-11-10：按钮吸底——内容滚动时主按钮（现「下一局」）始终可见 */
   .autoNextTip{margin-top:8px;padding:6px 10px;border-radius:8px;background:rgba(212,175,55,.14);border:1px solid rgba(212,175,55,.5);color:var(--gold);font-size:12px;text-align:center;}
   /* 牌桌闲聊气泡：绝对定位悬浮于 #table 上（按座位锚定，不受窄列座位与旋转影响），几秒后淡出 */
   .chatBox{position:absolute;max-width:150px;padding:4px 10px;background:linear-gradient(135deg,rgba(255,248,225,.97),rgba(255,238,200,.97));color:#5a3811;border:1px solid rgba(180,120,40,.55);border-radius:10px;font-size:12px;line-height:1.35;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:chatPop .22s ease-out;z-index:30;pointer-events:none;word-break:break-all;}
@@ -856,7 +856,7 @@
         <li>上牌只有两条来路：牌墙存量 + 对手不要。把这条想通，「打啥接啥」「灯腿听」这类"运气问题"全是操作问题。</li>
       </ol>
     </div>
-    <div class="revPoint"><b>配合教学面板练习：</b>本游戏 AI 本身就是「向听主导 + 不拆成型面子 + 红中变现」的打法，且已学郑太顺技巧层；拿不准时看底部「推荐打出」栏；打完用复盘弹窗核对：<b>红中打没打对时机、补杠有没有冒险、听牌面选没选宽</b>——这三个点练熟，再加上七章八章两位大师的心法和九章实战记牌心法，你就是这桌的「超级麻将高手师傅」。<br><span style="color:#9bb8ab;font-size:11.5px">仅用于单机娱乐与离线学习。</span></div>
+    <div class="revPoint"><b>配合教学面板练习：</b>本游戏 AI 本身就是「向听主导 + 不拆成型面子 + 红中变现」的打法，且已学郑太顺技巧层；拿不准时看底部「推荐打出」栏；打完用顶栏「战绩」回看每局输赢核对：<b>红中打没打对时机、补杠有没有冒险、听牌面选没选宽</b>——这三个点练熟，再加上七章八章两位大师的心法和九章实战记牌心法，你就是这桌的「超级麻将高手师傅」。<br><span style="color:#9bb8ab;font-size:11.5px">仅用于单机娱乐与离线学习。</span></div>
   </div>
 </div>
 <div class="mask" id="reviewModal" style="display:none">
@@ -870,7 +870,7 @@
   <h1>巢湖-金华红中</h1>
   <p>点击下方按钮进入并全屏。竖屏横屏均可，旋转手机会自动切换布局。首次点击用于解锁全屏与声音，这是浏览器的通用要求。</p>
   <button id="startBtn">开始游戏</button>
-  <p style="font-size:11px;opacity:.55;margin-top:10px">版本 v2026.11.10（若你的开局骰子仍显示上局残留点数，说明浏览器缓存了旧版，请关闭本页重新打开）</p>
+  <p style="font-size:11px;opacity:.55;margin-top:10px">版本 v2026.11.13（若你的开局骰子仍显示上局残留点数，说明浏览器缓存了旧版，请关闭本页重新打开）</p>
 </div>
 <div id="roleSelect">
   <h2>选择你的角色</h2>
