@@ -26,8 +26,9 @@ chk('源码：顶栏只剩一个音频开关', HTML.includes('<button id="soundB
 chk('源码：旧音乐开关逻辑与 banshanBgm 偏好已清除',
   !/syncBgmUI/.test(HTML) && !/setItem\('banshanBgm'/.test(HTML) && HTML.includes("removeItem('banshanBgm')"));
 chk('源码：bgmOn 恒跟随 soundOn，无独立状态漂移', HTML.includes('bgmOn=soundOn') && HTML.includes('let bgmOn=soundOn'));
-chk('源码：底部教学模块改抽屉浮层（dockGrip 拖动条 + dockMaxH 贴手牌 + 竖屏 V4 键 + 牌桌 52vh 不占满）',
-  HTML.includes('dockGrip') && HTML.includes('dockMaxH') && HTML.includes('banshanDockHPortV4') &&
+chk('源码：底部教学模块改抽屉浮层（dockGrip 拖动条 + dockMaxH 贴满到屏幕底 + 竖屏高度不持久化 + 牌桌 52vh 不占满）',
+  HTML.includes('dockGrip') && HTML.includes('dockMaxH') && HTML.includes('snapDockReveal') &&
+  HTML.includes('removeItem(\'banshanDockHPortV4\')') &&
   HTML.includes('max-height:52vh') && HTML.includes('max-height:38vh') && HTML.includes('banshanDockHV2'));
 chk('源码：出牌按钮与听牌浮层已接入',
   HTML.includes("id='playBtn'") && HTML.includes("id='tingBtn'") &&
@@ -200,10 +201,69 @@ const dockP = await page.evaluate(() => {
     topPct: +(r.top / innerHeight).toFixed(3), scroll: d.scrollHeight - d.clientHeight,
     clipped: boxes.filter(x => !x.ok).map(x => x.s), boxes: boxes.length };
 });
-chk('竖屏教学抽屉默认贴手牌（顶边到手牌下沿附近、占比约 0.7）',
+chk('竖屏教学抽屉默认贴满（顶部贴手牌/操作行下沿、下方无黑色空当、占比约 0.7）',
   dockP.ratio >= 0.60 && dockP.topPct < 0.42 && dockP.scroll > 0, JSON.stringify(dockP));
 chk('竖屏手牌 / 头像行按钮零裁切（出牌后按钮按状态收起属正常）',
   dockP.clipped.length === 0 && dockP.boxes >= 2, JSON.stringify(dockP.clipped));
+
+// ⑥b 2026-11-14 专项：抽屉上方无黑色空当 + 操作按钮/点评框不被盖 + 高度不持久化
+const noGap = await page.evaluate(() => {
+  // 手动塞进历史遗留的偏矮存档 → reload 后必须被无视且键被清
+  localStorage.setItem('banshanDockHPortV4', JSON.stringify({ h: 200 }));
+  const d = document.getElementById('bottomDock').getBoundingClientRect();
+  const hw = document.getElementById('handWrap').getBoundingClientRect();
+  return { dockTop: Math.round(d.top), anchor: Math.round(hw.bottom), gap: Math.round(d.top - hw.bottom) };
+});
+chk('抽屉顶部紧贴手牌/操作行下沿（间隙 ≤ 6px，无黑色空当）',
+  Math.abs(noGap.gap) <= 6, JSON.stringify(noGap));
+await page.reload({ waitUntil: 'load' });
+await page.click('#startBtn');
+await page.waitForSelector('#roleSelect.show .roleBtn', { timeout: 15000 });
+await page.locator('.roleBtn').first().click();
+await page.waitForFunction(() => typeof G !== 'undefined' && !!G && G.awaiting === 'discard', null, { timeout: 60000 });
+await page.waitForTimeout(500);
+const noStore = await page.evaluate(() => {
+  const d = document.getElementById('bottomDock').getBoundingClientRect();
+  const hw = document.getElementById('handWrap').getBoundingClientRect();
+  return { v4: localStorage.getItem('banshanDockHPortV4'), gap: Math.round(d.top - hw.bottom) };
+});
+chk('历史拖拽存档已清且不恢复（键为 null、抽屉自动贴满）',
+  noStore.v4 === null && Math.abs(noStore.gap) <= 6, JSON.stringify(noStore));
+
+// 操作按钮出现时抽屉绝不遮挡（模拟等待胡牌决策）
+const claimGeom = await page.evaluate(() => {
+  G.awaiting = 'zimo'; renderActions({});
+  const dock = document.getElementById('bottomDock').getBoundingClientRect();
+  const act = document.getElementById('actions').getBoundingClientRect();
+  const btns = [...document.querySelectorAll('#actions button')].map(b => b.textContent);
+  const covered = [...document.querySelectorAll('#actions button')].filter(b => {
+    const r = b.getBoundingClientRect();
+    return r.bottom > dock.top + 2; // 按钮底边伸进抽屉区域 = 被盖
+  }).length;
+  G.awaiting = 'discard'; renderActions({});
+  return { dockTop: Math.round(dock.top), actBottom: Math.round(act.bottom), covered, btns };
+});
+chk('胡/过按钮出现时抽屉自动让位（按钮全部露出、可点）',
+  claimGeom.covered === 0 && claimGeom.btns.includes('胡牌') && claimGeom.dockTop >= claimGeom.actBottom - 4,
+  JSON.stringify(claimGeom));
+
+// 师傅点评框出现时抽屉不盖点评内容
+const warnGeom = await page.evaluate(() => {
+  const el = document.getElementById('liveWarn');
+  el.innerHTML = '<div class="wFacts">测试点评内容</div>';
+  el.style.display = 'block';
+  fitLiveWarnBox(el); snapDockAuto();
+  const dock = document.getElementById('bottomDock').getBoundingClientRect();
+  const lw = el.getBoundingClientRect();
+  const covered = lw.bottom > dock.top + 2;
+  el.style.display = 'none'; el.innerHTML = ''; snapDockAuto();
+  const dock2 = document.getElementById('bottomDock').getBoundingClientRect();
+  const hw = document.getElementById('handWrap').getBoundingClientRect();
+  return { covered, lwBottom: Math.round(lw.bottom), dockTop: Math.round(dock.top),
+    backGap: Math.round(dock2.top - hw.bottom) };
+});
+chk('师傅点评框出现时抽屉贴其下沿（不盖内容），收起后自动回满',
+  !warnGeom.covered && Math.abs(warnGeom.backGap) <= 6, JSON.stringify(warnGeom));
 
 await page.setViewportSize({ width: 1280, height: 800 });
 await page.waitForTimeout(400);

@@ -185,7 +185,7 @@
   #stage:not(.pport) #table.teachSplit:not(.dicePhase){grid-template-rows:minmax(0,.42fr) minmax(0,.6fr) minmax(0,2.3fr);}
   /* 组合模式下底部教学面板让位给牌桌，内容仍可纵向滚动查看；短横屏更紧凑。
      :not(.dockFixed) 保证用户手动拖拽分隔条设定的高度不被覆盖 */
-  #stage #bottomDock:not(.dockFixed){max-height:38vh;} /* 2026-11-13：横屏教学区上限维持 38vh（竖屏由 setDockHeightPx 0.46 上提）；再高会挤短横屏组合态手牌 */
+  #stage #bottomDock:not(.dockFixed){max-height:38vh;} /* 2026-11-14：横屏教学区上限维持 38vh（竖屏抽屉由 dockMaxH 动态贴满不设上限）；再高会挤短横屏组合态手牌 */
   @media (max-height:520px){
     /* 短横屏（≤520px 高）本就紧张，教学区维持 24vh 不上提，避免牌桌下排手牌被裁 */
     #stage #bottomDock:not(.dockFixed){max-height:24vh;}
@@ -2574,9 +2574,9 @@ function resetOrientation(){__orientPort=null;}
 // 竖屏且宽度 ≥600：平板 / 大屏竖放，按平板尺度放大字号与牌面（手机竖屏维持紧凑尺度）
 function isWidePort(){return innerWidth>=600&&isPhonePort();}
 function dockKey(){
-  // 2026-11-13 用户需求：教学模块改抽屉浮层——升级存储键（竖屏 V4 / 横屏 HV2），
-  // 避免旧会话（V3 及更早）拖拽保存的偏低高度覆盖「贴手牌」新默认；此后手动拖拽仍照常记忆
-  return isPhonePort()?'banshanDockHPortV4':'banshanDockHV2';
+  // 2026-11-14 用户需求：竖屏抽屉高度不再持久化——每局自动贴满（顶部贴手牌/操作行下沿），
+  // 历史拖拽存档的偏矮高度会在抽屉上方露出黑色空当，这正是用户截图反馈的问题；仅横屏仍记忆拖拽高度
+  return 'banshanDockHV2';
 }
 function syncSplitter(){
   const sp=document.getElementById('hSplitter'),dock=document.getElementById('bottomDock'),stage=document.getElementById('stage');
@@ -2584,17 +2584,47 @@ function syncSplitter(){
   const rotated=stage.classList.contains('rot'); // 平板竖屏旋转模式不启用（坐标旋转会错位）
   sp.classList.toggle('show',dock.style.display!=='none'&&!rotated);
 }
-// 2026-11-13 用户需求：教学模块做成可手指上拉的抽屉——竖屏浮层模式下，
-// dock 绝对定位覆盖牌桌，其高度上限=「手牌下沿到 stage 底」，即抽屉顶多拉到贴手牌、不盖手牌；
-// 横屏仍走 flex 流，上限由牌桌保底高度决定。
-let __dockAuto=true; // 竖屏抽屉默认「自动贴手牌」；用户手动拖动后置 false，尊重用户高度
+// 2026-11-14 用户需求：教学模块上方不要有黑色区域、再往上移——
+// 竖屏抽屉「顶部锚点」= 手牌/操作行（含拆解条、师傅点评框）的最下沿：
+// 从那里一直填满到屏幕底，牌桌下排空白 + 牌桌外的深色背景全部被抽屉盖住，不再露黑色空当。
+// 旧口径锚 #hand 自身下沿，会盖住手牌下方胡/碰/过按钮行；拖拽历史高度存档也会露出空当（均已修正）。
+let __dockAuto=true; // 竖屏抽屉默认「自动贴满」；用户手动拖动后置 false 尊重所拖高度（仅本局临时，进新局自动回满）
 function dockMaxH(){
-  const stage=document.getElementById('stage'),hand=document.getElementById('hand');
-  if(isPhonePort()&&stage&&hand){
-    const gap=stage.getBoundingClientRect().bottom-hand.getBoundingClientRect().bottom-4;
-    return Math.max(120,gap);
+  const stage=document.getElementById('stage');
+  if(isPhonePort()&&stage){
+    let anchor=0;
+    const hw=document.getElementById('handWrap');
+    if(hw)anchor=hw.getBoundingClientRect().bottom;       // 手牌 + 胡/碰/杠/过操作行
+    const sb=document.getElementById('splitBar');
+    if(sb&&getComputedStyle(sb).display!=='none')anchor=Math.max(anchor,sb.getBoundingClientRect().bottom); // 拆牌条
+    const lw=document.getElementById('liveWarn');
+    if(lw&&lw.style.display==='block')anchor=Math.max(anchor,lw.getBoundingClientRect().bottom);           // 师傅点评框
+    if(!anchor)return null;
+    return Math.max(90,stage.getBoundingClientRect().bottom-anchor-4);
   }
   return null;
+}
+// 竖屏抽屉自动贴满（仅自动态调用；手牌/操作行/点评框变化后重贴，杜绝露空当或盖按钮）
+function snapDockAuto(){
+  try{
+    if(!isPhonePort()||!__dockAuto)return;
+    const d=document.getElementById('bottomDock');
+    if(!d||d.style.display==='none')return;
+    setDockHeightPx(dockMaxH());
+  }catch(e){}
+}
+// 操作行（胡/碰/杠/过）出现/变化后调用：即便用户手动拖矮过抽屉，
+// 只要抽屉顶盖到操作行/点评框上方，就强制回贴——按钮永远可点，这是硬约束
+function snapDockReveal(){
+  try{
+    if(!isPhonePort())return;
+    const d=document.getElementById('bottomDock');
+    if(!d||d.style.display==='none')return;
+    const max=dockMaxH();
+    if(max!=null&&d.getBoundingClientRect().height>max+2){
+      __dockAuto=true;setDockHeightPx(max);
+    }
+  }catch(e){}
 }
 function clampDockH(h){
   const stage=document.getElementById('stage'),top=document.getElementById('topbar').offsetHeight;
@@ -2611,9 +2641,13 @@ function setDockHeightPx(h){
   dock.classList.add('dockFixed');dock.style.height=v+'px';return v;
 }
 function clearDockHeight(){const dock=document.getElementById('bottomDock');dock.classList.remove('dockFixed');dock.style.height='';}
-function saveDockH(){try{const dock=document.getElementById('bottomDock');
-  localStorage.setItem(dockKey(),JSON.stringify({h:Math.round(dock.getBoundingClientRect().height)}));}catch(e){}}
+function saveDockH(){
+  if(isPhonePort())return; // 2026-11-14：竖屏抽屉高度不持久化——每局自动贴满，手动拖拽仅本局临时生效
+  try{const dock=document.getElementById('bottomDock');
+  localStorage.setItem(dockKey(),JSON.stringify({h:Math.round(dock.getBoundingClientRect().height)}));}catch(e){}
+}
 function restoreDockH(){
+  if(isPhonePort())return false; // 2026-11-14：竖屏不恢复历史拖拽高度（旧存档偏矮会露出黑色空当）
   let saved;try{saved=JSON.parse(localStorage.getItem(dockKey())||'null');}catch(e){saved=null;}
   if(saved&&saved.h){setDockHeightPx(saved.h);return true;}
   return false;
@@ -2648,6 +2682,8 @@ document.addEventListener('pointerdown',function(e){
 // 模式刻意不持久化：不因上次点开过就被记住而变成「默认开启」；只保留拆解条折叠状态。
 let splitMode=false,splitOpen=true,__sbSig='',__handSig='';
 try{localStorage.removeItem('banshanSplitMode');}catch(e){} // 清理旧版本遗留的开关记忆
+// 2026-11-14：竖屏抽屉高度不再持久化——清掉历史键（V4/V3），避免遗留偏矮存档；横屏键 banshanDockHV2 保留
+try{localStorage.removeItem('banshanDockHPortV4');localStorage.removeItem('banshanDockHPortV3');}catch(e){}
 try{splitOpen=localStorage.getItem('banshanSplitBar')!=='0';}catch(e){}
 function saveSplitMode(){} // 不写 localStorage：默认态永远是关闭
 function saveSplitOpen(){try{localStorage.setItem('banshanSplitBar',splitOpen?'1':'0');}catch(e){}}
@@ -2883,6 +2919,7 @@ function liveWarn(tile){
   el.style.display='block';
   el.scrollTop=0;
   fitLiveWarnBox(el);
+  snapDockAuto(); // 2026-11-14：点评框出现占位——竖屏抽屉自动态重贴到点评框下沿，不盖内容、不露空当
   const syncWarnMore=()=>{
     const more=el.scrollHeight-el.clientHeight>2;
     el.classList.toggle('warnMore',more&&el.scrollTop+el.clientHeight<el.scrollHeight-2);
@@ -2929,6 +2966,7 @@ function clearWarn(){
   if(warnTimer){clearTimeout(warnTimer);warnTimer=null;}
   const el=document.getElementById('liveWarn');
   if(el){el.innerHTML='';el.className='liveWarn';el.style.display='none';}
+  snapDockAuto(); // 2026-11-14：点评框收起——竖屏抽屉自动态回满到操作行下沿
 }
 function buildThinkHTML(){
   const me=p(0),d=handDiagnose(me),pick=teachPick(d),ht=recommendHandType(d,me),opp=readOpponents();
@@ -4181,7 +4219,10 @@ function renderActions(o){
   if(k==='zimo'){mk('胡牌',{hu:'hu'},'primary');mk('过',{pass:1});}else if(k==='gangself'){for(const t of o.an)mk('暗杠 '+tileName(t),{kind:'an',id:t.id},'danger');for(const id of o.bu)mk('补杠 '+id,{kind:'bu',id},'danger');mk('不杠',{pass:1});}
   else if(k==='discard'){/* 出牌按钮已移到头像右侧（#playBtn）；#actions 仅留倒计时 #cd 容器 */}
   else if(k==='qiang'){mk('抢杠胡',{hu:'hu'},'primary');mk('放弃',{pass:1});}
-  else if(k==='claim'){const id=o.id;if(canMingGang(p(0),id))mk('杠',{kind:'gang'},'danger');if(canPeng(p(0),id))mk('碰',{kind:'peng'},'primary');mk('过',{pass:1});}}
+  else if(k==='claim'){const id=o.id;if(canMingGang(p(0),id))mk('杠',{kind:'gang'},'danger');if(canPeng(p(0),id))mk('碰',{kind:'peng'},'primary');mk('过',{pass:1});}
+  // 2026-11-14：操作行按钮出现/消失改变手牌区下沿——竖屏抽屉立刻重贴，绝不盖住胡/碰/杠/过按钮
+  snapDockReveal();
+}
 function renderInfo(){const remain=G.wall.length-G.head-(G.wall.length-1-G.tail);document.getElementById('info').textContent='墙剩'+remain+'张 · 留底6 · 你的杠分'+p(0).gangScore;
   document.getElementById('warnTag').style.display=blockedByZRule(p(0))?'inline-block':'none';
   updateRoundTag();}
@@ -4336,8 +4377,8 @@ function fit(){
   }
   document.documentElement.classList.toggle('large',large);
   if(document.getElementById('cd'))positionCd(); // 倒计时随手牌/头像重算后重新定位到头像上方
-  // 2026-11-13：竖屏抽屉自动态——fit 后手牌位置/尺度可能变化（切教学/拆牌、摸牌换行等），
-  // 重新贴手牌，避免抽屉盖住或远离手牌；用户手动拖过（__dockAuto=false）则不打扰
+  // 2026-11-14：竖屏抽屉自动态——fit 后手牌/操作行位置可能变化（切教学/拆牌、摸牌换行等），
+  // 重新贴满到「手牌/操作行下沿」，避免抽屉盖住按钮或远离手牌露黑色空当；用户手动拖过（__dockAuto=false）则不打扰
   if(pp&&__dockAuto){
     const d=document.getElementById('bottomDock');
     if(d&&d.style.display!=='none')setDockHeightPx(dockMaxH());
@@ -4374,14 +4415,11 @@ function applyPhonePortDock(){
     if(updateTeachPanel)updateTeachPanel();
   }
   refreshDock();
-  if(!restoreDockH()){
-    // 2026-11-13 用户需求：教学模块改抽屉——默认展开到「贴手牌下沿」（覆盖手牌下方到屏幕底的空白），
-    // 浮层不挤压牌桌，手牌与牌面尺寸完全不受影响；自动态随 fit 持续贴手牌
-    __dockAuto=true;
-    setDockHeightPx(dockMaxH());
-  }else{
-    __dockAuto=false; // 有历史保存高度（用户手动拖过），尊重之
-  }
+  // 2026-11-14 用户需求：教学抽屉每局自动贴满——顶部贴「手牌/操作行下沿」、填满到屏幕底，
+  // 手牌下方不再露出黑色空当；不再恢复历史拖拽高度（手动拖拽仅本局临时生效，进新局自动回满）
+  __dockAuto=true;
+  setDockHeightPx(dockMaxH());
+  snapDockReveal(); // 兜底：进局若已有操作按钮（胡/碰/过）在等待，确保抽屉不盖按钮
   // 2026-11-11 修复：掷骰阶段教学区隐藏、牌桌全高，fit 算的是旧尺寸；
   // 进局设置教学区高度后必须重算牌面（手牌预算/提醒空挡依赖真实桌高）
   requestAnimationFrame(fit);
