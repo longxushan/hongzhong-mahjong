@@ -40,6 +40,9 @@ await page.addInitScript(() => {
 });
 await page.goto(pathToFileURL(FILE).href, { waitUntil: 'load', timeout: 30000 });
 
+// 2026-11-13：牌面已拆到 tiles.js 懒加载（掷骰阶段才加载），静态自检前先确保就绪
+await page.evaluate(() => loadTiles().catch(() => {}));
+
 // ===== 阶段 A：开局前静态链路自检 =====
 const staticChecks = await page.evaluate(() => {
   const out = [], add = (name, pass, detail) => out.push({ name, pass: !!pass, detail: String(detail) });
