@@ -56,6 +56,14 @@
   .whoBtn{flex:0 0 auto;border-radius:999px;padding:3px 10px;font-size:11px;line-height:1.25;
     min-height:24px;border:1px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,.35);}
   .whoBtn.ting{background:#204a3c;color:#d8f3e6;border-color:#4f8f76;}
+  /* 2026-11-13：听牌后头像左侧「听」变红字闪烁（与教学「听牌一览」/听牌浮层同源 calcTing） */
+  @keyframes tingBlink{
+    0%,100%{color:#ff5a45;text-shadow:0 0 5px rgba(255,74,55,.95),0 0 11px rgba(255,60,45,.6);}
+    50%{color:#c23a2c;text-shadow:none;} /* 暗帧仍保持红色可读，不压成黑字 */
+  }
+  #tingBtn.isTing{background:#2c100d;color:#ff5a45;border-color:#ff6a55;font-weight:800;
+    box-shadow:0 0 8px rgba(255,74,55,.55),inset 0 0 6px rgba(255,74,55,.25);
+    animation:tingBlink .9s ease-in-out infinite;}
   .whoBtn.play{background:linear-gradient(180deg,#ffd873,#e8a92c);color:#7a1b12;font-weight:800;border-color:#f0c65a;}
   .whoBtn:active{transform:scale(.94);}
   #table.dicePhase .whoBtn{display:none!important;} /* 掷骰阶段头像竖排放大，两个按钮先隐藏 */
@@ -645,7 +653,7 @@
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn">重开</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -3794,6 +3802,7 @@ function allHandsHTML(skipSeat){
   return h+'</div>';
 }
 function presentResult(r){return new Promise(res=>{
+  try{syncTingButton();}catch(e){} // 2026-11-13：结算时 G.over 已置真，停止「听」按钮闪烁
   if(!r._expLearned){r._expLearned=true;try{learnFromRound(r);}catch(e){}} // 角色经验学习：每局成败写进档案（跨局持久）
   if(!r._cumAdded){addCum(r.d);r._cumAdded=true;pushHist(r);}
   if(!r._speechDone){r._speechDone=true;try{speakScore(r.pl?buildWinSpeechKeys(r):['host/liuju']);}catch(e){}}
@@ -3806,7 +3815,7 @@ function presentResult(r){return new Promise(res=>{
   h+='<h3 style="margin-top:14px">各家总账（含杠分）</h3><div class="netGrid">';for(const x of r.d){const c=x.net>0?'plus':x.net<0?'minus':'';h+='<div class="row"><span>'+p(x.seat).name+'</span><span class="'+c+'">'+(x.net>0?'+':'')+x.net+'（杠'+(x.gang>0?'+':'')+x.gang+'）</span></div>';}h+='</div>';
   h+=allHandsHTML(r.pl?r.pl.seat:null); // 每局结束四家摊牌：让大家看清各家手里剩什么牌再进下一局
   h+=cumRankHTML();
-  h+='<div class="modalBtns"><button class="primary" id="mNext">'+(isFinal?'开始下一轮':'再来一局')+'</button><button id="mReview">师傅复盘</button><button id="mResetCum">清零累计</button><button id="mClose">查看桌面</button></div></div>';
+  h+='<div class="modalBtns"><button class="primary" id="mNext">'+(isFinal?'开始下一轮':'下一局')+'</button><button id="mReview">师傅复盘</button><button id="mResetCum">清零累计</button><button id="mClose">查看桌面</button></div></div>';
   mk.innerHTML=h;document.getElementById('stage').appendChild(mk);
   // 师傅讲解折叠开关（手机默认收起、桌面默认展开）
   {const wpf=mk.querySelector('#wpFoldBtn');
@@ -4086,8 +4095,25 @@ function renderActions(o){
 function renderInfo(){const remain=G.wall.length-G.head-(G.wall.length-1-G.tail);document.getElementById('info').textContent='墙剩'+remain+'张 · 留底6 · 你的杠分'+p(0).gangScore;
   document.getElementById('warnTag').style.display=blockedByZRule(p(0))?'inline-block':'none';
   updateRoundTag();}
+// 2026-11-13：听牌后头像左侧「听」变红字闪烁。与教学「听牌一览」/听牌浮层同源 calcTing()，
+// 用手牌签名缓存避免每次 render 都跑 28 次 wouldWin；跑局钩子下跳过精算（千局自检不受影响）。
+let __tingSig='',__tingN=0;
+function syncTingButton(){
+  const b=document.getElementById('tingBtn');
+  if(!b)return;
+  const off=()=>{b.classList.remove('isTing');b.title='看我胡哪些牌';};
+  if(window.__noTingBlink||window.__noSplitBar||typeof G==='undefined'||!G||!G.players||G.over){off();__tingSig='';return;}
+  try{
+    const me=p(0);
+    const sig=G.token+'|'+me.hand.map(t=>t.id).sort().join('')+'|'+
+      me.melds.map(m=>m.type+':'+m.tiles.map(t=>t.id).join('')).join(',');
+    if(sig!==__tingSig){__tingSig=sig;__tingN=calcTing().length;}
+  }catch(e){__tingN=0;}
+  b.classList.toggle('isTing',__tingN>0);
+  b.title=__tingN>0?('已听牌 · 共 '+__tingN+' 种胡牌，点我看详情'):'看我胡哪些牌（当前未听牌）';
+}
 let __renderFitSig='';
-function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);syncSplitModeUI();for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();
+function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);syncSplitModeUI();for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();syncTingButton();
   // 2026-11-13：视口/教学/拆牌任一变化后立刻按新几何重算「一行 16 张」牌面；
   // 只在签名变化时算，避免每次出牌都重复读写布局（跑局脚本不受影响）
   try{const tb=document.getElementById('table'),dk=document.getElementById('bottomDock');
@@ -4129,7 +4155,18 @@ document.addEventListener('click',function(e){
 const warnBtnEl=document.getElementById('warnBtn');
 warnBtnEl.classList.toggle('btnActive',mistakeWarnOn);
 warnBtnEl.onclick=function(){mistakeWarnOn=!mistakeWarnOn;saveMistake();this.classList.toggle('btnActive',mistakeWarnOn);if(!mistakeWarnOn)clearWarn();toast(mistakeWarnOn?'打错提醒已开启':'打错提醒已关闭');sndClick();};
-document.getElementById('restartBtn').onclick=()=>restart(true);
+// 2026-11-13：顶栏「重开」改为「下一局」——点击后真正推进第 N/8 局计数，
+// 与结算弹窗 goNext() 的规则完全一致：第 8 局后回到第 1/8 局并起新一轮（累计分、战绩归零重计）。
+// 主动跳过的这一局不打完，不写战绩、不改各家累计分。
+function nextRoundFromTop(){
+  const wasFinal=roundNum>=ROUND_MAX;
+  if(wasFinal){resetCumForCurrent();roundNum=1;}
+  else roundNum++;
+  saveRound();updateRoundTag();
+  restart(true);
+  toast((wasFinal?'新一轮开始 · 第 1/':'已进入第 '+roundNum+'/')+ROUND_MAX+' 局（跳过的这局不计战绩）');
+}
+document.getElementById('restartBtn').onclick=nextRoundFromTop;
 // 对局账单（战绩）：每局输赢明细 + 本轮累计汇总
 document.getElementById('histBtn').onclick=function(){
   document.getElementById('histBody').innerHTML=buildHistHTML();

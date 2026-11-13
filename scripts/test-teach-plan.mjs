@@ -40,7 +40,7 @@ await page.waitForSelector('#roleSelect.show .roleBtn', { timeout: 10000 });
 await page.locator('.roleBtn').first().click();
 await page.waitForFunction(
   () => typeof G !== 'undefined' && !!G && G.awaiting === 'discard',
-  null, { timeout: 30000 }
+  null, { timeout: 60000 } // 2026-11-13：与其他专项一致，避免并行回归时掷骰流程偶发超时误报
 );
 
 const results = await page.evaluate(() => {
