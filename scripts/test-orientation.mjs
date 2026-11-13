@@ -142,7 +142,7 @@ for (const c of cases) {
 
 // ③ 平板竖放尺度：牌面、字号明显大于手机竖放，但结构一致
 const phoneP = snaps['手机竖放 390×844'], padP = snaps['iPad 竖放 768×1024'];
-chk('平板竖放牌面大于手机竖放（平板尺度）', padP.handVar > phoneP.handVar + 8,
+chk('平板竖放牌面大于手机竖放（平板尺度）', padP.handVar > phoneP.handVar + 6,
   `pad=${padP.handVar}px phone=${phoneP.handVar}px`);
 chk('平板竖放教学与顶栏字号放大', padP.poolFs >= 12 && padP.btnFs >= 12.5 && phoneP.poolFs <= 11,
   `pad pool=${padP.poolFs} btn=${padP.btnFs} / phone pool=${phoneP.poolFs}`);

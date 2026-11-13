@@ -44,7 +44,7 @@ async function probe() {
     const w = el.getBoundingClientRect();
     const tb = document.getElementById('table').getBoundingClientRect();
     const hw = document.querySelector('#seat0 #handWrap').getBoundingClientRect();
-    const act = document.querySelector('#seat0 #handWrap').getBoundingClientRect(); // 2026-11-13：基准与 fitLiveWarnBox 一致
+    const act = document.getElementById('hand').getBoundingClientRect(); // 2026-11-13：基准与 fitLiveWarnBox 一致（手牌自身下沿）
     const dock = document.getElementById('bottomDock').getBoundingClientRect();
     const inter = (a, b) => a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2;
     const before = { hidden: el.scrollHeight - el.clientHeight, over: getComputedStyle(el).overflowY, more: el.classList.contains('warnMore') };
@@ -59,7 +59,7 @@ async function probe() {
       warnTop: Math.round(w.top - tb.top), warnH: Math.round(w.height),
       bottomGap: Math.round(tb.bottom - w.bottom), gapActions: Math.round(w.top - act.bottom),
       overlap: inter(w, hw) || inter(w, act), dockGap: Math.round(dock.top - w.bottom),
-      inlineBottom: el.style.bottom, inlineMaxH: el.style.maxHeight,
+      inlineTop: el.style.top, inlineBottom: el.style.bottom, inlineMaxH: el.style.maxHeight,
       hasMaster: el.textContent.includes('雀学米高'),
       text: el.textContent.slice(0, 20), before, after,
     };
@@ -71,7 +71,7 @@ async function viewport(w, h, label) {
   await page.waitForTimeout(400);
   const r = await probe();
   console.log(`${label} ${w}x${h}:`, JSON.stringify({ warnTop: r.warnTop, warnH: r.warnH, bottomGap: r.bottomGap, gapActions: r.gapActions, hidden: r.before.hidden, overlap: r.overlap, dockGap: r.dockGap }));
-  chk(`${label} 点评框已上抬（底边离牌桌底缘 ≥8px）`, r.bottomGap >= 8 && r.bottomGap <= 40, JSON.stringify(r));
+  chk(`${label} 点评框顶贴手牌下沿（gap 0~12px、底边不超出牌桌）`, r.gapActions >= 0 && r.gapActions <= 12 && r.bottomGap >= 0, JSON.stringify(r));
   chk(`${label} 不遮挡手牌与出牌按钮`, !r.overlap && r.gapActions >= 0, JSON.stringify(r));
   chk(`${label} 框内长文案可滚动看全`, r.before.over === 'auto' && r.after.atEnd && r.hasMaster, JSON.stringify({ before: r.before, after: r.after }));
   chk(`${label} 上滑到底后取消渐隐`, r.before.hidden <= 2 || (r.before.more && !r.after.more), JSON.stringify({ before: r.before, after: r.after }));
@@ -81,7 +81,7 @@ async function viewport(w, h, label) {
 // ---------- ① 多机型竖屏 ----------
 const r390 = await viewport(390, 844, '竖屏A');
 chk('竖屏A 可用高度比旧版 88px 更大（内容往上长）', parseInt(r390.inlineMaxH, 10) > 100, `maxH=${r390.inlineMaxH}`);
-chk('竖屏A 底边已上抬并写入自适应值', parseInt(r390.inlineBottom, 10) >= 8, `bottom=${r390.inlineBottom}`);
+chk('竖屏A 框顶已锚定手牌下沿（写入 top 自适应值）', parseInt(r390.inlineTop, 10) > 0, `top=${r390.inlineTop}`);
 await viewport(430, 932, '竖屏B');
 await viewport(360, 780, '竖屏C');
 await viewport(390, 1140, '竖屏D');
@@ -93,14 +93,14 @@ await page.evaluate(() => { if (!document.getElementById('teachBtn').classList.c
 await page.waitForTimeout(400);
 const rTeach = await probe();
 console.log('教学模式:', JSON.stringify({ warnH: rTeach.warnH, bottomGap: rTeach.bottomGap, gapActions: rTeach.gapActions, overlap: rTeach.overlap }));
-chk('教学模式下点评仍上抬且不遮挡按钮', rTeach.bottomGap >= 8 && !rTeach.overlap, JSON.stringify(rTeach));
+chk('教学模式下点评仍贴手牌下沿且不遮挡按钮', rTeach.gapActions >= 0 && rTeach.gapActions <= 12 && !rTeach.overlap, JSON.stringify(rTeach));
 chk('教学模式下点评仍可上滑看全', rTeach.after.atEnd && rTeach.hasMaster, JSON.stringify(rTeach.after));
 
 await page.evaluate(() => { document.getElementById('teachBtn').click(); document.getElementById('splitBtn').click(); });
 await page.waitForTimeout(400);
 const rSplit = await probe();
 console.log('拆牌模式:', JSON.stringify({ warnH: rSplit.warnH, bottomGap: rSplit.bottomGap, gapActions: rSplit.gapActions, overlap: rSplit.overlap }));
-chk('拆牌模式下点评仍上抬且不遮挡按钮', rSplit.bottomGap >= 8 && !rSplit.overlap, JSON.stringify(rSplit));
+chk('拆牌模式下点评仍贴手牌下沿且不遮挡按钮', rSplit.gapActions >= 0 && rSplit.gapActions <= 12 && !rSplit.overlap, JSON.stringify(rSplit));
 chk('拆牌模式下点评仍可上滑看全', rSplit.after.atEnd && rSplit.hasMaster, JSON.stringify(rSplit.after));
 await page.evaluate(() => document.getElementById('splitBtn').click());
 
@@ -128,7 +128,7 @@ await page.setViewportSize({ width: 844, height: 390 });
 await page.waitForTimeout(500);
 const rLand = await probe();
 console.log('横屏:', JSON.stringify({ pport: rLand.pport, inlineBottom: rLand.inlineBottom, inlineMaxH: rLand.inlineMaxH, shown: rLand.shown, warnH: rLand.warnH }));
-chk('横屏不套竖屏上抬内联样式', !rLand.pport && !rLand.inlineBottom && !rLand.inlineMaxH, JSON.stringify(rLand));
+chk('横屏不套竖屏上抬内联样式', !rLand.pport && !rLand.inlineTop && !rLand.inlineBottom && !rLand.inlineMaxH, JSON.stringify(rLand));
 chk('横屏点评仍正常显示', rLand.shown && rLand.hasMaster, JSON.stringify(rLand));
 
 chk('全程无页面脚本错误', pageErrors.length === 0, pageErrors.join(' | '));

@@ -185,7 +185,7 @@
   #stage:not(.pport) #table.teachSplit:not(.dicePhase){grid-template-rows:minmax(0,.42fr) minmax(0,.6fr) minmax(0,2.3fr);}
   /* 组合模式下底部教学面板让位给牌桌，内容仍可纵向滚动查看；短横屏更紧凑。
      :not(.dockFixed) 保证用户手动拖拽分隔条设定的高度不被覆盖 */
-  #stage #bottomDock:not(.dockFixed){max-height:38vh;} /* 2026-11-13 用户需求：底部教学模块再往上提一些（34vh→38vh） */
+  #stage #bottomDock:not(.dockFixed){max-height:38vh;} /* 2026-11-13：横屏教学区上限维持 38vh（竖屏由 setDockHeightPx 0.46 上提）；再高会挤短横屏组合态手牌 */
   @media (max-height:520px){
     /* 短横屏（≤520px 高）本就紧张，教学区维持 24vh 不上提，避免牌桌下排手牌被裁 */
     #stage #bottomDock:not(.dockFixed){max-height:24vh;}
@@ -201,8 +201,11 @@
   #actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto;align-items:center;max-width:48%;}
   #actions:empty{min-height:0;}
   #actions button{height:var(--hand2);min-height:var(--hand2);padding:0 16px;font-size:calc(var(--hand2)*0.32);border-radius:6px;display:flex;align-items:center;justify-content:center;line-height:1;white-space:nowrap;}
-  #actions #cd{height:auto;min-height:0;}
-  #cd{width:100%;text-align:center;font-size:12px;color:#ffd98a;margin-bottom:2px;flex:0 0 100%;}
+  /* 2026-11-13 用户需求：思考时间放到我的头像上方——#cd 绝对定位在 #table 内、头像正上方（不占流、不挤压手牌），
+     位置由 positionCd() 按 who.offsetTop 实时计算（横竖屏一致）；table 无 overflow 裁切，who 上方可见 */
+  #cd{position:absolute;left:50%;transform:translateX(-50%);width:max-content;max-width:96vw;
+    text-align:center;font-size:11.5px;color:#ffd98a;line-height:1.25;white-space:nowrap;z-index:8;pointer-events:none;
+    text-shadow:0 1px 3px rgba(0,0,0,.7);}
   .topTag{background:rgba(217,164,65,.16);border:1px solid rgba(217,164,65,.55);color:#f3d9a4;border-radius:9px;padding:3px 9px;font-size:var(--tagfs);white-space:nowrap;flex:0 0 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
   .topTag b{color:var(--gold);}
   .topTag.warn{background:rgba(192,57,43,.2);border-color:rgba(224,120,110,.65);color:#ffb3ab;}
@@ -2830,25 +2833,28 @@ function fitLiveWarnBox(el){
   try{
     const stage=document.getElementById('stage');
     if(!stage||!stage.classList.contains('pport')){
-      el.style.removeProperty('bottom');el.style.removeProperty('max-height');return;
+      el.style.removeProperty('top');el.style.removeProperty('bottom');el.style.removeProperty('max-height');return;
     }
-    // 2026-11-13：出牌按钮移到头像行后 #actions 可能只剩倒计时甚至为空，
-    // 基准改用「手牌 + 操作区」整体下沿，点评框仍不遮挡手牌
-    const tb=document.getElementById('table'),act=document.querySelector('#seat0 #handWrap')||document.querySelector('#seat0 #actions');
-    if(!tb||!act)return;
-    const t=tb.getBoundingClientRect(),a=act.getBoundingClientRect();
+    // 2026-11-13 用户需求：师傅点评往上移、跟我的底牌相接——
+    // 基准改用「手牌」自身下沿（出牌按钮/思考时间已移出，不再拿 #handWrap 整块算），
+    // 框顶直接锚定手牌下沿 +4px（不再 bottom 锚底，内容少也不会浮在半空留空隙）
+    const tb=document.getElementById('table'),hand=document.getElementById('hand');
+    if(!tb||!hand)return;
+    const t=tb.getBoundingClientRect(),h=hand.getBoundingClientRect();
     const lift=Math.max(8,Math.min(20,Math.round(t.height*0.028)));
-    const topMin=(a.bottom-t.top)+7;                  // 与手牌/操作行留 7px 视觉间隙
+    const topMin=(h.bottom-t.top)+4;                  // 点评框顶贴手牌下沿，留 4px 视觉间隙
     // 2026-11-12：平板竖放可用空挡更大，点评框上限同步放宽；手机竖屏维持 190px 口径
     const cap=stage.classList.contains('pportWide')?240:190;
     const maxH=Math.max(72,Math.min(cap,Math.round(t.height-lift-topMin)));
-    el.style.bottom=lift+'px';
+    el.style.top=topMin+'px';
+    el.style.bottom='auto';
     el.style.maxHeight=maxH+'px';
   }catch(e){}
 }
 window.addEventListener('resize',()=>{
   const el=document.getElementById('liveWarn');
   if(el&&el.style.display==='block')fitLiveWarnBox(el);
+  positionCd();
 });
 function clearWarn(){
   if(warnTimer){clearTimeout(warnTimer);warnTimer=null;}
@@ -3607,8 +3613,22 @@ function waitHuman(kind,opts){return new Promise(res=>{
 function fmtCountdown(n){return n>90?Math.floor(n/60)+' 分 '+String(n%60).padStart(2,'0')+' 秒':n+' 秒';}
 function renderCountdown(n){
   let c=document.getElementById('cd');
-  if(!c){c=document.createElement('div');c.id='cd';document.getElementById('actions').prepend(c);}
+  if(!c){
+    c=document.createElement('div');c.id='cd';
+    // 2026-11-13 用户需求：思考时间放到我的头像上方——挂到 #table 内，绝对定位在头像正上方，不占流
+    document.getElementById('table').appendChild(c);
+  }
   c.textContent='剩余思考时间 '+fmtCountdown(n);
+  positionCd();
+}
+// 把倒计时绝对定位到我的头像（who）正上方：who 的 offsetParent 是 #table（seat0 无定位），
+// top 取 who.offsetTop 上方留 3px 间隙；倒计时仅决策时短暂显示，resize/fit 后随 who 重算
+function positionCd(){
+  const c=document.getElementById('cd');if(!c)return;
+  const who=document.querySelector('#seat0 .who'),table=document.getElementById('table');
+  if(!who||!table)return;
+  const whoTop=who.offsetTop;
+  c.style.top=Math.max(2,whoTop-c.offsetHeight-3)+'px';
 }
 function clearCountdown(){if(G._cd){clearInterval(G._cd);G._cd=null;}const c=document.getElementById('cd');if(c)c.remove();}
 function humanRespond(v){clearCountdown();if(G.humanResolve){const r=G.humanResolve;G.humanResolve=null;G.awaiting=null;r(v);}}
@@ -4242,6 +4262,7 @@ function fit(){
     rs.setProperty('--btnpad','5px 8px');rs.setProperty('--topgap','5px');rs.setProperty('--volw','52px');
   }
   document.documentElement.classList.toggle('large',large);
+  if(document.getElementById('cd'))positionCd(); // 倒计时随手牌/头像重算后重新定位到头像上方
 }
 function layout(){
   // 2026-11-10 牌桌锁定（用户需求：不可移动不可缩放）：每次布局重算都归位——
@@ -4277,7 +4298,7 @@ function applyPhonePortDock(){
   if(!restoreDockH()){
     const stage=document.getElementById('stage');
     const avail=stage.clientHeight-document.getElementById('topbar').offsetHeight;
-    setDockHeightPx(avail*0.42); // 2026-11-13 用户需求：底部教学模块再往上提一些——竖屏默认占比 0.36→0.42
+    setDockHeightPx(avail*0.44); // 2026-11-13 用户需求：底部教学模块再往上提——竖屏默认占比 0.36→0.42→0.44（再高会缩小平板竖放牌面）
   }
   // 2026-11-11 修复：掷骰阶段教学区隐藏、牌桌全高，fit 算的是旧尺寸；
   // 进局设置教学区高度后必须重算牌面（手牌预算/提醒空挡依赖真实桌高）

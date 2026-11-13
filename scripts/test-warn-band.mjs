@@ -63,7 +63,7 @@ const result = await page.evaluate(() => {
       dockTop: dock ? Math.round(dock.top) : null,
       warnText: document.getElementById('liveWarn')?.textContent.slice(0, 24) || '',
       warnFull: document.getElementById('liveWarn')?.textContent || '',
-      warnScroll: (() => { const e = document.getElementById('liveWarn'); return e ? { hidden: e.scrollHeight - e.clientHeight, over: getComputedStyle(e).overflowY, more: e.classList.contains('warnMore'), maxH: e.style.maxHeight, bottom: e.style.bottom } : null; })(),
+      warnScroll: (() => { const e = document.getElementById('liveWarn'); return e ? { hidden: e.scrollHeight - e.clientHeight, over: getComputedStyle(e).overflowY, more: e.classList.contains('warnMore'), maxH: e.style.maxHeight, top: e.style.top } : null; })(),
       // 诊断明细
       dbg: {
         tableH: Math.round(table.height),
@@ -81,18 +81,18 @@ const result = await page.evaluate(() => {
 console.log(`手牌区顶部位置: 牌桌高度的 ${result.handTopPct}%（上移前约 70%，应 ≤62%）`);
 console.log('诊断:', JSON.stringify(result.dbg));
 console.log(`打错提醒显示: ${result.warnShown}（「${result.warnText}…」）`);
-console.log(`提醒距牌桌底缘: ${result.warnBottomGap}px（2026-11-12 上抬后应为 8~30）`);
-console.log(`操作行与提醒之间空挡: ${result.gapBetween}px（上抬加高后 ≥5 即不遮挡）`);
+console.log(`提醒距牌桌底缘: ${result.warnBottomGap}px（2026-11-13 顶贴手牌后仅需 ≥0 不超出牌桌）`);
+console.log(`操作行与提醒之间空挡: ${result.gapBetween}px（顶贴手牌，≥0 即不遮挡）`);
 console.log(`提醒与手牌/操作行交叠: ${result.warnOverlapHand}（应 false）`);
 console.log(`点评框可上滑: ${JSON.stringify(result.warnScroll)}（内容较长时应 overflow=auto）`);
 console.log(`页面错误: ${pageErrors.length} 条`);
 
 const pass = result.handTopPct <= 62
   && result.warnShown === true
-  && result.warnBottomGap >= 8 && result.warnBottomGap <= 30
-  && result.gapBetween >= 5
+  && result.warnBottomGap >= 0
+  && result.gapBetween >= 0
   && result.warnOverlapHand === false
-  && result.warnScroll && result.warnScroll.over === 'auto' && parseInt(result.warnScroll.maxH, 10) > 100 && parseInt(result.warnScroll.bottom, 10) >= 8
+  && result.warnScroll && result.warnScroll.over === 'auto' && parseInt(result.warnScroll.maxH, 10) > 100 && parseInt(result.warnScroll.top, 10) > 0
   && /雀学米高|郑太顺/.test(result.warnFull) // 2026-11-11：双大师心法已入实时点评
   && pageErrors.length === 0;
 console.log(pass ? 'PASS: 手牌上移+提醒上抬自适应空挡' : 'FAIL: 需调整');

@@ -26,8 +26,8 @@ chk('源码：顶栏只剩一个音频开关', HTML.includes('<button id="soundB
 chk('源码：旧音乐开关逻辑与 banshanBgm 偏好已清除',
   !/syncBgmUI/.test(HTML) && !/setItem\('banshanBgm'/.test(HTML) && HTML.includes("removeItem('banshanBgm')"));
 chk('源码：bgmOn 恒跟随 soundOn，无独立状态漂移', HTML.includes('bgmOn=soundOn') && HTML.includes('let bgmOn=soundOn'));
-chk('源码：底部教学区上提（竖屏 0.42 / 常规横屏 38vh；短横屏维持 24vh 防裁切）',
-  HTML.includes('setDockHeightPx(avail*0.42)') && HTML.includes('max-height:38vh') &&
+chk('源码：底部教学区上提（竖屏 0.44 / 常规横屏 38vh；短横屏维持 24vh 防裁切）',
+  HTML.includes('setDockHeightPx(avail*0.44)') && HTML.includes('max-height:38vh') &&
   HTML.includes('max-height:24vh') && HTML.includes('banshanDockHPortV3') && HTML.includes('banshanDockHV2'));
 chk('源码：出牌按钮与听牌浮层已接入',
   HTML.includes("id='playBtn'") && HTML.includes("id='tingBtn'") &&
@@ -200,8 +200,8 @@ const dockP = await page.evaluate(() => {
     topPct: +(r.top / innerHeight).toFixed(3), scroll: d.scrollHeight - d.clientHeight,
     clipped: boxes.filter(x => !x.ok).map(x => x.s), boxes: boxes.length };
 });
-chk('竖屏教学区默认占比 ≈0.42、顶边上提（旧 0.36）',
-  dockP.ratio >= 0.40 && dockP.topPct < 0.62 && dockP.scroll > 0, JSON.stringify(dockP));
+chk('竖屏教学区默认占比 ≈0.44、顶边再上提（旧 0.42）',
+  dockP.ratio >= 0.42 && dockP.topPct < 0.60 && dockP.scroll > 0, JSON.stringify(dockP));
 chk('竖屏手牌 / 头像行按钮零裁切（出牌后按钮按状态收起属正常）',
   dockP.clipped.length === 0 && dockP.boxes >= 2, JSON.stringify(dockP.clipped));
 
@@ -212,7 +212,7 @@ const dockL = await page.evaluate(() => {
   return { maxH: getComputedStyle(d).maxHeight, fixed: d.classList.contains('dockFixed'),
     h: Math.round(d.getBoundingClientRect().height), vh: innerHeight };
 });
-chk('横屏教学区上限同步提到 38vh，且旧拖拽高度不覆盖新默认',
+chk('横屏教学区上限维持 38vh，且旧拖拽高度不覆盖新默认',
   Math.abs(parseFloat(dockL.maxH) - dockL.vh * 0.38) < 2 && !dockL.fixed, JSON.stringify(dockL));
 
 // 组合模式（教学 + 拆牌）零裁切
