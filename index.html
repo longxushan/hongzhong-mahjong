@@ -930,7 +930,7 @@ async function thinkVoiceSync(){
   while((vpBusy||vpQueue.length>0)&&Date.now()-t0<limit)await sleep(80);
 }
 const CN={1:'一',2:'二',3:'三',4:'四',5:'五',6:'六',7:'七',8:'八',9:'九'};
-// 2026-11-13 性能优化：牌面 SVG 数据已拆到 tiles.js（约 796KB），掷骰阶段懒加载，
+// 2026-11-13 性能优化：牌面 SVG 数据已拆到 voice/tiles.js（约 796KB，置于 voice/ 下以便 GitHub Pages workflow 随语音目录一并发布），掷骰阶段懒加载，
 // 首屏 HTML 体积大降、打开提速；文字牌兜底保证 tiles.js 加载失败时仍可玩。
 let TILES=null,_tilesPromise=null;
 function loadTiles(){
@@ -938,7 +938,7 @@ function loadTiles(){
   if(!_tilesPromise){
     _tilesPromise=new Promise(function(res,rej){
       var s=document.createElement("script");
-      s.src="tiles.js";
+      s.src="voice/tiles.js";
       s.onload=function(){TILES=window.__MAHJONG_TILES__||null;if(TILES)res(TILES);else rej(new Error("tiles empty"));};
       s.onerror=function(){rej(new Error("tiles load fail"));};
       document.head.appendChild(s);
