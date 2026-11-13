@@ -74,29 +74,31 @@ const check = (s, label) => {
 };
 
 const results = [];
-let s = await snap();
-results.push(check(s, '默认 30%'));
+const s0 = await snap();
+results.push(check(s0, '默认贴手牌'));
+const base = { handVar: s0.handVar, top: s0.handWrapTop, bottom: s0.handWrapBottom, tableH: s0.tableH };
 
-// 拖动教学区：抓 #hSplitter 向上拖（dock 变高、牌桌变小），分 3 档
+// 2026-11-13：教学模块改抽屉浮层——拖动目标是 #dockGrip（#hSplitter 竖屏已隐藏）；
+// 浮层改高度不挤压牌桌，手牌位置与牌面应始终不变（往下拖收起、往上拖展开）
 const drag = async (dy) => {
-  const box = await page.locator('#hSplitter').boundingBox();
+  const box = await page.locator('#dockGrip').boundingBox();
   const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
   await page.mouse.move(cx, cy);
   await page.mouse.down();
-  for (let k = 1; k <= 10; k++) await page.mouse.move(cx, cy - (dy * k / 10), { steps: 1 });
+  for (let k = 1; k <= 10; k++) await page.mouse.move(cx, cy + (dy * k / 10), { steps: 1 });
   await page.mouse.up();
   await page.waitForTimeout(350); // 等 RAF fit 与渲染稳定
 };
 
-await drag(120); s = await snap(); results.push(check(s, '上拖 120px'));
-await drag(120); s = await snap(); results.push(check(s, '再上拖 120px'));
-await drag(-180); s = await snap(); results.push(check(s, '下拖回 180px'));
+await drag(150); const s1 = await snap(); results.push(check(s1, '下拖收起 150px'));
+await drag(-200); const s2 = await snap(); results.push(check(s2, '上拖展开 200px'));
 
-// 自适应验证：牌面尺寸应随 dock 高度变化（上拖变小、下拖变大）
-const sizes = results.length >= 3;
+// 浮层不挤压牌桌：拖动前后手牌位置与牌面尺寸保持不变
+const unchanged = [s1, s2].every(s => s.handVar === base.handVar && s.tableH === base.tableH
+  && Math.abs(s.handWrapTop - base.top) <= 1 && Math.abs(s.handWrapBottom - base.bottom) <= 1);
 console.log(`\n页面错误: ${pageErrors.length} 条`);
 
-const pass = results.every(Boolean) && pageErrors.length === 0 && sizes;
-console.log(pass ? 'PASS: 竖屏顶部自适应、无遮挡无重叠' : 'FAIL: 需修复');
+const pass = results.every(Boolean) && pageErrors.length === 0 && unchanged;
+console.log(pass ? 'PASS: 教学抽屉拖动不影响牌桌、手牌不越界不重叠' : 'FAIL: 需修复');
 await browser.close();
 process.exit(pass ? 0 : 1);

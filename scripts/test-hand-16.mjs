@@ -27,8 +27,8 @@ chk('源码：手牌按 16 张/行定尺度，--hand2 由手牌区实测宽度�
   HTML.includes('const HAND_SLOTS=16;') && HTML.includes('usable/HAND_SLOTS/0.75') &&
   HTML.includes("rs.setProperty('--hand2',hand2+'px')") && !HTML.includes("rs.setProperty('--hand2',(hand*0.8)"));
 chk('源码：竖屏列间距收紧到 3px，把宽度让给牌面', HTML.includes('column-gap:3px'));
-chk('源码：旧尺寸作下限 + 竖向预算/上限兜底，不会把牌压得更小或裁切',
-  HTML.includes('Math.max(hand*0.8,Math.min(byW,byH,cap2))') && HTML.includes('warnReserve=pp?'));
+chk('源码：旧尺寸作下限 + 竖向预算/上限兜底 + 宽度硬上限，不会把牌压得更小或裁切',
+  HTML.includes('Math.min(byW,Math.max(hand*0.8,Math.min(byH,cap2)))') && HTML.includes('warnReserve=pp?'));
 chk('源码：教学模式 / 拆牌方式切换后立即重算牌面（同步 fit）',
   (HTML.match(/fit\(\); \/\/ 2026-11-13/g) || []).length >= 2);
 chk('源码：16 张留有 2px 舍入余量，保证一行排得下', HTML.includes("-2; // 留 2px 舍入余量"));

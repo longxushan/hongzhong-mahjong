@@ -340,6 +340,8 @@
   #bottomDock{flex:0 0 auto;width:100%;min-width:0;background:#16211c;border-top:2px solid #5a4a26;padding:3px 8px 4px;max-height:40vh;overflow-y:auto;overflow-x:hidden;}
   #bottomDock::-webkit-scrollbar{width:0;height:0;}
   #bottomDock.dockFixed{max-height:none;flex:0 0 auto;}
+  /* 2026-11-13 用户需求：教学模块做成可手指上拉的抽屉——顶部拖动条（默认横屏隐藏，竖屏浮层模式显示） */
+  #dockGrip{display:none;}
   #hSplitter{flex:0 0 12px;width:100%;display:none;align-items:center;justify-content:center;background:#101814;cursor:row-resize;touch-action:none;position:relative;z-index:6;}
   #hSplitter.show{display:flex;}
   #hSplitter span{width:48px;height:4px;border-radius:3px;background:#6d5a2e;transition:background .15s;}
@@ -465,9 +467,31 @@
   #stage.pport #topbar b{display:none;} /* 2026-11-09 用户需求：竖屏隐藏长标题省一行，留给牌桌 */
   #stage.pport #topbar .topTag{font-size:9.5px;}
   #stage.pport #topbar button{font-size:10.5px;padding:3px 5px;}
-  #stage.pport #table{flex:1 1 auto;grid-template-rows:minmax(0,.65fr) minmax(0,1fr) minmax(0,1.75fr);} /* 2026-11-11 用户需求：手牌区上移——座位行加高至 51%，牌面位置抬高，牌桌中部不再大片空置 */
-  #stage.pport #hSplitter{flex-basis:14px;}
-  #stage.pport #bottomDock{flex:0 0 auto;}
+  /* 2026-11-13 用户需求：教学模块改抽屉浮层——牌桌不再被 dock 挤压占满全高，
+     固定 max-height:52vh 保持牌桌原有尺度（手牌/别家牌不因浮层而放大失衡），
+     dock 浮层覆盖牌桌下方空白到屏幕底；掷骰阶段(:not(.dicePhase))无教学区、牌桌仍占满 */
+  #stage.pport #table:not(.dicePhase){flex:1 1 auto;max-height:52vh;grid-template-rows:minmax(0,.65fr) minmax(0,1fr) minmax(0,1.75fr);} /* 2026-11-11 用户需求：手牌区上移——座位行加高至 51%，牌面位置抬高，牌桌中部不再大片空置 */
+  #stage.pport #hSplitter{display:none!important;} /* 竖屏改用抽屉浮层，废弃旧分隔条 */
+  /* 2026-11-13 用户需求：教学模块 = 底部抽屉浮层，绝对定位覆盖在牌桌上方，
+     往上拖展开、往下拖收起；不参与 flex 流，故手牌与牌桌完全不受影响 */
+  #stage.pport #bottomDock{
+    position:absolute;left:0;right:0;bottom:0;z-index:25;
+    flex:none;max-height:none;padding:0;
+    border-top:none;border-radius:16px 16px 0 0;
+    box-shadow:0 -8px 26px rgba(0,0,0,.6);
+    overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  }
+  #stage.pport #dockGrip{
+    position:sticky;top:0;z-index:3;
+    display:flex;align-items:center;justify-content:center;gap:7px;
+    height:30px;min-height:30px;
+    background:#0f1713;border-bottom:1px solid #5a4a26;
+    touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;
+  }
+  #stage.pport #dockGrip:active{cursor:grabbing;}
+  #stage.pport #dockGrip span{width:46px;height:4px;border-radius:3px;background:#7a6536;flex:0 0 auto;}
+  #stage.pport #dockGrip i{font-style:normal;font-size:11px;color:#9fb4a6;letter-spacing:2px;flex:0 0 auto;}
   #stage.pport .tGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:5px;}
   /* 新四栏竖屏顺序：①合并栏 ②对手分析 各跨整行，③听牌一览与④积分排行并排 */
   #stage.pport .tColMain{grid-column:1/3;}
@@ -667,6 +691,7 @@
 </div>
 <div id="hSplitter"><span></span></div>
 <div id="bottomDock" style="display:none">
+  <div id="dockGrip"><span></span><i>教学模块</i></div>
   <div id="teachPanel"></div>
   <div id="thinkContent" style="display:none"></div>
 </div>
@@ -2525,9 +2550,9 @@ function resetOrientation(){__orientPort=null;}
 // 竖屏且宽度 ≥600：平板 / 大屏竖放，按平板尺度放大字号与牌面（手机竖屏维持紧凑尺度）
 function isWidePort(){return innerWidth>=600&&isPhonePort();}
 function dockKey(){
-  // 2026-11-13 用户需求：底部教学模块再往上提——升级存储键（竖屏 V3 / 横屏 HV2），
-  // 避免旧会话手动拖拽保存的偏低高度覆盖新默认；此后手动拖拽仍照常记忆
-  return isPhonePort()?'banshanDockHPortV3':'banshanDockHV2';
+  // 2026-11-13 用户需求：教学模块改抽屉浮层——升级存储键（竖屏 V4 / 横屏 HV2），
+  // 避免旧会话（V3 及更早）拖拽保存的偏低高度覆盖「贴手牌」新默认；此后手动拖拽仍照常记忆
+  return isPhonePort()?'banshanDockHPortV4':'banshanDockHV2';
 }
 function syncSplitter(){
   const sp=document.getElementById('hSplitter'),dock=document.getElementById('bottomDock'),stage=document.getElementById('stage');
@@ -2535,11 +2560,26 @@ function syncSplitter(){
   const rotated=stage.classList.contains('rot'); // 平板竖屏旋转模式不启用（坐标旋转会错位）
   sp.classList.toggle('show',dock.style.display!=='none'&&!rotated);
 }
+// 2026-11-13 用户需求：教学模块做成可手指上拉的抽屉——竖屏浮层模式下，
+// dock 绝对定位覆盖牌桌，其高度上限=「手牌下沿到 stage 底」，即抽屉顶多拉到贴手牌、不盖手牌；
+// 横屏仍走 flex 流，上限由牌桌保底高度决定。
+let __dockAuto=true; // 竖屏抽屉默认「自动贴手牌」；用户手动拖动后置 false，尊重用户高度
+function dockMaxH(){
+  const stage=document.getElementById('stage'),hand=document.getElementById('hand');
+  if(isPhonePort()&&stage&&hand){
+    const gap=stage.getBoundingClientRect().bottom-hand.getBoundingClientRect().bottom-4;
+    return Math.max(120,gap);
+  }
+  return null;
+}
 function clampDockH(h){
   const stage=document.getElementById('stage'),top=document.getElementById('topbar').offsetHeight;
-  // 2026-11-10 用户需求：手机竖屏牌桌保底更高——极端拖拽下留足手牌两行+操作行空间，不遮挡
-  const minTable=isPhonePort()?150:110;
-  const total=stage.clientHeight,minDock=70,max=total-top-minTable-12;
+  if(isPhonePort()){
+    const max=dockMaxH()||(stage.clientHeight*0.7);
+    return Math.max(90,Math.min(max,h)); // 竖屏：至少露拖动条，至多贴手牌
+  }
+  // 2026-11-10 用户需求：手机竖屏牌桌保底更高——极端拖拽下留足手牌两行+操作行空间，不遮挡（横屏沿用）
+  const total=stage.clientHeight,minDock=70,max=total-top-110-12;
   return Math.max(minDock,Math.min(max,h));
 }
 function setDockHeightPx(h){
@@ -2556,19 +2596,24 @@ function restoreDockH(){
 }
 document.addEventListener('pointerdown',function(e){
   if(!e.target||!e.target.closest)return;
-  const sp=e.target.closest('#hSplitter');if(!sp)return;
+  // 2026-11-13 用户需求：教学模块改抽屉——竖屏拖 dockGrip、横屏拖 hSplitter
+  const isPort=isPhonePort();
+  const sp=isPort?e.target.closest('#dockGrip'):e.target.closest('#hSplitter');
+  if(!sp)return;
   const dock=document.getElementById('bottomDock');
   const startY=e.clientY,startH=dock.getBoundingClientRect().height;
   sp.classList.add('dragging');document.body.classList.add('rowResizing');e.preventDefault();
   function move(ev){setDockHeightPx(startH-(ev.clientY-startY));
-    // 2026-11-10 用户需求：手机版顶部自适应——拖教学区时牌桌区实时重算牌面尺寸，不溢出不遮挡
-    requestAnimationFrame(fit);}
+    // 竖屏抽屉为浮层，改高度不挤压牌桌，无需重算牌面（牌桌/手牌保持不动）；
+    // 横屏 flex 流才需要实时重算牌面尺寸，不溢出不遮挡
+    if(!isPort)requestAnimationFrame(fit);}
   function up(){
     document.removeEventListener('pointermove',move);
     document.removeEventListener('pointerup',up);
     document.removeEventListener('pointercancel',up);
     sp.classList.remove('dragging');document.body.classList.remove('rowResizing');saveDockH();
-    requestAnimationFrame(fit); // 拖完终态再对齐一次
+    if(isPort)__dockAuto=false; // 用户手动拖过抽屉：不再自动贴手牌，尊重所拖高度
+    if(!isPort)requestAnimationFrame(fit); // 拖完终态再对齐一次（仅横屏）
   }
   document.addEventListener('pointermove',move);
   document.addEventListener('pointerup',up);
@@ -4245,7 +4290,10 @@ function fit(){
     const splitExtra=handEl.classList.contains('splitHand')?22:0;
     const byH=seat0El.clientHeight-whoH-actH-sbH-splitExtra-warnReserve-(pp?14:10);
     const cap2=large?72:(wide?64:(pp?46:56));
-    hand2=Math.max(hand*0.8,Math.min(byW,byH,cap2));
+    // 2026-11-13：byW（一行 16 张的宽度约束）必须作最终硬上限——抽屉浮层让牌桌变高后，
+    // hand*0.8 旧尺寸下限可能反超 byW，若仍用 max(hand*0.8, min(byW,…)) 会越界换行成两行；
+    // 改为 min(byW, max(下限, min(byH,cap2)))，保证任何情况下 16 张都排得进一行
+    hand2=Math.min(byW,Math.max(hand*0.8,Math.min(byH,cap2)));
   }
   const sm=Math.max(pp?(wide?17:13):17,hand*0.5), disc=Math.max(pp?(wide?15:11):14,hand*0.4), back=Math.max(pp?(wide?16:12):15,hand*0.44);
   const gap=Math.max(2,Math.min(large?10:(wide?9:7),hand*0.09));
@@ -4263,6 +4311,12 @@ function fit(){
   }
   document.documentElement.classList.toggle('large',large);
   if(document.getElementById('cd'))positionCd(); // 倒计时随手牌/头像重算后重新定位到头像上方
+  // 2026-11-13：竖屏抽屉自动态——fit 后手牌位置/尺度可能变化（切教学/拆牌、摸牌换行等），
+  // 重新贴手牌，避免抽屉盖住或远离手牌；用户手动拖过（__dockAuto=false）则不打扰
+  if(pp&&__dockAuto){
+    const d=document.getElementById('bottomDock');
+    if(d&&d.style.display!=='none')setDockHeightPx(dockMaxH());
+  }
 }
 function layout(){
   // 2026-11-10 牌桌锁定（用户需求：不可移动不可缩放）：每次布局重算都归位——
@@ -4296,9 +4350,12 @@ function applyPhonePortDock(){
   }
   refreshDock();
   if(!restoreDockH()){
-    const stage=document.getElementById('stage');
-    const avail=stage.clientHeight-document.getElementById('topbar').offsetHeight;
-    setDockHeightPx(avail*0.44); // 2026-11-13 用户需求：底部教学模块再往上提——竖屏默认占比 0.36→0.42→0.44（再高会缩小平板竖放牌面）
+    // 2026-11-13 用户需求：教学模块改抽屉——默认展开到「贴手牌下沿」（覆盖手牌下方到屏幕底的空白），
+    // 浮层不挤压牌桌，手牌与牌面尺寸完全不受影响；自动态随 fit 持续贴手牌
+    __dockAuto=true;
+    setDockHeightPx(dockMaxH());
+  }else{
+    __dockAuto=false; // 有历史保存高度（用户手动拖过），尊重之
   }
   // 2026-11-11 修复：掷骰阶段教学区隐藏、牌桌全高，fit 算的是旧尺寸；
   // 进局设置教学区高度后必须重算牌面（手牌预算/提醒空挡依赖真实桌高）
