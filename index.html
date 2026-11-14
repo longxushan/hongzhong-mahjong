@@ -239,7 +239,10 @@
   .row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid #3a3a3a;font-size:12.5px;}
   .plus{color:#ff6b5c;}.minus{color:#69c17a;} /* 赢红输绿（中国惯例，2026-11-09 用户要求：赢牌数字用红色） */
   .codeTiles{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:5px 0;}
-  .modal .tp-sm{width:calc(var(--sm)*0.62);height:calc(var(--sm)*0.82);}
+  /* 2026-11-14 用户需求：结算等弹窗里的牌面太小看不清——弹窗牌面改按视口宽度定尺寸（--popW），
+     不再跟随牌桌 --sm（手机竖屏 sm 仅约 13px，旧口径 0.62×sm 把弹窗牌缩到 8px 宽，完全看不清） */
+  :root{--popW:clamp(24px,7.4vw,30px);}
+  .modal .tp-sm{width:var(--popW);height:calc(var(--popW)/0.75);}
   .winnerTiles{background:#1f2a25;border:1px solid #355040;border-radius:9px;padding:8px;margin:4px 0 8px;}
   .wtMelds{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-bottom:7px;padding-bottom:7px;border-bottom:1px dashed #3a5546;}
   .wtHand{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;}
@@ -290,7 +293,7 @@
   #tingModal .tingGrid{display:flex;flex-wrap:wrap;gap:7px;}
   #tingModal .tingItem{display:flex;align-items:center;gap:6px;background:#1f2a25;border:1px solid #355040;border-radius:9px;padding:5px 8px;}
   #tingModal .tingItem.dead{opacity:.45;border-style:dashed;}
-  #tingModal .tingItem .tp-sm{width:calc(var(--sm)*0.92);height:calc(var(--sm)*1.22);}
+  #tingModal .tingItem .tp-sm{width:calc(var(--popW)*0.95);height:calc(var(--popW)*0.95/0.75);}
   #tingModal .tingLabel{font-size:12px;color:#e8e8e8;white-space:nowrap;}
   #tingModal .tingNote{font-size:11.5px;color:#bdbdbd;line-height:1.6;margin-top:10px;border-top:1px dashed #3a5546;padding-top:8px;}
   #tingModal .tingEmpty{background:#2a3230;border:1px solid #45534d;border-radius:9px;padding:10px;font-size:13px;color:#cfe0d8;line-height:1.6;}
@@ -299,14 +302,14 @@
   #histModal .hhName{color:#e8e8e8;font-size:12px;flex:0 0 auto;}
   #histModal .hhType{color:#d9a441;font-size:12px;flex:0 0 auto;}
   #histModal .hhTiles{display:flex;flex-wrap:wrap;gap:2px;align-items:center;}
-  #histModal .hhTiles .tp-sm{width:calc(var(--sm)*0.55);height:calc(var(--sm)*0.72);}
+  #histModal .hhTiles .tp-sm{width:calc(var(--popW)*0.8);height:calc(var(--popW)*0.8/0.75);}
   /* 四家摊牌：每局结算弹窗内展示各家手牌+副露（庄家带标记，暗杠明一张盖三张） */
   .revealHands{margin-top:12px;}
   .revealHead{color:#f3d9a4;font-size:13px;font-weight:700;margin-bottom:4px;}
   .revealRow{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed rgba(255,255,255,.1);flex-wrap:wrap;}
   .rhName{color:#e8e8e8;font-size:12px;flex:0 0 96px;text-align:left;}
   .rhTiles{display:flex;flex-wrap:wrap;gap:2px;align-items:center;}
-  .revealRow .tp-sm{width:calc(var(--sm)*0.55);height:calc(var(--sm)*0.72);}
+  .revealRow .tp-sm{width:calc(var(--popW)*0.88);height:calc(var(--popW)*0.88/0.75);}
   #tipsModal .ruleSec{margin-bottom:11px;}
   #tipsModal h4{color:#f3d9a4;font-size:13px;margin:0 0 4px;border-left:3px solid var(--gold);padding-left:7px;}
   #tipsModal ol{margin:0;padding-left:19px;}
@@ -334,7 +337,7 @@
   .revMove{display:flex;gap:8px;align-items:flex-start;background:#2f2f2f;border:1px solid #3d3d3d;border-radius:8px;padding:6px 9px;margin-bottom:6px;font-size:12px;color:#e0e0e0;line-height:1.5;}
   .revMove.good{border-color:#3f6b4a;}
   .revMove.bad{border-color:#7a4444;}
-  .revMove .tp-sm{width:calc(var(--sm)*0.7);height:calc(var(--sm)*0.92);flex:0 0 auto;}
+  .revMove .tp-sm{width:calc(var(--popW)*0.8);height:calc(var(--popW)*0.8/0.75);flex:0 0 auto;}
   .revMoveTag{flex:0 0 auto;font-weight:bold;border-radius:5px;padding:1px 7px;font-size:11px;white-space:nowrap;}
   .revMoveTag.good{background:#2e9e5b;color:#fff;}
   .revMoveTag.bad{background:#a94a2b;color:#fff;}
