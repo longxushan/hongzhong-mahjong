@@ -7,6 +7,8 @@ import { chromium } from 'playwright-core';
 
 const ROOT = 'E:/9-workbuddy/16-github/hzmj/repo';
 const OUT = 'E:/9-workbuddy/16-github/hzmj';
+const TARGET = process.env.TEST_URL || pathToFileURL(path.join(ROOT, 'index.html')).href;
+const SHOT = process.env.SHOT_PREFIX || 'train-1114';
 const EXE = [
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
   'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
@@ -25,7 +27,7 @@ await page.addInitScript(() => {
     return Promise.resolve();
   };
 });
-await page.goto(pathToFileURL(path.join(ROOT, 'index.html')).href, { waitUntil: 'load', timeout: 30000 });
+await page.goto(TARGET, { waitUntil: 'load', timeout: 45000 });
 await page.click('#startBtn');
 await page.waitForSelector('#roleSelect.show .roleBtn', { timeout: 15000 });
 await page.locator('.roleBtn').first().click();
@@ -108,7 +110,7 @@ for (const [name, w, h] of [['phone-port', 390, 844], ['phone-land', 844, 390], 
              poolTile: tr ? { w: Math.round(tr.width * 10) / 10, h: Math.round(tr.height * 10) / 10 } : null,
              doc: { sw: document.documentElement.scrollWidth, vw: innerWidth, sh: document.documentElement.scrollHeight, vh: innerHeight } };
   });
-  await page.screenshot({ path: path.join(OUT, `train-1114-${name}.png`) });
+  await page.screenshot({ path: path.join(OUT, `${SHOT}-${name}.png`) });
 }
 
 R.pageerrors = errors;
