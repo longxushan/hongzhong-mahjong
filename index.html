@@ -370,7 +370,9 @@
   .tCol .teachTings{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:3px;}
   .tCol .teachTile{flex:0 0 auto;}
   .teachTile{display:flex;align-items:center;gap:5px;background:#2f2f2f;border:1px solid #3d3d3d;border-radius:7px;padding:3px 7px;}
-  .teachTile .tp-sm{width:calc(var(--sm)*0.7);height:calc(var(--sm)*0.92);}
+  /* 2026-11-15 用户需求：教学抽屉内牌面（听牌/进张列表）不再跟牌桌 --sm 联动（手机竖屏 --sm≈13px 时缩到约 9px 看不清），
+     改按视口宽定尺寸，与弹窗口径 --popW 同源（390 宽手机 ≈ 24×32px，桌面/平板 24.6×33px 封顶） */
+  .teachTile .tp-sm{width:calc(var(--popW)*0.9);height:calc(var(--popW)*0.9/0.75);}
   .teachTile span{font-size:12px;color:#e8e8e8;white-space:nowrap;}
   .tNow{font-size:12px;color:#ffe9b0;background:#33453c;border:1px solid #4a6455;border-radius:7px;padding:2px 10px;margin-bottom:2px;}
   .tStage{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:#cfe0d6;line-height:1.5;margin-bottom:6px;}
@@ -408,8 +410,10 @@
   .tRankReset:hover{background:#4f3d24;color:#ffd27a;}
   .tColHead{font-size:13px;font-weight:bold;color:#ffe14d;border-bottom:1px solid #3a5546;padding-bottom:3px;margin-bottom:5px;}
   .tRecBig{display:flex;justify-content:center;}
-  .tRecBig .tp-sm{width:calc(var(--sm)*0.78);height:calc(var(--sm)*1.03);}
-  .tRecName{color:var(--gold);font-weight:bold;font-size:14px;margin:4px 0 6px;}
+  /* 2026-11-15 用户需求：推荐打出的牌是教学抽屉的主角牌面，改按视口宽定尺寸并放大 1.15 倍
+     （390 宽手机 ≈ 33×44px；此前 0.78×--sm 在手机竖屏仅约 8px 宽，用户反馈「二条图标太小」） */
+  .tRecBig .tp-sm{width:calc(var(--popW)*1.15);height:calc(var(--popW)*1.15/0.75);}
+  .tRecName{color:var(--gold);font-weight:bold;font-size:15px;margin:4px 0 6px;}
   /* 合并栏：推荐牌与牌名横排，腾出纵向空间给牌河实况 */
   .tRecRow{display:flex;align-items:center;justify-content:center;gap:9px;}
   .tRecRow .tRecName{margin:2px 0 5px;}
@@ -516,8 +520,10 @@
   /* 2026-11-12：合并栏内容变多，竖屏压缩冗余排版（隐藏口诀附注、听张改横滑），底部面板仍可上下滑动查看全部 */
   #stage.pport .tKouNote{display:none;}
   #stage.pport .tPool,#stage.pport .tStageLive{font-size:10.5px;line-height:1.35;padding:3px 5px;}
-  #stage.pport .tRecBig .tp-sm{width:calc(var(--sm)*0.62);height:calc(var(--sm)*0.82);}
-  #stage.pport .tCol .teachTings{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:3px;}
+  /* 2026-11-15：竖屏推荐牌/听牌列表继承 popW 基准（旧 0.62×--sm 手机上仅约 8px 宽，已删） */
+  /* 2026-11-15：竖屏听张/进张列表改换行铺满（牌面放大后横滑会把最后一项截断在右缘、
+     又没有滚动提示；抽屉本身可上下滑，换行比横滑更易读）。横屏窄列仍横滑。 */
+  #stage.pport .tCol .teachTings{flex-wrap:wrap;overflow-x:visible;justify-content:center;}
   #stage.pport .tCol .teachTile{flex:0 0 auto;}
   #stage.pport .tCol{max-width:none!important;overflow:visible;}
   #stage.pport .tColRank{max-width:none!important;}
@@ -556,7 +562,8 @@
   #stage.pport.pportWide .tGrid{gap:8px;}
   #stage.pport.pportWide .tCol,#stage.pport.pportWide .tOppCard{font-size:12px;}
   #stage.pport.pportWide .tPool,#stage.pport.pportWide .tStageLive{font-size:12.5px;line-height:1.5;padding:5px 8px;}
-  #stage.pport.pportWide .tRecBig .tp-sm{width:calc(var(--sm)*0.72);height:calc(var(--sm)*0.95);}
+  #stage.pport.pportWide .tRecBig .tp-sm{width:calc(var(--popW)*1.3);height:calc(var(--popW)*1.3/0.75);}
+  #stage.pport.pportWide .teachTile .tp-sm{width:calc(var(--popW)*0.95);height:calc(var(--popW)*0.95/0.75);}
   #stage.pport.pportWide #splitBar .sbGrp{font-size:12px;padding:2px 7px;}
   #stage.pport.pportWide #seat0 #liveWarn{left:4%;right:4%;font-size:13.5px;padding:7px 14px 8px;max-height:170px;}
   #stage.pport.pportWide #seat0 #liveWarn .wFacts,#stage.pport.pportWide #seat0 #liveWarn .wWhy{font-size:13px;line-height:1.45;}
