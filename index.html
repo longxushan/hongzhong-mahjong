@@ -13,8 +13,10 @@
   html,body{touch-action:manipulation;}
   #table{touch-action:none;}
   body{background:#1c1c1c;color:#fff;display:flex;flex-direction:column;}
-  #topbar{display:flex;align-items:center;gap:var(--topgap);padding:5px 10px;background:#111;font-size:var(--topfs);flex:0 0 auto;z-index:5;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;}
+  #topbar{display:flex;align-items:center;gap:var(--topgap);padding:5px 10px;background:#111;font-size:var(--topfs);flex:0 0 auto;z-index:5;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-x;}
   #topbar::-webkit-scrollbar{display:none;height:0;width:0;}
+  /* 2026-11-15 用户需求：顶栏菜单可左右滑动——右侧渐隐提示还有更多按钮（tbMore 由 topbarFadeSync 维护，滑到底自动消失） */
+  #topbar.tbMore{-webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 18px),rgba(0,0,0,.22) 100%);mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 18px),rgba(0,0,0,.22) 100%);}
   #topbar b{color:var(--gold);white-space:nowrap;flex:0 0 auto;} #topbar .sp{flex:1 1 0;min-width:0;}
   button{border:none;border-radius:8px;padding:var(--btnpad);font-size:var(--btnfs);font-weight:600;background:#333;color:#fff;cursor:pointer;white-space:nowrap;flex:0 0 auto;}
   button.primary{background:var(--gold);color:#1a1a1a;} button:disabled{opacity:.35;}
@@ -479,7 +481,8 @@
   #appWrap{position:fixed;inset:0;overflow:hidden;background:#1c1c1c;}
   #appWrap.rot{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);}
   /* 手机竖屏原生上下布局 */
-  #stage.pport #topbar{flex-wrap:wrap;overflow:visible;row-gap:2px;column-gap:4px;padding:3px 6px;}
+  /* 2026-11-15 用户需求：顶栏菜单可左右滑动——竖屏不再折行占牌桌高度，单行横滑（平板 pportWide 同构） */
+  #stage.pport #topbar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;row-gap:2px;column-gap:4px;padding:3px 6px;}
   #stage.pport #topbar .sp{display:none;}
   #stage.pport #topbar b{display:none;} /* 2026-11-09 用户需求：竖屏隐藏长标题省一行，留给牌桌 */
   #stage.pport #topbar .topTag{font-size:9.5px;}
@@ -4652,7 +4655,14 @@ function layout(){
   }
   syncSplitter();
   try{rotBtnSync();}catch(e){} // 2026-11-14：旋转/resize 后按钮文案跟随当前方向（横屏布局显示「竖屏」）
+  try{topbarFadeSync();}catch(e){} // 2026-11-15：方向/宽度变化后顶栏可滚状态可能改变，重刷右缘渐隐
   requestAnimationFrame(fit);
+}
+// 2026-11-15 用户需求：顶部菜单可左右滑动——右缘渐隐提示（tbMore）维护：
+// 还有未滑出的按钮时显示渐隐，滑到底（差 1px 容差）自动消失；layout/scroll 双触发
+function topbarFadeSync(){
+  const tb=document.getElementById('topbar');if(!tb)return;
+  tb.classList.toggle('tbMore',tb.scrollWidth-tb.clientWidth-1>tb.scrollLeft);
 }
 // 手机竖屏：默认开启教学、下半区给默认高度（若未手动保存过）
 function applyPhonePortDock(){
@@ -4689,6 +4699,8 @@ function startGame(){
   const rs=document.getElementById('roleSelect');rs.classList.add('show');
 }
 document.getElementById('startBtn').addEventListener('click',startGame);
+// 2026-11-15 用户需求：顶部菜单可左右滑动——滑动中实时维护右缘渐隐（滑到底自动消失）
+document.getElementById('topbar').addEventListener('scroll',topbarFadeSync,{passive:true});
 const soundBtn=document.getElementById('soundBtn');
 if(appVolume<=0)soundOn=false;
 bgmOn=soundOn; // 单一开关：初始化即严格同步

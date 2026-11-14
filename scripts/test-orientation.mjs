@@ -95,7 +95,8 @@ const snap = () => page.evaluate(() => {
 
 // ① 源码口径：不再按设备宽度分档、不再旋转舞台
 chk('源码：isPhonePort 已去掉 560px 宽度门槛', !/innerWidth\s*<=\s*560/.test(HTML));
-chk('源码：layout 不再 add(rot) 强制旋转平板竖屏', !/classList\.add\(['"]rot['"]\)/.test(HTML));
+chk('源码：layout 不再 add(rot) 强制旋转平板竖屏', !/stage\.classList\.add\(['"]rot['"]\)/.test(HTML));
+// 2026-11-14 手动横屏功能：toggleRot 对 #appWrap 加 rot 属合法（模拟横屏），仅 stage 自动旋转被禁
 chk('源码：含纯几何方向判定 + 宽竖屏 + orientation 监听',
   HTML.includes('let __orientPort=null') && HTML.includes('function isWidePort') &&
   HTML.includes('pportWide') && HTML.includes("matchMedia('(orientation: portrait)')"));
