@@ -213,14 +213,18 @@
   /* 顶栏弹性：标签/按钮按内容完整显示，sp 与 info 收缩，空间不足时只省略 info，不挤压牌桌 */
   #topbar #info{flex:0 1 auto;min-width:40px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #topbar button{flex:0 0 auto;}
-  #discardPool{display:flex;flex-direction:column;gap:3px;width:100%;flex:0 0 auto;min-height:0;overflow:hidden;padding:4px 10px 0;justify-content:flex-start;zoom:1.5;transform:translateY(-16px); /* 2026-11-10 用户要求：弃牌池上移一些（放大后原本偏下、贴近手牌） */}
+  /* 2026-11-14 用户需求：顶部打牌区（四家弃牌池）的牌还是太小，再放大一档。
+     放大集中在手机竖屏（竖屏 zoom 1→1.3、--disc 下限 11→14），横屏维持原 1.5 倍不加剧中心区溢出；
+     各屏牌面系数统一上调 6~9% 做到「适当放大」。牌多时可纵向滚动看全，不再被 overflow:hidden 硬裁。 */
+  #discardPool{display:flex;flex-direction:column;gap:3px;width:100%;flex:0 0 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding:4px 10px 0;justify-content:flex-start;zoom:1.5;transform:translateY(-16px); /* 2026-11-10 用户要求：弃牌池上移一些（放大后原本偏下、贴近手牌） */}
+  #discardPool::-webkit-scrollbar{width:0;height:0;display:none;}
   .poolRow{display:flex;align-items:flex-start;gap:6px;justify-content:center;min-width:0;width:100%;}
   .poolTag{flex:0 0 auto;width:22px;height:22px;margin-top:2px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
-  .poolTiles{display:flex;flex-wrap:wrap;gap:3px;min-width:0;justify-content:flex-start;flex:0 1 auto;max-width:92%;}
+  .poolTiles{display:flex;flex-wrap:wrap;gap:3px;min-width:0;justify-content:flex-start;flex:0 1 auto;max-width:96%;}
   .seatc0{background:#d9a441;color:#111;}.seatc1{background:#4a90d9;color:#fff;}.seatc2{background:#52b788;color:#111;}.seatc3{background:#a06cd5;color:#fff;}
-  #discardPool .tp-sm{width:calc(var(--disc)*0.98);height:calc(var(--disc)*1.26);}
+  #discardPool .tp-sm{width:calc(var(--disc)*1.04);height:calc(var(--disc)*1.34);}
   html:not(.large) #discardPool{gap:2px;padding-top:2px;}
-  html:not(.large) #discardPool .tp-sm{width:calc(var(--disc)*0.88);height:calc(var(--disc)*1.08);}
+  html:not(.large) #discardPool .tp-sm{width:calc(var(--disc)*0.96);height:calc(var(--disc)*1.18);}
   html:not(.large) .poolTag{width:18px;height:18px;font-size:10px;margin-top:1px;}
   html:not(.large) .poolTiles{gap:2px;}
   .mask{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px;}
@@ -515,7 +519,9 @@
      14 张牌自然排成单行，拆牌分组或超 16 张时才换行/横滑，不再压成两行小牌 */
   #stage.pport #hand{width:100%;flex:1 1 auto;justify-content:center;flex-wrap:wrap;column-gap:3px;row-gap:6px;overflow:visible;}
   #stage.pport #hand .tp-hand.sel{z-index:2;position:relative;} /* 两行时选中牌上移与上一行重叠，置顶显示 */
-  #stage.pport #discardPool{zoom:1;} /* 2026-11-09 用户需求：手机竖屏弃牌再小一点（撤销该场景下的 1.5 倍放大） */
+  /* 2026-11-14 用户需求：竖屏弃牌池同样放大（撤销 11-09「竖屏再小一点」的 zoom:1）。
+     1→1.3 为适度放大：既让四家打出的牌在手机上能一眼看清张数与花色，又不会把牌桌下排手牌挤掉。 */
+  #stage.pport #discardPool{zoom:1.3;}
   #stage.pport #actions{width:100%;max-width:none;justify-content:center;flex:0 0 auto;}
   /* 2026-11-12 用户需求：师傅点评内容再往上一些——
      不再死钉牌桌最底缘：底边上抬一段、框顶贴着操作行下方往上长（高度由 fitLiveWarnBox() 按本局可用空挡实时计算），
@@ -667,6 +673,25 @@
   /* 2026-11-12 用户要求：讲思路 / 复盘 两个模块暂时隐藏，功能代码全部保留 */
   html.masterHidden #thinkBtn,html.masterHidden #reviewBtn,html.masterHidden #mReview,
   html.masterHidden #thinkContent,html.masterHidden #reviewModal{display:none!important;}
+  /* 2026-11-14 训练闭环面板：练技术不是抄答案——先答后揭 + 分级提示 + 成绩/弱项 */
+  .trWrap{font-size:12.5px;color:#dce8f0;line-height:1.62;}
+  .trSec{background:#1f2a25;border:1px solid #355040;border-radius:9px;padding:8px 10px;margin-bottom:8px;}
+  .trSec h4{margin:0 0 6px;font-size:13px;color:#ffe14d;border-left:3px solid #d9a441;padding-left:7px;}
+  .trOpts{display:flex;gap:6px;flex-wrap:wrap;}
+  .trOpts button{font-size:12px;padding:6px 10px;background:#33433a;border:1px solid #4a6453;color:#dce8f0;border-radius:7px;}
+  .trOpts button.on{background:#2e9e5b;border-color:#7fd6a0;color:#fff;font-weight:800;}
+  .trBig{font-size:22px;font-weight:800;color:#ffe14d;line-height:1.2;}
+  .trGrid{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;}
+  .trMuted{color:#9fb4a6;font-size:11.5px;}
+  .trBars{display:flex;gap:5px;align-items:flex-end;height:40px;margin:8px 0 20px;}
+  .trBar{flex:1;min-width:12px;background:linear-gradient(180deg,#7fd6a0,#2e9e5b);border-radius:3px 3px 0 0;position:relative;}
+  .trBar.low{background:linear-gradient(180deg,#e0786e,#a13328);}
+  .trBar span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:9px;color:#9fb4a6;}
+  .trWeak{margin:4px 0;padding:5px 8px;background:rgba(192,57,43,.15);border-left:3px solid #e0786e;border-radius:4px;}
+  .trWeak b{color:#ffb3ab;}
+  .trTip{color:#cfe0d6;font-size:11.5px;}
+  .trClue{background:#1d2a33;border:1px dashed #3a6a8e;border-radius:8px;padding:8px 10px;color:#cfe8f7;font-size:12px;line-height:1.6;}
+  .trClue b{color:#8fc3e0;}
 </style>
 <script>
   // 恢复方法：把 MASTER_PANELS_HIDDEN 改成 false（或去掉 html.masterHidden 类），按钮、面板与复盘弹窗立即回来。
@@ -680,7 +705,7 @@
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="trainBtn" title="训练模式：先自己答，再听师傅讲；含成绩与弱项">训练</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -708,6 +733,13 @@
     <div class="tingHead"><h3>我胡哪些牌 · 听牌一览</h3><button class="tingClose" id="tingCloseBtn">关闭</button></div>
     <div id="tingBody"></div>
     <div class="tingNote">剩余张数按玩家可见口径：4 − 全桌废牌区已打出的 − 全桌副露亮出的 − 自己手里已有的；别家暗牌看不见，按仍在场上计，故为可见上限。标「绝张」的牌理论上能胡，但明面上已无剩余。</div>
+  </div>
+</div>
+<!-- 2026-11-14 训练闭环：开关 / 提示分级 / 决策成绩 / 弱项建议 -->
+<div class="mask" id="trainModal" style="display:none">
+  <div class="modal">
+    <div class="ruleHead"><h3 style="margin:0">训练 · 练技术，不是抄答案</h3><button class="ruleClose" id="trainCloseBtn">关闭</button></div>
+    <div id="trainBody"></div>
   </div>
 </div>
 <div class="mask" id="rulesModal" style="display:none">
@@ -2762,7 +2794,7 @@ function updateTeachPanel(){
   let h='<div class="tNow">'+nowTxt+'</div><div class="tGrid">';
   // 第1栏（2026-11-12 用户需求）：牌型分析 + 推荐打出·打牌建议 合并为一栏。
   // 内部 .tMainGrid 宽屏左右两块并排、竖屏上下堆叠，避免合并后高度翻倍被裁切。
-  h+='<div class="tCol tColMain tColAdv"><div class="tColHead">牌型分析 · 推荐打出 · 打牌建议</div><div class="tMainGrid">';
+  h+='<div class="tCol tColMain tColAdv"><div class="tColHead">牌型分析 · '+(TRAIN.on?'我来作答 · 师傅讲解':'推荐打出 · 打牌建议')+'</div><div class="tMainGrid">';
   h+='<div class="tSec tSecPlan">';
   h+='<div class="tPlanTag">本局主做：<b>'+ht.planName+'</b>'+(ht.planMult?' <span class="tPlanMult">'+ht.planMult+'</span>':'')+'</div>';
   h+='<div class="tLead">'+ht.leadText+'</div>';
@@ -2774,6 +2806,16 @@ function updateTeachPanel(){
   h+='</div>';
   // 推荐打出 · 打牌建议（主判据为本局废牌区实况，口诀降为参考）
   h+='<div class="tSec tSecRec">';
+  // 2026-11-14 训练闭环：未作答时只给分档线索；点选一张手牌（=作答）后才揭晓完整答案与讲解。
+  // 原有推荐牌、牌河判据、听牌进张等逻辑完全不改，只在前面加一道「先自己想」的闸。
+  if(!trainAnswered()){
+    h+=trainClueHTML(d,pick,me);
+  }else{
+  if(TRAIN.on&&G._sel&&G._sel.id!==pick.id){
+    h+='<div class="tWhy" style="color:#ffd98a"><b>你选了 '+tileName(G._sel)+'，师傅首推 '+tileName(rec)+'</b>：'+poolJudgeLine(G._sel.id)+' 对照 '+poolJudgeLine(pick.id)+'。</div>';
+  }else if(TRAIN.on&&G._sel){
+    h+='<div class="tWhy" style="color:#a8e6bf"><b>你选对了</b>：'+tileName(rec)+' 正是这一手代价最小的一打。</div>';
+  }
   h+='<div class="tRecRow"><div class="tRecBig">'+tileDiv(rec,true)+'</div><div class="tRecName">'+tileName(rec)+'</div></div>';
   if(pick.rule)h+='<div class="tRule">'+pick.kou+'</div>';
   else h+='<div class="tWhy"><b>为什么打这张（按本局废牌区）</b><span>'+poolJudgeLine(pick.id)+'</span></div>';
@@ -2799,6 +2841,7 @@ function updateTeachPanel(){
     }
   }
   if(!pick.rule)h+='<div class="tKouNote"><b>牌理通则（参考）</b>：'+pick.kou+'</div>';
+  } // 训练模式：作答后才显示完整答案区
   h+='</div></div></div>'; // 关闭 tSecRec / tMainGrid / tColMain
   // 第2栏（2026-11-12 用户需求新增）：对手牌型分析 + 打牌分析，只用玩家可见信息
   h+='<div class="tCol tColOpp"><div class="tColHead">对手分析 · 牌型与打法</div>'+opponentAnalysisHTML()+'</div>';
@@ -2828,6 +2871,110 @@ function updateTeachPanel(){
 let mistakeWarnOn=true; // 默认开启：点选即给实时分析，用户仍可用顶部按钮手动关闭
 try{const _mv=localStorage.getItem('banshanMistake');if(_mv==='0')mistakeWarnOn=false;else if(_mv==='1')mistakeWarnOn=true;}catch(e){mistakeWarnOn=true;}
 function saveMistake(){try{localStorage.setItem('banshanMistake',mistakeWarnOn?'1':'0');}catch(e){}}
+// ===== 2026-11-14 训练闭环：先答后揭 / 分级提示 / 决策成绩 =====
+// 设计依据：原程序把「推荐打出哪张」直接摆在面板上，玩家照着点即可，练不到判断力。
+// 训练模式把答案收起来，等玩家点选一张牌（=作答）后再用已有的 teachPick / discardQuality 讲清为什么；
+// 同时把每次决策的一致率与失误类型沉淀下来，形成「自己练 → 被教 → 看进步」的闭环。
+const TRAIN_KEY='banshanTrainV1';
+const TRAIN_ADVICE={
+  '向听倒退':'先数成型面子再动孤张；任何一打若让向听数变大，几乎都是错的。可开「拆牌方式」看分组。',
+  '进张变窄':'同向听时比谁留的进张多：两面＞嵌张＞边张，再看废牌区里这些牌还剩几张。',
+  '红中取舍':'红中万能，但手里≥2 只且本局没打出过时禁止胡牌；单只红中在七对/清一色/即听时才考虑打掉换硬胡。',
+  '开局定方向':'开局先定主做牌型（清一色/七对/全碰/基本），别急着把某一门打光；看「牌型分析」的本局主做。',
+  '中盘取舍':'中盘每打一张前先问：打完我听什么、还剩几张？用「听牌一览」核对可见剩余。',
+  '残局收官':'牌墙将尽时优先保住已听或一进张的路线，别再贪大牌；注意别家副露与弃牌花色。'
+};
+function trainDefault(){return {on:false,level:0,dec:0,good:0,byType:{},rounds:[],cur:{dec:0,good:0}};}
+function loadTrain(){
+  const b=trainDefault();
+  try{const s=JSON.parse(localStorage.getItem(TRAIN_KEY)||'null');
+    if(s&&typeof s==='object'){b.on=!!s.on;b.level=Math.max(0,Math.min(2,s.level|0));b.dec=s.dec|0;b.good=s.good|0;
+      b.byType=(s.byType&&typeof s.byType==='object')?s.byType:{};b.rounds=Array.isArray(s.rounds)?s.rounds.slice(-8):[];}}catch(e){}
+  return b;
+}
+let TRAIN=loadTrain();
+function saveTrain(){try{localStorage.setItem(TRAIN_KEY,JSON.stringify(TRAIN));}catch(e){}}
+function trainRate(o){return o&&o.dec?Math.round(o.good/o.dec*100):0;}
+// 以「下一局开始」为上一局的结算点：把本局决策并入最近 8 局趋势，清空本局计数
+function trainRollRound(){
+  if(TRAIN.cur&&TRAIN.cur.dec>0){
+    TRAIN.rounds.push({dec:TRAIN.cur.dec,good:TRAIN.cur.good,rate:trainRate(TRAIN.cur)});
+    if(TRAIN.rounds.length>8)TRAIN.rounds=TRAIN.rounds.slice(-8);
+  }
+  TRAIN.cur={dec:0,good:0};saveTrain();
+}
+function trainClassify(chosenId,bestId,qM,qP){
+  if(chosenId==='Z'||bestId==='Z')return '红中取舍';
+  if(qM&&qP&&qM.sh>qP.sh)return '向听倒退';
+  if(qM&&qP&&qM.sh===qP.sh&&qM.iw<qP.iw)return '进张变窄';
+  const w=wallRemain();
+  return w>=50?'开局定方向':(w<25?'残局收官':'中盘取舍');
+}
+// qM/qP 由 recordMove 的独立复核传入，避免重复跑一遍进张精算
+function trainCount(chosenTile,pick,good,qM,qP){
+  try{
+    TRAIN.dec++;TRAIN.cur.dec++;
+    if(good){TRAIN.good++;TRAIN.cur.good++;}
+    else{const k=trainClassify(chosenTile.id,pick.id,qM,qP);TRAIN.byType[k]=(TRAIN.byType[k]||0)+1;}
+    saveTrain();
+  }catch(e){}
+}
+function trainAnswered(){return !TRAIN.on||!!G._sel;}
+function trainClueHTML(d,pick,me){
+  const myTurn=G.awaiting==='discard';
+  const head=myTurn?'先自己判断：点一张手牌作答':'轮到你时，先想好这一手再点牌';
+  let body;
+  if(TRAIN.level===1){
+    let shNow=99,shBest=99,eVis=0,tingN=0;
+    try{
+      shNow=calcShanten(me.hand,me.melds);shBest=shMinOf(me);
+      if(pick.effDraws)for(const id of pick.effDraws)eVis+=visibleLeft(id);
+      tingN=pick.ting&&pick.ting.vt?pick.ting.vt.length:0;
+    }catch(e){}
+    // 只给思考方向与公开数字，不给牌名；避免出现「可进张约 0 种」这类看不懂的空指标
+    body='<b>只给线索，不给答案</b>：当前向听 '+shNow+'，这一手最优能压到 '+shBest+'；'
+      +(tingN?'存在打完直接听 '+tingN+' 种牌的打法':(eVis>0?'一进张的有效牌，明面上还剩约 '+eVis+' 张':'这一手暂无明确进张，先别拆成型面子'))
+      +'。先数清成型面子，再比哪一打留下的两面搭最多、贴张在牌河里还剩几张，然后自己定。';
+  }else if(TRAIN.level===2){
+    body='<b>盲练中</b>：本手不给任何提示，凭自己判断。点一张牌后，师傅会逐手讲清对错与牌理。';
+  }else{
+    body='<b>训练模式</b>：答案先收起来。按你的判断点一张手牌，师傅再揭晓这一手的最优解和理由——先看答案再点，练不到判断力。';
+  }
+  return '<div class="trClue">'+head+'<br>'+body+'</div>'
+    +'<div class="tWhy" style="margin-top:6px">牌型分析、对手分析、听牌一览仍然可见：这些是牌桌上的公开信息，练的就是用它们做判断。</div>';
+}
+function trainPanelHTML(){
+  const total=trainRate(TRAIN),cur=trainRate(TRAIN.cur);
+  const types=Object.keys(TRAIN.byType).map(k=>[k,TRAIN.byType[k]]).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const lvName=['完整推荐','只给线索','盲练'];
+  let h='<div class="trWrap">';
+  h+='<div class="trSec"><h4>一、怎么练</h4><div class="trOpts">'
+    +'<button data-tr="on" class="'+(TRAIN.on?'on':'')+'">训练模式：'+(TRAIN.on?'开':'关')+'</button></div>'
+    +'<div class="trMuted" style="margin-top:5px">开启后自动打开教学面板；推荐答案要等你点选一张牌（作答）才揭晓。关闭则回到「直接看推荐」。</div></div>';
+  h+='<div class="trSec"><h4>二、提示强度（越往右越练脑）</h4><div class="trOpts">';
+  for(let i=0;i<3;i++)h+='<button data-tr="lv" data-v="'+i+'" class="'+(TRAIN.level===i?'on':'')+'">'+(i+1)+' · '+lvName[i]+'</button>';
+  h+='</div><div class="trMuted" style="margin-top:5px">1 作答后看完整讲解；2 作答前只给向听与进张线索；3 作答前完全不给提示。三档都在作答后给完整讲解，逐步脱离拐杖。</div></div>';
+  h+='<div class="trSec"><h4>三、我的决策成绩</h4><div class="trGrid">'
+    +'<div><span class="trBig">'+cur+'%</span><div class="trMuted">本局一致率（'+TRAIN.cur.good+'/'+TRAIN.cur.dec+' 手）</div></div>'
+    +'<div><span class="trBig">'+total+'%</span><div class="trMuted">累计一致率（'+TRAIN.good+'/'+TRAIN.dec+' 手）</div></div></div>';
+  if(TRAIN.rounds.length){
+    h+='<div class="trMuted" style="margin-top:8px">最近 '+TRAIN.rounds.length+' 局一致率</div><div class="trBars">';
+    for(const r of TRAIN.rounds){
+      const hh=Math.max(6,Math.round(r.rate*0.38));
+      h+='<div class="trBar '+(r.rate<60?'low':'')+'" style="height:'+hh+'px" title="'+r.good+'/'+r.dec+'"><span>'+r.rate+'</span></div>';
+    }
+    h+='</div>';
+  }else h+='<div class="trMuted" style="margin-top:6px">打完一局后，这里会出现逐局一致率曲线。</div>';
+  h+='</div>';
+  h+='<div class="trSec"><h4>四、我的弱项（据失误自动归类）</h4>';
+  if(!types.length)h+='<div class="trTip">暂无失误记录。多打几手，系统会按「向听倒退 / 进张变窄 / 红中取舍 / 开局·中盘·残局」归类，给出针对性练法。</div>';
+  else for(const kv of types)h+='<div class="trWeak"><b>'+kv[0]+' · '+kv[1]+' 次</b><br><span class="trTip">'+(TRAIN_ADVICE[kv[0]]||'回看这一手的讲解，先弄清代价再打下一张。')+'</span></div>';
+  h+='<div class="trOpts" style="margin-top:8px"><button data-tr="reset">清空成绩</button></div></div>';
+  h+='<div class="trTip">口径：把你的每一打与师傅首推（向听精算）比对，同向听且进张不差的「同分不同选」不算失误；成绩只在本机保存，不含任何个人信息。</div>';
+  h+='</div>';
+  return h;
+}
+function openTrainModal(){document.getElementById('trainBody').innerHTML=trainPanelHTML();document.getElementById('trainModal').style.display='flex';sndClick();}
 let moveLog=[];
 let lastReview=null;
 let warnTimer=null;
@@ -2854,9 +3001,12 @@ function shMinOf(pl){let m=99,seen={};for(const t of pl.hand){if(seen[t.id])cont
 function recordMove(chosenTile){
   try{
     const me=p(0),d=handDiagnose(me),pick=teachPick(d);
+    // 2026-11-14：qMine/qPick 借短路求值赋值，供训练成绩复用，不重复跑一遍进张精算
+    let qMine=null,qPick=null;
     const good=chosenTile.id===pick.id||(pick.stance&&stanceFit(pick.stance,chosenTile.id,d)>0)
-      ||notWorse(discardQuality(me,chosenTile.id),discardQuality(me,pick.id));
+      ||notWorse((qMine=discardQuality(me,chosenTile.id)),(qPick=discardQuality(me,pick.id)));
     moveLog.push({chosen:chosenTile.id,best:pick.id,good:good,stage:d.stage,reason:poolReasonText(chosenTile.id,pick.id)});
+    trainCount(chosenTile,pick,good,qMine,qPick);
   }catch(e){}
 }
 // 点选一张牌时实时分析：结论一律由「本局废牌区实况 + 首推独立复核」得出，不再照抄麻将口诀。
@@ -3738,7 +3888,7 @@ function positionCd(){
   c.style.top=Math.max(2,whoTop-c.offsetHeight-3)+'px';
 }
 function clearCountdown(){if(G._cd){clearInterval(G._cd);G._cd=null;}const c=document.getElementById('cd');if(c)c.remove();}
-function humanRespond(v){clearCountdown();if(G.humanResolve){const r=G.humanResolve;G.humanResolve=null;G.awaiting=null;r(v);}}
+function humanRespond(v){clearCountdown();G._sel=null; /* 2026-11-14 训练闭环：出牌即结束本手作答，下一手重新收起答案 */ if(G.humanResolve){const r=G.humanResolve;G.humanResolve=null;G.awaiting=null;r(v);}}
 function takeOverByAI(){if(!G.humanResolve)return;const me=p(0),k=G.awaiting;if(k==='discard')humanRespond(aiChooseDiscard(me));else if(k==='zimo'||k==='qiang')humanRespond({hu:'hu'});else if(k==='gangself'){const an=findAnGang(me),bu=findBuGang(me);if(an.length)humanRespond({kind:'an',id:an[0].id});else if(bu.length)humanRespond({kind:'bu',id:bu[0]});else humanRespond({pass:1});}else if(k==='claim')humanRespond({pass:1});}
 
 async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变更：谁赢谁坐庄——上局胡牌者下局当庄家；流局无人胡则按序轮换 */ /* 2026-11-08 新增：每桌首局开局掷骰定庄（四人掷定东→东家掷骰数位定庄），之后仍谁赢谁坐庄 */let nd=forceDealer!=null?forceDealer:(!hasPlayed?null:(lastWinner!=null?lastWinner:(lastDealer+1)%4));
@@ -3755,7 +3905,7 @@ async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变
   try{document.getElementById('table').classList.remove('dicePhase');}catch(e){} // 2026-11-10：进局恢复正常座位尺寸
   G=newGame(nd);G.token=myToken;G.east=tableEast;log('新对局，庄家='+(nd===0?'你('+humanName+')':G.players[nd].name)+'，留底6张，50分封顶');
   await loadTiles().catch(()=>{}); // 2026-11-13：发牌渲染前确保牌面数据就绪（掷骰期间已在后台加载，正常零等待）
-  log('对手风格：'+G.players.filter(x=>x.style).map(x=>x.name+'·'+AI_STYLE_NAME[x.style]).join('，'));resetMoveLog();render();
+  log('对手风格：'+G.players.filter(x=>x.style).map(x=>x.name+'·'+AI_STYLE_NAME[x.style]).join('，'));trainRollRound();resetMoveLog();render();
   if(isPhonePort())applyPhonePortDock();
   while(!G.over&&myToken===runToken){const cur=p(G.current);const first=G.firstTurn&&G.current===G.dealer;
     // 牌桌闲聊：牌墙见底时随机一家感慨一次（每局一次）
@@ -4081,7 +4231,7 @@ function renderHand(){
     html=parts.map(q=>'<span class="hGrp h-'+q.type+'"><span class="hLab">'+q.label+'</span><span class="hTiles">'+q.tiles.map(tileHTML).join('')+'</span></span>').join('');
     }else html=me.hand.map(tileHTML).join('');
     e.innerHTML=html;
-    e.querySelectorAll('.tile-photo').forEach(d=>{d.onclick=()=>{if(G.awaiting!=='discard')return;e.querySelectorAll('.tile-photo').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');const picked=me.hand.find(t=>t.uid==parseInt(d.dataset.uid,10));G._sel=picked;liveWarn(picked);};d.ondblclick=()=>{if(G.awaiting==='discard'){clearWarn();humanRespond(me.hand.find(x=>x.uid==parseInt(d.dataset.uid,10)));}};});
+    e.querySelectorAll('.tile-photo').forEach(d=>{d.onclick=()=>{if(G.awaiting!=='discard')return;e.querySelectorAll('.tile-photo').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');const picked=me.hand.find(t=>t.uid==parseInt(d.dataset.uid,10));G._sel=picked;liveWarn(picked);if(typeof scheduleTeachRefresh==='function')scheduleTeachRefresh();};d.ondblclick=()=>{if(G.awaiting==='discard'){clearWarn();humanRespond(me.hand.find(x=>x.uid==parseInt(d.dataset.uid,10)));}};});
     e.scrollLeft=0;
   }
   me._lastUid=null;
@@ -4259,6 +4409,27 @@ document.getElementById('tipsBtn').onclick=function(){document.getElementById('t
 document.getElementById('tipsCloseBtn').onclick=function(){document.getElementById('tipsModal').style.display='none';};
 document.getElementById('tipsModal').onclick=function(e){if(e.target===this)this.style.display='none';};
 document.getElementById('teachBtn').onclick=toggleTeach;
+// 2026-11-14 训练闭环：顶栏「训练」入口 + 面板内交互（面板为 innerHTML 重建，用事件委托）
+document.getElementById('trainBtn').onclick=function(){this.classList.toggle('btnActive',TRAIN.on);openTrainModal();};
+document.getElementById('trainCloseBtn').onclick=function(){document.getElementById('trainModal').style.display='none';};
+document.getElementById('trainModal').onclick=function(e){if(e.target===this)this.style.display='none';};
+document.getElementById('trainBody').addEventListener('click',function(e){
+  const b=e.target&&e.target.closest?e.target.closest('[data-tr]'):null;if(!b)return;
+  const a=b.getAttribute('data-tr');
+  if(a==='on'){
+    TRAIN.on=!TRAIN.on;saveTrain();
+    if(TRAIN.on&&!teachOn)toggleTeach(); // 训练依赖教学面板展示揭晓内容
+    else if(typeof scheduleTeachRefresh==='function')scheduleTeachRefresh();
+  }else if(a==='lv'){
+    TRAIN.level=Math.max(0,Math.min(2,parseInt(b.getAttribute('data-v'),10)||0));saveTrain();
+    if(typeof scheduleTeachRefresh==='function')scheduleTeachRefresh();
+  }else if(a==='reset'){TRAIN=trainDefault();saveTrain();}
+  else return;
+  document.getElementById('trainBody').innerHTML=trainPanelHTML();
+  document.getElementById('trainBtn').classList.toggle('btnActive',TRAIN.on);
+  sndClick();
+});
+document.getElementById('trainBtn').classList.toggle('btnActive',TRAIN.on);
 document.getElementById('splitBtn').onclick=toggleSplitMode;
 document.getElementById('thinkBtn').onclick=toggleThink;
 document.getElementById('reviewBtn').onclick=function(){
@@ -4361,7 +4532,10 @@ function fit(){
     // 改为 min(byW, max(下限, min(byH,cap2)))，保证任何情况下 16 张都排得进一行
     hand2=Math.min(byW,Math.max(hand*0.8,Math.min(byH,cap2)));
   }
-  const sm=Math.max(pp?(wide?17:13):17,hand*0.5), disc=Math.max(pp?(wide?15:11):14,hand*0.4), back=Math.max(pp?(wide?16:12):15,hand*0.44);
+  // 2026-11-14：只放大竖屏的 --disc 下限（原本手机竖屏仅 11px，四家打出的牌几乎看不清）：
+  // 手机竖屏 11→14、平板竖屏 15→17；横屏保持原 14 / hand*0.4，避免大屏牌池过度放大盖住手牌。
+  // --sm/--back 不动，避免牵动教学面板与牌背尺寸。
+  const sm=Math.max(pp?(wide?17:13):17,hand*0.5), disc=Math.max(pp?(wide?17:14):14,hand*0.4), back=Math.max(pp?(wide?16:12):15,hand*0.44);
   const gap=Math.max(2,Math.min(large?10:(wide?9:7),hand*0.09));
   let sideMin=large?130:96, sideMax=large?172:118;
   if(pp){sideMin=wide?92:58;sideMax=wide?136:80;}
