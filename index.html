@@ -467,7 +467,13 @@
   #toast{position:fixed;left:50%;top:16%;transform:translateX(-50%);background:rgba(0,0,0,.85);padding:10px 18px;border-radius:10px;font-size:15px;z-index:40;opacity:0;transition:opacity .25s;pointer-events:none;}
   #toast.show{opacity:1;}
   #stage{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:#1c1c1c;}
-  #stage.rot{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);}
+  #stage.rot{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);} /* 旧方案备查：rot 现挂在 #appWrap 上（2026-11-14 手动横屏） */
+  /* 2026-11-14 手动横屏（用户需求：系统竖屏锁定时也能横屏玩）——
+     #appWrap 是旋转容器：竖屏锁定下点「横屏」把整个应用（牌桌+弹窗+浮层）转 90°，
+     宽高互换由 JS 按视口精确设置；fixed 元素（mask/toast/roleSelect）以带 transform 的
+     #appWrap 为包含块，自然跟随旋转，无需逐个适配 */
+  #appWrap{position:fixed;inset:0;overflow:hidden;background:#1c1c1c;}
+  #appWrap.rot{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);}
   /* 手机竖屏原生上下布局 */
   #stage.pport #topbar{flex-wrap:wrap;overflow:visible;row-gap:2px;column-gap:4px;padding:3px 6px;}
   #stage.pport #topbar .sp{display:none;}
@@ -703,12 +709,13 @@
 </script>
 </head>
 <body>
+<div id="appWrap">
 <div id="stage">
 <div id="topbar">
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="trainBtn" title="训练模式：先自己答，再听师傅讲；含成绩与弱项">训练</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="trainBtn" title="训练模式：先自己答，再听师傅讲；含成绩与弱项">训练</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="rotBtn" title="竖屏锁定时一键横屏：整个牌桌转 90°，再点回竖屏；解锁旋转后旋转手机也会自动跟随">横屏</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -931,7 +938,7 @@
 </div>
 <div id="splash">
   <h1>巢湖-金华红中</h1>
-  <p>点击下方按钮进入并全屏。竖屏横屏均可，旋转手机会自动切换布局。首次点击用于解锁全屏与声音，这是浏览器的通用要求。</p>
+  <p>点击下方按钮进入并全屏。竖屏横屏均可，旋转手机会自动切换布局；若手机开了竖屏锁定，点顶栏「横屏」按钮即可一键横屏。首次点击用于解锁全屏与声音，这是浏览器的通用要求。</p>
   <button id="startBtn">开始游戏</button>
   <p style="font-size:11px;opacity:.55;margin-top:10px">版本 v2026.11.13（若你的开局骰子仍显示上局残留点数，说明浏览器缓存了旧版，请关闭本页重新打开）</p>
 </div>
@@ -952,6 +959,7 @@
     <button id="diceRollBtn">我来掷</button>
     <div id="diceResult"></div>
   </div>
+</div>
 </div>
 <script>
 const RULESET_ID='hongzhong-v1';
@@ -2569,11 +2577,12 @@ document.addEventListener('pointerdown',function(e){
   let widths=[...cols].map(c=>c.clientWidth);
   tg.classList.add('manual');
   tg.style.gridTemplateColumns=widths.map(w=>w+'px').join(' ');
-  const startX=e.clientX,startL=widths[idx],startR=widths[idx+1],MIN=52;
+  const startX=e.clientX,startY=e.clientY,startL=widths[idx],startR=widths[idx+1],MIN=52;
   document.body.classList.add('colResizing');
   e.preventDefault();
   function move(ev){
-    let d=ev.clientX-startX;let nl=startL+d,nr=startR-d;
+    // 2026-11-14：手动横屏（rot）下拖动轴随旋转交换——列宽拖动改看屏幕 Y 位移
+    let d=isRot()?(ev.clientY-startY):(ev.clientX-startX);let nl=startL+d,nr=startR-d;
     if(nl<MIN){nl=MIN;nr=startR+startL-MIN;}
     if(nr<MIN){nr=MIN;nl=startL+startR-MIN;}
     const w=widths.slice();w[idx]=nl;w[idx+1]=nr;
@@ -2606,6 +2615,7 @@ window.addEventListener('resize',function(){
 // 函数名 isPhonePort 为历史沿用，语义已等同「当前是否竖向排版」。
 let __orientPort=null;
 function isPhonePort(){
+  if(window.__forceLand)return false; // 2026-11-14：手动横屏（竖屏锁定兜底）——布局一律按横屏口径
   const w=innerWidth||1,h=innerHeight||1;
   if(h>w*1.02)__orientPort=true;
   else if(w>h*1.02)__orientPort=false;
@@ -2613,6 +2623,40 @@ function isPhonePort(){
   return __orientPort;
 }
 function resetOrientation(){__orientPort=null;}
+// ===== 手动横竖屏切换（2026-11-14 用户需求：系统竖屏锁定时也能横屏玩）=====
+// 竖屏锁定下视口恒竖、无法感知物理朝向，靠「横屏」按钮把整个 #appWrap 旋转 90° 模拟横屏；
+// 解锁旋转/lock 成功后视口真变横时，layout() 会自动撤掉模拟旋转、无缝切原生横屏布局。
+const isRot=()=>{const w=document.getElementById('appWrap');return !!w&&w.classList.contains('rot');};
+// 屏幕坐标 → app 布局坐标（rotate(90deg) 逆变换：ax=sy, ay=W-sx；W=屏幕宽）
+function toAppXY(x,y){return isRot()?{x:y,y:innerWidth-x}:{x:x,y:y};}
+// 屏幕 rect → app 布局 rect（精确交换并翻转，供拖动插入位等几何计算用）
+function rectToApp(r){return isRot()
+  ?{left:r.top,top:innerWidth-r.right,right:r.bottom,bottom:innerWidth-r.left,width:r.height,height:r.width}
+  :{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height};}
+function applyRotSize(){
+  const w=document.getElementById('appWrap');if(!w)return;
+  if(w.classList.contains('rot')){w.style.width=innerHeight+'px';w.style.height=innerWidth+'px';}
+  else{w.style.width='';w.style.height='';}
+}
+function rotBtnSync(){
+  const b=document.getElementById('rotBtn');if(!b)return;
+  b.textContent=(isRot()||!isPhonePort())?'竖屏':'横屏';
+  b.classList.toggle('btnActive',isRot());
+}
+function toggleRot(){
+  const w=document.getElementById('appWrap');if(!w)return;
+  if(isRot()){ // 模拟横屏 → 回竖屏
+    window.__forceLand=false;w.classList.remove('rot');applyRotSize();
+    try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}catch(e){}
+  }else if(isPhonePort()){ // 竖屏 → 模拟横屏；安卓全屏下同时尝试真锁横屏（成功则视口变横、自动撤模拟）
+    window.__forceLand=true;w.classList.add('rot');applyRotSize();
+    try{const so=screen.orientation;if(so&&so.lock){const pr=so.lock('landscape');if(pr&&pr.catch)pr.catch(function(){});}}catch(e){}
+  }else{ // 原生横屏 → 请求回竖屏（仅 lock 生效时有实际动作）
+    try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}catch(e){}
+    toast('已请求回竖屏；若未生效，旋转设备即可自动切换');
+  }
+  rotBtnSync();resetOrientation();layout();
+}
 // 竖屏且宽度 ≥600：平板 / 大屏竖放，按平板尺度放大字号与牌面（手机竖屏维持紧凑尺度）
 function isWidePort(){return innerWidth>=600&&isPhonePort();}
 function dockKey(){
@@ -2701,9 +2745,12 @@ document.addEventListener('pointerdown',function(e){
   const sp=isPort?e.target.closest('#dockGrip'):e.target.closest('#hSplitter');
   if(!sp)return;
   const dock=document.getElementById('bottomDock');
-  const startY=e.clientY,startH=dock.getBoundingClientRect().height;
+  const startX=e.clientX,startY=e.clientY,startH=dock.getBoundingClientRect().height;
   sp.classList.add('dragging');document.body.classList.add('rowResizing');e.preventDefault();
-  function move(ev){setDockHeightPx(startH-(ev.clientY-startY));
+  function move(ev){
+    // 2026-11-14：手动横屏（rot）下拖动轴随旋转交换——app 内 Y 位移=屏幕 X 位移取反
+    const dAppY=isRot()?-(ev.clientX-startX):(ev.clientY-startY);
+    setDockHeightPx(startH-dAppY);
     // 竖屏抽屉为浮层，改高度不挤压牌桌，无需重算牌面（牌桌/手牌保持不动）；
     // 横屏 flex 流才需要实时重算牌面尺寸，不溢出不遮挡
     if(!isPort)requestAnimationFrame(fit);}
@@ -4255,12 +4302,13 @@ function hdTiles(el){return Array.prototype.slice.call(el.querySelectorAll('.til
 function hdClearMarks(el){const a=el.querySelectorAll('.hDropBefore,.hDropAfter');for(const x of a)x.classList.remove('hDropBefore','hDropAfter');}
 function hdDropIndex(px,py,tiles){
   // 竖屏手牌是两行 wrap：先定位手指所在行，再按该行牌中心 X 找插入点，支持跨行配牌
+  // 2026-11-14：手动横屏（rot）下 rect/指针都换算到 app 布局系再比较，轴交换后插入方向仍正确
   let rowTop=-Infinity;
-  for(const t of tiles){const r=t.getBoundingClientRect();if(r.top<=py+8&&r.top>rowTop)rowTop=r.top;}
-  if(rowTop===-Infinity)for(const t of tiles){const r=t.getBoundingClientRect();if(r.top<rowTop)rowTop=r.top;}
+  for(const t of tiles){const r=rectToApp(t.getBoundingClientRect());if(r.top<=py+8&&r.top>rowTop)rowTop=r.top;}
+  if(rowTop===-Infinity)for(const t of tiles){const r=rectToApp(t.getBoundingClientRect());if(r.top<rowTop)rowTop=r.top;}
   let last=-1;
   for(let i=0;i<tiles.length;i++){
-    const r=tiles[i].getBoundingClientRect();
+    const r=rectToApp(tiles[i].getBoundingClientRect());
     if(Math.abs(r.top-rowTop)>6)continue;
     last=i;
     if(px<r.left+r.width/2)return i;
@@ -4327,15 +4375,16 @@ document.addEventListener('pointerdown',function(e){
   const all=hdTiles(el),from=all.indexOf(tile);
   if(from<0||all.length<2)return;
   const s={el:el,tile:tile,uid:uid,wasSplit:splitMode,count:(p(0)&&p(0).hand)?p(0).hand.length:0,
-    x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY,id:e.pointerId,type:e.pointerType||'mouse',
+    x:0,y:0,px:0,py:0,id:e.pointerId,type:e.pointerType||'mouse',
     on:false,idx:from,targetUid:null,timer:null,others:[]};
+  {const ap=toAppXY(e.clientX,e.clientY);s.x=ap.x;s.y=ap.y;s.px=ap.x;s.py=ap.y;} // 2026-11-14：rot 模式换算到 app 系，拖动/插入方向不随旋转错乱
   s.others=all.filter(x=>x!==tile);
   __hd=s;
   s.timer=setTimeout(function(){if(__hd===s&&!s.on)hdActivate(s);},HD_HOLD);
 });
 document.addEventListener('pointermove',function(e){
   const s=__hd;if(!s||e.pointerId!==s.id)return;
-  s.px=e.clientX;s.py=e.clientY;
+  {const ap=toAppXY(e.clientX,e.clientY);s.px=ap.x;s.py=ap.y;} // 2026-11-14：rot 模式换算到 app 系
   const dx=s.px-s.x,dy=s.py-s.y;
   if(!s.on){
     if(s.type==='touch'){
@@ -4572,6 +4621,13 @@ function layout(){
   // 2026-11-10 牌桌锁定（用户需求：不可移动不可缩放）：每次布局重算都归位——
   // transform 恒 identity，杜绝旧会话/旧版本残留在牌桌上的平移与缩放
   try{if(typeof view!=='undefined'&&typeof tableEl!=='undefined'){view.s=1;view.x=0;view.y=0;tableEl.style.transform='none';}}catch(e){}
+  // 2026-11-14 手动横屏维护：视口真变横（旋转解锁/安卓 lock 成功）→ 模拟旋转功成身退，
+  // 无缝切原生横屏布局；视口尺寸变化（地址栏显隐）时按新视口重设旋转宽高
+  const aw=document.getElementById('appWrap');
+  if(aw&&aw.classList.contains('rot')&&innerWidth>innerHeight*1.02){
+    window.__forceLand=false;aw.classList.remove('rot');rotBtnSync();
+  }
+  if(aw)applyRotSize();
   const stage=document.getElementById('stage');
   const pp=isPhonePort(),wide=pp&&isWidePort();
   stage.classList.toggle('pport',pp);
@@ -4588,6 +4644,7 @@ function layout(){
     if(!restoreDockH())clearDockHeight();
   }
   syncSplitter();
+  try{rotBtnSync();}catch(e){} // 2026-11-14：旋转/resize 后按钮文案跟随当前方向（横屏布局显示「竖屏」）
   requestAnimationFrame(fit);
 }
 // 手机竖屏：默认开启教学、下半区给默认高度（若未手动保存过）
@@ -4643,6 +4700,10 @@ soundBtn.addEventListener('click',function(){
   else{try{speechSynthesis.cancel();}catch(e){}vpStop();bgmStop();}
 });
 syncSoundUI();
+// 2026-11-14 手动横竖切换：顶栏「横屏/竖屏」按钮——竖屏锁定兜底；解锁旋转后旋转设备仍自动跟随
+const rotBtn=document.getElementById('rotBtn');
+rotBtn.addEventListener('click',function(){toggleRot();sndClick();});
+rotBtnSync();
 // 2026-11-13：独立「音乐」按钮与 banshanBgm 偏好已移除；背景音乐随「声音」总开关启停。
 // 保持 AudioContext 活跃：系统据此识别为媒体播放，音量键控制游戏声音
 ['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(AC&&AC.state==='suspended')AC.resume();},{passive:true}));
@@ -4671,7 +4732,6 @@ const view={s:1,x:0,y:0};
 const ptrs=new Map();
 let pinchD0=0, view0=null, pan0=null;
 const tableEl=document.getElementById('table');
-const isRot=()=>document.getElementById('stage').classList.contains('rot');
 const toLocal=(dx,dy)=>isRot()?{dx:dy,dy:-dx}:{dx,dy};
 const pDist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const isBlankTgt=t=>!t.closest('.tile-photo')&&!t.closest('button')&&!t.closest('#actions')&&!t.closest('.who');
