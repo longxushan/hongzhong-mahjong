@@ -835,7 +835,7 @@
       <table>
         <tr><th>方向</th><th>番数</th><th>路线启动门槛（不是胡牌条件）</th><th>说明</th></tr>
         <tr><td>全碰</td><td>×4</td><td>刻型本钱 ≥4 组；胡牌需 4 组刻子 + 1 将</td><td>本玩法第一番型；红中可代刻子；碰就是加速器</td></tr>
-        <tr><td>七对</td><td>×2（豪华×4）</td><td>≥4 对可考虑转路线；胡牌需 7 对且无副露</td><td>关门自摸流；某牌实体 4 张=豪华七对</td></tr>
+        <tr><td>七对</td><td>×2（豪华×4）</td><td>≥4 对且手里有红中可考虑转路线（红中顶一对）；胡牌需 7 对且无副露</td><td>关门自摸流；某牌实体 4 张=豪华七对</td></tr>
         <tr><td>清一色</td><td>×2</td><td>主色 ≥9 张可定调；胡牌需全手同色</td><td>可与全碰叠成 ×8，接近封顶</td></tr>
         <tr><td>平胡快硬胡</td><td>×2ⁿ</td><td>默认路线</td><td>5.5 打底 × 红中倍数，稳</td></tr>
       </table>
@@ -910,7 +910,7 @@
         <tr><td>交集区域理论</td><td>三家交集不要区 = 你的进攻区（后期还是安全区）</td><td>底部「听牌一览」的「剩」数就是替你算好的存量口：剩得多的方向，自摸概率高</td></tr>
         <tr><td>抽屉原则算存量</td><td><b>112</b> −（四家手牌 + 牌池已见）= 牌墙存量（本游戏全副 112 张，不是常规麻将的 136）；两三家都缺某花色 → 该花色全在牌墙</td><td>拆搭留存量大的一侧、拆存量为 0 或极少的一侧——听牌一览已把可见剩余摆在你眼前</td></tr>
         <tr><td>三档标签记牌</td><td>给每家贴三档：牌型信息 / 牌效速度 / 留牌区域；记信息链不记原始牌</td><td>盯三家副露与弃牌顺序，判谁快听了 → 决定你是抢速度还是收杠分等流局</td></tr>
-        <tr><td>七对攻防兼备</td><td>七对隐蔽性强、进可攻退可守；牌运最差时强做七对是改运节点</td><td>本玩法七对 ×2（豪华 ×4）：连输两局牌又散时，起手 4 对以上可转七对稳住心态</td></tr>
+        <tr><td>七对攻防兼备</td><td>七对隐蔽性强、进可攻退可守；牌运最差时强做七对是改运节点</td><td>本玩法七对 ×2（豪华 ×4）：连输两局牌又散时，起手 4 对以上且握有红中可转七对稳住心态</td></tr>
         <tr><td>接牌快打牌慢</td><td>性子越急出牌越快、错误率越高，恶性循环；摸牌快、出牌慢养算力</td><td>把「打错提醒」开着打：每次出牌前看一眼师傅点评，慢三秒再出牌，错误率自然下来</td></tr>
       </table>
       <ol>
@@ -2050,7 +2050,7 @@ function handDiagnose(pl){
   let pPairs=0;for(let i=0;i<27;i++)pPairs+=Math.floor(cnt[i]/2);
   return {zN,zBlocked:blockedByZRule(pl),pairs,pongs,completeMelds,orphans,twoSide,embedded,edge,sc,mainSuit,
     pairCount:pairs.length,pairCount7:pPairs,
-    sevenPot:pl.melds.length===0&&(pPairs>=4||(pPairs>=3&&zN>=1)),
+    sevenPot:pl.melds.length===0&&pPairs>=4&&(zN>=1||zDiscarded(pl)>0),
     qingPot:sc[mainSuit]>=9,stage,wall};
 }
 // ===== 手牌拆解（2026-11-12 用户需求：开局自动按麻将通常规则分类，快速判断牌型与后续听张）=====
@@ -2105,12 +2105,18 @@ function recommendHandType(d,me){
   const mainN=d.sc[d.mainSuit];
   const suitRem=suitVisibleLeft(d.mainSuit);
   const qingPossible=(mainN+suitRem+d.zN>=13)&&!(d.stage==='残局'&&mainN<11);
-  const sevenPossible=!(d.stage==='残局'&&d.pairCount7+d.zN<4);
+  // 2026-11-14 用户需求：七对推荐门槛——实体对子 ≥4 且手里有红中（红中可顶一对）才推荐做七对；
+  // 本局已主动打掉红中转硬胡七对（discard 里有红中）视为路线已锁，不因红中离手中途撤推荐
+  const sevenGate=d.zN>=1||zDiscarded(me)>0;
+  const sevenPossible=sevenGate&&d.pairCount7>=4;
   const list=[];
   if(me.melds.length===0){
     const sevenNeed=Math.max(0,7-d.pairCount7-d.zN); // 红中可顶对，按「实体对子+红中」算真实缺口
+    const sevenWhy=d.pairCount7<4
+      ?'门槛未到：手里对子满 4 对且握有红中才值得转七对，现在改走基本胡更快。'
+      :'门槛未到：手里没有红中，七对少一张百搭顶对、成型更慢，摸到红中再考虑。';
     list.push({name:'七对',mult:2,feasible:sevenPossible,
-      text:'七对（×2）：现有对子'+d.pairCount7+'对（四张一样算两对）'+(d.zN?'，红中'+d.zN+'只可顶'+d.zN+'对':'')+'，按可见信息还差'+sevenNeed+'对'+(sevenPossible?'，留对子、打孤张。':'，但已到'+d.stage+'、来不及凑齐，建议放弃，改走基本胡。')});
+      text:'七对（×2）：现有对子'+d.pairCount7+'对（四张一样算两对）'+(d.zN?'，红中'+d.zN+'只可顶'+d.zN+'对':'')+'，按可见信息还差'+sevenNeed+'对'+(sevenPossible?'，留对子、打孤张。':'，'+sevenWhy)});
   }
   list.push({name:'清一色',mult:2,feasible:qingPossible,
     text:'清一色（×2）：'+CFG.suitName[d.mainSuit]+'子已有'+mainN+'张，按全场可见信息还有'+suitRem+'张'+CFG.suitName[d.mainSuit]+'子没露面'+(qingPossible?'，集中'+CFG.suitName[d.mainSuit]+'子、打其他花色。':'，可进张被别家碰打后不足，硬做容易烂牌，建议放弃。')});
@@ -2161,9 +2167,10 @@ function bigHandStance(pl,d,conserv,vis){
   // 清一色：主花色成型度达标，且剩余进张（牌墙可摸+红中）足以补齐；残局要求更高
   const qTh=c>=0.6?10:9;
   const qing=mainN>=qTh&&(mainN+suitRem+d.zN>=13)&&!(d.wall<18&&mainN<12);
-  // 七对：无副露，实体对子成型（红中可顶一个对子）
+  // 七对（2026-11-14 用户需求门槛）：实体对子≥4 且手里有红中（红中顶一对）才锁七对路线，
+  // 撤掉旧「3 对+红中即锁」分支；本局已打掉红中转硬胡七对（discard 有红中）视为路线已锁，不中途撤销
   const sTh=c>=0.6?5:4;
-  const seven=pl.melds.length===0&&(pPairs>=sTh||(pPairs>=sTh-1&&d.zN>=1));
+  const seven=pl.melds.length===0&&(d.zN>=1||zDiscarded(pl)>0)&&pPairs>=sTh;
   // 碰碰胡：刻子+对子+已碰杠副露 ≥4 组
   const pong=(d.pongs.length+d.pairCount+meldPongs)>=4;
   let kind=null,name='';
@@ -3151,7 +3158,7 @@ function buildThinkHTML(){
 const REVIEW_KNOWLEDGE={
   tianhu:'天胡是庄家起手 14 张不打一张直接胡，总分×4，可遇不可求。遇上系统会先问你胡不胡——不胡就按正常打牌继续，但天胡资格只有这一次。',
   dihu:'地胡是非庄家第一巡摸牌就胡（此时全场只打过庄家一张、无人碰杠），总分×2。同样可以先不胡、继续按正常打；一旦过了这一巡就只剩普通自摸。',
-  sevenPairs:'七对不靠面子，靠 7 个对子。看到手里对子多（4 对以上）就早定方向、专打孤张，红中能顶一个对子；残局对子不够要及时放弃。',
+  sevenPairs:'七对不靠面子，靠 7 个对子。看到手里对子多（4 对以上）且握着红中就早定方向、专打孤张，红中能顶一个对子；对子不足 4 对或没红中就别硬做，残局对子不够要及时放弃。',
   qingyise:'清一色只留一个花色，进张集中、番数翻倍。定调前先看该花色的牌和可进张够不够，一旦做牌就要狠心打掉别的花色，中途犹豫最容易两头落空。',
   allpong:'碰碰胡全靠刻子和碰，见到对子就往刻子上做。它和七对互斥，手里对子多但散张也多时，要早判断走哪条路。',
   ganghua:'杠上开花是杠后补牌正好胡，番数翻倍。该杠的牌要果断，但要留意补杠可能被别人抢杠胡。',

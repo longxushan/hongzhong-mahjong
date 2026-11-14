@@ -2,6 +2,8 @@
 // 断言：①碰一组+顺子结构不再误报碰碰胡（原逻辑有副露就锁死全碰且 G.pongCommit 粘滞）
 //       ②豪华对（四张算两对）七对成型度不被低估，主做与推荐姿态（bigHandStance）同源一致
 //       ③清一色判定实时重算不依赖粘滞状态 ④页面无 pongCommit 残留引用
+// 2026-11-14 增补：七对推荐门槛——实体对子≥4 且手里有红中才推荐（已打红中转硬胡七对视为已锁路线；
+//       4 对无红中 / 3 对+红中 / 4 对+红中首发走「打红中转七对」三个分支全覆盖）
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -47,10 +49,11 @@ const results = await page.evaluate(() => {
   const out = [];
   const me = p(0);
   const mk = (id, uid) => ({ id, uid, suit: id === 'Z' ? 'Z' : id[0], rank: id === 'Z' ? 0 : parseInt(id[1], 10) });
-  const setHand = ids => { me.hand = ids.map((id, i) => mk(id, 90000 + i)); };
-  const probe = (label, handIds, meldList) => {
+  const setHand = ids => { me.hand = ids.map((id, i) => mk(id, 90000 + i)); me.discard = []; };
+  const probe = (label, handIds, meldList, discIds) => {
     setHand(handIds);
     me.melds = (meldList || []).map(t => ({ type: 'peng', tiles: [mk(t, 91001), mk(t, 91002), mk(t, 91003)] }));
+    me.discard = (discIds || []).map((id, i) => mk(id, 92000 + i)); // 控制本局弃牌（七对红中门槛：已打红中=已锁硬胡七对路线）
     const t0 = performance.now();
     const d = handDiagnose(me);
     const pick = teachPick(d);
@@ -58,7 +61,9 @@ const results = await page.evaluate(() => {
     out.push({
       label, ms: Math.round(performance.now() - t0),
       plan: ht.planName, stanceKind: pick.stance ? pick.stance.kind : null,
-      pick: pick.id, pairCount7: d.pairCount7,
+      pick: pick.id, pairCount7: d.pairCount7, zN: d.zN,
+      zDisc: (me.discard || []).filter(t => t.id === 'Z').length,
+      dumpKou: pick.id === 'Z' ? pick.kou.slice(0, 12) : null,
     });
   };
 
@@ -66,10 +71,17 @@ const results = await page.evaluate(() => {
   probe('B', ['W1','W2','W3','W7','W8','W9','T2','T3','T4','T7','T8','T9','W5'], ['B3']);
   // C：碰一组 + 清一色万 10 张 → 清一色（实时算，不靠粘滞状态）
   probe('C', ['W1','W2','W3','W5','W6','W7','W9','W9','T5','W4','W8'], ['B3']);
-  // D：W2×4 + 三对（豪华七对实际 5 对成型）→ 七小对，与推荐姿态同源
-  probe('D', ['W2','W2','W2','W2','T5','T5','B7','B7','W9','W9','T3'], []);
-  // E：4 对 + 顺子一向听 → 七小对（七对口径成型 5 对，牌型分析与推荐一致）
-  probe('E', ['W2','W2','T5','T5','B7','B7','W9','W9','T3','T4','T5','B1','B2'], []);
+  // D：W2×4 + 三对 + 红中（豪华七对实际 5 对成型，门槛满足：≥4 对且含红中）→ 七小对，与推荐姿态同源
+  probe('D', ['W2','W2','W2','W2','T5','T5','B7','B7','W9','W9','Z'], []);
+  // D2：豪华 5 对但红中已打掉（本局 discard 有红中，硬胡七对路线已锁）→ 仍七小对，不中途撤销
+  probe('D2', ['W2','W2','W2','W2','T5','T5','B7','B7','W9','W9','T3'], [], ['Z']);
+  // E：6 对 + 1 红中 + 孤张（去红即听）→ 主做七小对；教学首发建议「打红中转硬胡七对」（门槛满足：≥4对+含红中）
+  // 注：仅 4 对+多散张时 dump 安全闸不通过（打红后向听仍远），会保留红中走癞子路线——属预期行为
+  probe('E', ['W1','W1','W3','W3','W5','W5','T2','T2','T7','T7','B4','B4','W6','Z'], []);
+  // E2：4 对但手里无红中、本局也没打过红中 → 不推荐七对（门槛未到，走碰碰胡/基本）
+  probe('E2', ['W2','W2','T5','T5','B7','B7','W9','W9','T3','T4','T5','B2','B8'], []);
+  // E3：仅 3 对 + 红中 → 不推荐七对（对子门槛未满 4 对，红中顶一对也不够首发）
+  probe('E3', ['W2','W2','T5','T5','B7','B7','Z','T3','T4','W1','W5','B2','B8'], []);
   // B'：探针后再切回顺子结构 → 主做应实时从七对切回基本（无粘滞）
   probe('B2', ['W1','W2','W3','W7','W8','W9','T2','T3','T4','T7','T8','T9','W5'], ['B3']);
   return out;
@@ -83,8 +95,16 @@ const chk = (cond, msg) => { console.log((cond ? '✓ ' : '✗ ') + msg); if (!c
 
 chk(by('B').plan === '普通自摸胡', 'B 碰1组+全顺子结构 → 普通自摸胡（不再误报碰碰胡）');
 chk(by('C').plan === '清一色' && by('C').stanceKind === 'qing', 'C 清一色万10张 → 清一色，与推荐姿态同源');
-chk(by('D').plan === '七小对' && by('D').stanceKind === 'seven' && by('D').pairCount7 === 5, 'D W2×4+三对 → 七小对（豪华对算两对，成型5对）+ 姿态一致');
-chk(by('E').plan === '七小对' && by('E').stanceKind === 'seven', 'E 4对一向听 → 七小对，与推荐姿态一致');
+chk(by('D').plan === '七小对' && by('D').stanceKind === 'seven' && by('D').pairCount7 === 5 && by('D').zN === 1,
+  'D W2×4+三对+红中 → 七小对（豪华对算两对，成型5对，门槛满足：≥4对且含红中）+ 姿态一致');
+chk(by('D2').plan === '七小对' && by('D2').stanceKind === 'seven' && by('D2').zN === 0 && by('D2').zDisc === 1,
+  'D2 豪华5对、红中已打（硬胡七对已锁）→ 仍七小对，不因红中离手中途撤推荐');
+chk(by('E').plan === '七小对' && by('E').pick === 'Z',
+  'E 6对+1红中（去红即听）→ 主做七小对，教学建议打红中转硬胡七对（门槛满足：≥4对+含红中）');
+chk(by('E2').plan !== '七小对' && by('E2').stanceKind !== 'seven',
+  'E2 4对无红中且本局未打红中 → 不推荐七对（无红中门槛未到），plan=' + by('E2').plan);
+chk(by('E3').plan !== '七小对' && by('E3').stanceKind !== 'seven',
+  'E3 仅3对+红中 → 不推荐七对（对子不满4对），plan=' + by('E3').plan);
 chk(by('B2').plan === '普通自摸胡', 'B2 手牌切回顺子结构 → 主做实时切回普通自摸胡（无粘滞）');
 for (const r of results) {
   if (r.stanceKind) chk(STANCE_PLAN[r.stanceKind] === r.plan, r.label + ' 主做=' + r.plan + ' 与姿态 kind=' + r.stanceKind + ' 一致');

@@ -61,9 +61,10 @@ const r2 = await page.evaluate(() => {
 });
 check('清一色姿态 liveWarn：选非首推的别色牌不再报打亏', r2.good, r2.txt);
 
-// 用例3：七对姿态——6对+2散张，应建议打散张、绝不拆对
+// 用例3：七对姿态——6对+2散张、本局已打过一只红中（转硬胡七对路线已锁，门槛合规）→ 应建议打散张、绝不拆对
 const r3 = await page.evaluate(() => {
   const me = p(0);
+  me.discard = [window.__mk('Z', 915000)]; // 2026-11-14 七对门槛：红中已打=硬胡七对已锁；红中在手时首发会先建议打红中（走 dump 分支）
   const ids = ['W1','W1','W3','W3','W5','W5','T2','T2','T7','T7','B4','B4','B9','W6'];
   me.hand = ids.map((x, i) => window.__mk(x, 910000 + i));
   const d = handDiagnose(me), pick = teachPick(d);
@@ -71,7 +72,18 @@ const r3 = await page.evaluate(() => {
   const pickIsPair = cnt[pick.id] >= 2;
   return { stance: pick.stance ? pick.stance.name : null, pickId: pick.id, pickIsPair };
 });
-check('七对姿态：识别 + 建议打孤张、不拆对子', r3.stance && r3.stance.includes('七对') && !r3.pickIsPair, `姿态=${r3.stance}，建议=${r3.pickId}（对子=${r3.pickIsPair}）`);
+check('七对姿态：识别 + 建议打孤张、不拆对子（已打红中=硬胡七对已锁）', r3.stance && r3.stance.includes('七对') && !r3.pickIsPair, `姿态=${r3.stance}，建议=${r3.pickId}（对子=${r3.pickIsPair}）`);
+
+// 用例3b：七对门槛负例——同样 6 对但手里无红中、本局也没打过红中 → 不锁七对姿态（2026-11-14 用户需求：≥4对且含红中才推荐）
+const r3b = await page.evaluate(() => {
+  const me = p(0);
+  me.discard = [];
+  const ids = ['W1','W1','W3','W3','W5','W5','T2','T2','T7','T7','B4','B4','B9','W6'];
+  me.hand = ids.map((x, i) => window.__mk(x, 912000 + i));
+  const d = handDiagnose(me), pick = teachPick(d), ht = recommendHandType(d, me);
+  return { stance: pick.stance ? pick.stance.name : null, plan: ht.planName };
+});
+check('七对门槛负例：6对无红中（未打过）→ 不推荐七对（可转碰碰胡）', !(r3b.stance || '').includes('七对') && r3b.plan !== '七小对', `姿态=${r3b.stance}，主做=${r3b.plan}`);
 
 // 用例4：碰碰胡姿态——2刻+3对+散张（刻子≥2优先碰碰胡而非七对），应打散张、保对刻
 const r4 = await page.evaluate(() => {
