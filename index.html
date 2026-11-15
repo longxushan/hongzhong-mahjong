@@ -516,16 +516,23 @@
   /* 新四栏竖屏顺序：①合并栏 ②对手分析 各跨整行，③听牌一览与④积分排行并排 */
   #stage.pport .tColMain{grid-column:1/3;}
   #stage.pport .tColOpp{grid-column:1/3;}
-  /* 2026-11-15 摊牌模式（上帝视角）：对手分析栏顶部——三家暗牌明列 + AI 思路实时直播 */
+  /* 2026-11-15 摊牌模式（上帝视角）：对手分析栏顶部——AI 思路实时直播（暗牌已摊到各家头像下，见 .rvHand） */
   .revealBox{margin:2px 0 6px;border:1px solid #7a5c2e;border-radius:8px;background:linear-gradient(180deg,#2a2117,#221a12);padding:5px 7px;}
   .revealBox .rvHead{color:#ffd98a;font-size:12px;font-weight:bold;margin-bottom:4px;}
-  .revealBox .rvRow{display:flex;align-items:center;gap:6px;padding:2px 0;}
-  .revealBox .rvName{flex:0 0 auto;font-size:11px;font-weight:bold;color:#cfe8d8;min-width:3.4em;}
-  .revealBox .rvTiles{display:flex;flex-wrap:wrap;gap:1px;align-items:center;}
-  .revealBox .rvTiles .tp-sm{width:calc(var(--popW)*0.72);height:calc(var(--popW)*0.72/0.75);}
   .revealBox .rvLog{max-height:160px;overflow-y:auto;border-top:1px dashed #5a4a30;margin-top:4px;padding-top:4px;}
   .revealBox .rvLine{font-size:11px;color:#d8cba8;line-height:1.5;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
   .revealBox .rvDim{color:#8a7f68;font-size:11px;}
+  /* 2026-11-15 用户需求：摊牌时三家暗牌直接摊在各自头像底下排开（直接明了）——
+     顶部座位一行铺满；左右窄座自动换行铺列；尺寸走 popW 视口口径（手机竖屏 --sm 过小不看牌面） */
+  .rvHand{display:flex;flex-wrap:wrap;gap:1px;justify-content:center;align-items:center;max-width:100%;flex:0 0 auto;
+    padding:2px 5px;border-radius:6px;background:rgba(0,0,0,.34);box-shadow:inset 0 0 0 1px rgba(217,164,65,.4);}
+  /* --rvW 由 fitRvHands() 按座位实测空间写入；未写入时退回 popW 口径 */
+  .rvHand .tp-sm{width:var(--rvW,calc(var(--popW)*0.72));height:calc(var(--rvW,calc(var(--popW)*0.72))/0.75);}
+  #seat1 .rvHand,#seat3 .rvHand{gap:1px;max-height:100%;overflow:hidden;}
+  #table.dicePhase .rvHand{display:none!important;} /* 掷骰阶段还没发牌，摊牌行不出现 */
+  /* 2026-11-15 横屏自适应：顶座行高仅 ~41px（头像 26px 后剩不下牌行），摊牌改排头像右侧同一行；
+     竖屏顶座纵向充裕，保持「头像底下」原形态 */
+  #seat2.rvSide{flex-direction:row;flex-wrap:nowrap;gap:6px;justify-content:center;}
   #stage.pport .tColAdv{grid-column:1/3;}
   #stage.pport .tMainGrid{grid-template-columns:minmax(0,1fr);}  /* 合并栏内部上下堆叠 */
   #stage.pport .tSecRec{border-left:none;border-top:1px dashed #3a5546;padding-left:0;padding-top:4px;margin-top:4px;}
@@ -735,7 +742,7 @@
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
   <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，先打出1只才能胡（打1只即解锁，多打/全打都行）</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="revealBtn" title="摊牌模式（上帝视角）：直播三家暗牌与 AI 每一步碰/杠/出牌的思考理由，练习专用">摊牌</button><button id="trainBtn" title="训练模式：先自己答，再听师傅讲；含成绩与弱项">训练</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="rotBtn" title="竖屏锁定时一键横屏：整个牌桌转 90°，再点回竖屏；解锁旋转后旋转手机也会自动跟随">横屏</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="revealBtn" title="摊牌模式（上帝视角）：三家暗牌摊在各自头像下，并直播 AI 每一步碰/杠/出牌的思考理由，练习专用">摊牌</button><button id="trainBtn" title="训练模式：先自己答，再听师傅讲；含成绩与弱项">训练</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="rotBtn" title="竖屏锁定时一键横屏：整个牌桌转 90°，再点回竖屏；解锁旋转后旋转手机也会自动跟随">横屏</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -1136,8 +1143,9 @@ function renderEmptySeats(){
   for(let i=0;i<4;i++){
     const e=document.getElementById('seat'+i);
     if(!e)continue;
-    // 清掉上局遗留（副露/手牌/警示），保留头像结构
+    // 清掉上局遗留（副露/手牌/警示/摊牌行），保留头像结构
     [...e.children].forEach(c=>{if(!c.classList||!c.classList.contains('who'))c.remove();});
+    e.classList.remove('rvSide');
     let who=e.querySelector('.who');
     if(!who){
       who=document.createElement('div');who.className='who';
@@ -2526,9 +2534,9 @@ function toggleReveal(){
     const tb=document.getElementById('teachBtn');if(tb)tb.classList.add('btnActive');
     refreshDock();
   }
-  if(typeof G!=='undefined'&&G)updateTeachPanel(); // G 未建（开局前）时面板无从渲染，跳过
+  if(typeof G!=='undefined'&&G)render(); // 头像下的摊牌行随开关即时增删（render 幂等，教学面板在其内部刷新）
   sndClick();
-  toast(revealOn?'摊牌模式开启：底部「对手分析」栏直播三家暗牌与 AI 思路（仅自己练习用，刷新后自动关闭）':'摊牌模式已关闭');
+  toast(revealOn?'摊牌模式开启：三家暗牌摊在各自头像下，底部「对手分析」栏直播 AI 思路（仅自己练习用，刷新后自动关闭）':'摊牌模式已关闭');
 }
 function pushReveal(txt){
   if(!G||!revealOn)return;
@@ -2537,15 +2545,12 @@ function pushReveal(txt){
   if(G.revealLog.length>60)G.revealLog.length=60;
   scheduleTeachRefresh();
 }
-// 摊牌面板：三家暗牌明列（仅 revealOn）+ AI 思路日志（最新在上），挂在对手分析栏顶部
+// 摊牌面板：AI 思路日志（最新在上），挂在对手分析栏顶部；
+// 三家暗牌本身已摊到各自头像底下（renderSeat 的 .rvHand），面板不再重复列牌
 function revealPanelHTML(){
   if(!revealOn||typeof G==='undefined'||!G)return '';
-  let h='<div class="revealBox"><div class="rvHead">👁 上帝视角 · 摊牌中 —— 三家暗牌与 AI 实时思路（练习专用）</div>';
-  for(let i=1;i<=3;i++){
-    const pl=p(i);
-    h+='<div class="rvRow"><span class="rvName seatc'+i+'">'+pl.name+'</span><span class="rvTiles">'+(pl.hand.map(t=>tileDiv(t,true)).join('')||'<span class="rvDim">—</span>')+'</span></div>';
-  }
   const log=(G&&G.revealLog)||[];
+  let h='<div class="revealBox"><div class="rvHead">👁 上帝视角 · 摊牌中 —— 三家暗牌已摊在各自头像下；这里直播 AI 实时思路（练习专用）</div>';
   h+='<div class="rvLog">'+(log.length?log.map(x=>'<div class="rvLine">'+x+'</div>').join(''):'<div class="rvLine rvDim">等待各家摸牌 / 碰杠 / 出牌…</div>')+'</div></div>';
   return h;
 }
@@ -2566,6 +2571,43 @@ function whyMasterText(pl,disc){
     }
     return s;
   }catch(e){return '统一精算最优';}
+}
+// 2026-11-15 摊牌自适应：三家暗牌摊在头像下，牌面大小按各座位实测空间最大化（fit 同款思路）。
+// 顶座一行铺满；左右窄座换行铺列；高度不够（还要给副露留位）就按行数反推收缩——保证 13 张一张不裁。
+function fitRvHands(){
+  if(typeof G==='undefined'||!G||!revealOn){const t2=document.getElementById('seat2');if(t2)t2.classList.remove('rvSide');return;}
+  const capW=Math.min(30,Math.max(24,innerWidth*0.074))*0.72; // popW 同口径：clamp(24px,7.4vw,30px)×0.72
+  for(let i=1;i<=3;i++){
+    const e=document.getElementById('seat'+i),rv=e&&e.querySelector('.rvHand');
+    if(!rv)continue;
+    const n=rv.querySelectorAll('.tp-sm').length;
+    rv.style.removeProperty('--rvW');
+    // 横屏顶座纵向装不下一行牌 → 摊牌行改排头像右侧同一行（rvSide）；竖屏保持头像底下
+    const side2=(i===2&&!isPhonePort());
+    e.classList.toggle('rvSide',side2);
+    if(!n)continue;
+    const who=e.querySelector('.who'),melds=e.querySelector('.melds');
+    let availW,availH;
+    if(side2){
+      const whoW=who?who.offsetWidth:0;
+      const meldW=(melds&&melds.style.display!=='none')?Math.min(melds.scrollWidth,180):0;
+      availW=Math.max(40,e.clientWidth-whoW-meldW-24);
+      availH=Math.max(16,e.clientHeight-8);
+    }else{
+      const meldH=(melds&&melds.style.display!=='none')?Math.min(melds.scrollHeight,60):0; // 副露自然高度，封顶 60 防极端
+      availW=Math.max(28,e.clientWidth-12);
+      availH=Math.max(16,e.clientHeight-(who?who.offsetHeight:0)-meldH-14); // 14=座位两道 flex gap(8)+rv 内边距(4)+舍入
+    }
+    let best=0;
+    for(let rows=1;rows<=n;rows++){        // 枚举行数：宽度决定每行张数、高度决定行高，取两者最小化的最大值
+      const per=Math.ceil(n/rows);
+      const wByH=((availH/rows)-1)*0.75;
+      const wByW=(availW-(per-1))/per;
+      const w=Math.min(wByH,wByW);
+      if(w>best)best=w;
+    }
+    rv.style.setProperty('--rvW',Math.min(capW,Math.max(8,best)).toFixed(1)+'px');
+  }
 }
 function refreshDock(){
   const dock=document.getElementById('bottomDock');
@@ -4345,6 +4387,15 @@ function renderSeat(i){
   for(const m of pl.melds){mh+='<span class="meldGroup">';if(m.type==='angang')mh+=anGangDiv(m);else mh+=m.tiles.map(t=>tileDiv(t,true)).join('');mh+='</span>';}
   melds.innerHTML=mh;
   melds.style.display=pl.melds.length?'':'none';
+  // 2026-11-15 用户需求：摊牌模式把三家暗牌直接摊在各自头像底下排开（插在头像与副露之间），
+  // 随每次 render 刷新；自己的手牌底部本来就全亮，不重复摊。开/关即时增删走 toggleReveal 里的 render()
+  if(i>0){
+    let rv=e.querySelector('.rvHand');
+    if(revealOn){
+      if(!rv){rv=document.createElement('div');rv.className='rvHand';e.insertBefore(rv,who.nextSibling);}
+      rv.innerHTML=sortTiles(pl.hand).map(t=>tileDiv(t,true)).join('')||'<span class="rvDim" style="font-size:10px;color:#8a7f68">—</span>';
+    }else if(rv){rv.remove();e.classList.remove('rvSide');}
+  }
 }
 function renderDiscardPool(){
   const e=document.getElementById('discardPool');let h='';
@@ -4545,7 +4596,7 @@ function syncTingButton(){
   b.title=__tingN>0?('已听牌 · 共 '+__tingN+' 种胡牌，点我看详情'):'看我胡哪些牌（当前未听牌）';
 }
 let __renderFitSig='';
-function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);syncSplitModeUI();for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();syncTingButton();
+function render(){const tbtn=document.getElementById('teachBtn');if(tbtn)tbtn.classList.toggle('btnActive',teachOn);syncSplitModeUI();for(let i=0;i<4;i++)renderSeat(i);renderDiscardPool();renderHand();updateSplitBar();renderInfo();renderActions({});if(teachOn)updateTeachPanel();syncTingButton();fitRvHands();
   // 2026-11-13：视口/教学/拆牌任一变化后立刻按新几何重算「一行 16 张」牌面；
   // 只在签名变化时算，避免每次出牌都重复读写布局（跑局脚本不受影响）
   try{const tb=document.getElementById('table'),dk=document.getElementById('bottomDock');
@@ -4708,6 +4759,7 @@ function fit(){
     const d=document.getElementById('bottomDock');
     if(d&&d.style.display!=='none')setDockHeightPx(dockMaxH());
   }
+  try{fitRvHands();}catch(e){} // 2026-11-15：摊牌行随 --sm/--sideMin 等新几何重算牌面大小
 }
 function layout(){
   // 2026-11-10 牌桌锁定（用户需求：不可移动不可缩放）：每次布局重算都归位——

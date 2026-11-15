@@ -1,9 +1,9 @@
 // 2026-11-15 摊牌模式（上帝视角）回归测试
 // 断言：
 //  ① 源码：按钮/面板/日志/决策理由链路齐备，masterClaim 返回 {ok,why}
-//  ② 开启后：对手分析栏顶部出现摊牌面板，三家暗牌行与真实手牌数一致
+//  ② 开启后：三家暗牌摊在各自头像底下（.rvHand），张数与真实手牌一致；自己座位不重复摊
 //  ③ 托管跑局：AI 出牌/碰杠思路日志持续产生并渲染（含"打 "条目）
-//  ④ 关闭后：面板消失、日志停止；再次开启幂等恢复
+//  ④ 关闭后：面板与头像下摊牌行消失、日志停止；再次开启幂等恢复
 //  ⑤ 红中多打口径：手里 3 只红中但本局已打过 1 只 → 规则放行、听牌正常
 import path from 'node:path';
 import fs from 'node:fs';
@@ -35,6 +35,8 @@ chk('源码：摊牌按钮 + 开关函数 + 面板 + 日志链路齐备',
 chk('源码：masterClaim 返回 {ok,why} 决策理由（W 包装）', /const W=\(ok,why\)=>\(\{ok,why\}\)/.test(HTML));
 chk('源码：摊牌默认关且不持久化（无 localStorage 记忆 revealOn）', !/localStorage[^\n]*[Rr]eveal/.test(HTML));
 chk('源码：出牌/碰杠双路直播（revealLogDiscard 与 aiWantClaim 包装）', /revealOn&&\(!cur\.human\|\|cur\.auto\)\)revealLogDiscard/.test(HTML) && /function aiWantClaim\(pl,id,kind\)\{\s*const r=masterClaim/.test(HTML.replace(/\r/g, '')));
+chk('源码：暗牌摊在头像下（renderSeat 产 .rvHand，插在头像与副露之间）', /\.rvHand/.test(HTML) && /rv\.className='rvHand';e\.insertBefore\(rv,who\.nextSibling\)/.test(HTML.replace(/\r/g, '')));
+chk('源码：面板不再重复列牌（revealPanelHTML 无 rvRow，只留日志）', !/rvRow/.test(HTML));
 
 // ②③④ 运行时断言
 await page.goto(pathToFileURL(path.join(ROOT, 'index.html')).href, { waitUntil: 'load', timeout: 30000 });
@@ -50,19 +52,33 @@ await page.waitForTimeout(300);
 
 const panel = await page.evaluate(() => {
   const box = document.querySelector('.revealBox');
-  if (!box) return { has: false };
-  const rows = [...box.querySelectorAll('.rvRow')];
+  const rvs = [1, 2, 3].map(i => document.querySelector('#seat' + i + ' .rvHand'));
   return {
-    has: true, head: box.querySelector('.rvHead') ? box.querySelector('.rvHead').textContent : '',
-    rows: rows.length,
-    tilesMatch: rows.every((r, k) => r.querySelectorAll('.tp-sm').length === p(k + 1).hand.length),
-    tileCount: rows.map(r => r.querySelectorAll('.tp-sm').length),
+    has: !!box, head: box ? (box.querySelector('.rvHead') ? box.querySelector('.rvHead').textContent : '') : '',
+    rvN: rvs.filter(Boolean).length,
+    tilesMatch: rvs.every((rv, k) => rv && rv.querySelectorAll('.tp-sm').length === p(k + 1).hand.length),
+    tileCount: rvs.map(rv => rv ? rv.querySelectorAll('.tp-sm').length : 0),
     hands: [1, 2, 3].map(i => p(i).hand.length),
-    logN: box.querySelectorAll('.rvLine').length,
+    myRv: !!document.querySelector('#seat0 .rvHand'),
+    logN: box ? box.querySelectorAll('.rvLine').length : 0,
   };
 });
 chk('② 开启后摊牌面板出现（头部标识上帝视角）', panel.has && panel.head.includes('上帝视角'), JSON.stringify(panel).slice(0, 120));
-chk('② 三家暗牌行数=3 且张数与真实手牌一致', panel.rows === 3 && panel.tilesMatch, JSON.stringify({ tile: panel.tileCount, hand: panel.hands }));
+chk('② 三家暗牌摊在各自头像下（.rvHand×3）且张数与真实手牌一致', panel.rvN === 3 && panel.tilesMatch, JSON.stringify({ tile: panel.tileCount, hand: panel.hands }));
+chk('② 自己座位不重复摊（底部手牌本来就全亮）', !panel.myRv);
+
+// 摊牌行排序检查：暗牌按筒条万顺序排开（直接明了）
+const orderOk = await page.evaluate(() => {
+  const key = t => { const o = { W: 0, T: 1, B: 2 }; return t.id === 'Z' ? 99 : o[t.suit] * 9 + t.rank; };
+  return [1, 2, 3].every(i => {
+    const rv = document.querySelector('#seat' + i + ' .rvHand');
+    if (!rv) return false;
+    const alts = [...rv.querySelectorAll('.tp-sm')].map(s => s.querySelector('img').alt);
+    const tiles = p(i).hand.slice().sort((a, b) => key(a) - key(b));
+    return alts.join(',') === tiles.map(t => t.id === 'Z' ? '中' : (CN[t.rank] + CFG.suitName[t.suit])).join(',');
+  });
+});
+chk('② 头像下暗牌按筒条万+红中排序排开', orderOk);
 
 // ③ 托管跑局，让 AI 决策涌出日志
 await page.click('#autoBtn');
@@ -101,14 +117,15 @@ await page.waitForTimeout(1200);
 const closed = await page.evaluate((n0) => ({
   off: revealOn === false,
   boxGone: !document.querySelector('.revealBox'),
+  rvGone: ![1, 2, 3].some(i => document.querySelector('#seat' + i + ' .rvHand')),
   n: (G && G.revealLog) ? G.revealLog.length : -1, n0,
 }), n0);
-chk('④ 关闭后摊牌面板消失且开关复位', closed.off && closed.boxGone, JSON.stringify(closed));
+chk('④ 关闭后摊牌面板与头像下摊牌行消失、开关复位', closed.off && closed.boxGone && closed.rvGone, JSON.stringify(closed));
 chk('④ 关闭后日志停止增长（1.2s 无新增）', closed.n <= closed.n0 || closed.n === -1, JSON.stringify(closed));
 await page.click('#revealBtn');
 await page.waitForTimeout(300);
-const reopened = await page.evaluate(() => !!document.querySelector('.revealBox') && revealOn === true);
-chk('④ 再次开启幂等恢复', reopened);
+const reopened = await page.evaluate(() => !!document.querySelector('.revealBox') && [1, 2, 3].every(i => document.querySelector('#seat' + i + ' .rvHand')) && revealOn === true);
+chk('④ 再次开启幂等恢复（面板 + 头像下摊牌行）', reopened);
 await page.click('#revealBtn');
 await page.waitForTimeout(200);
 
