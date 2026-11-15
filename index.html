@@ -516,6 +516,16 @@
   /* 新四栏竖屏顺序：①合并栏 ②对手分析 各跨整行，③听牌一览与④积分排行并排 */
   #stage.pport .tColMain{grid-column:1/3;}
   #stage.pport .tColOpp{grid-column:1/3;}
+  /* 2026-11-15 摊牌模式（上帝视角）：对手分析栏顶部——三家暗牌明列 + AI 思路实时直播 */
+  .revealBox{margin:2px 0 6px;border:1px solid #7a5c2e;border-radius:8px;background:linear-gradient(180deg,#2a2117,#221a12);padding:5px 7px;}
+  .revealBox .rvHead{color:#ffd98a;font-size:12px;font-weight:bold;margin-bottom:4px;}
+  .revealBox .rvRow{display:flex;align-items:center;gap:6px;padding:2px 0;}
+  .revealBox .rvName{flex:0 0 auto;font-size:11px;font-weight:bold;color:#cfe8d8;min-width:3.4em;}
+  .revealBox .rvTiles{display:flex;flex-wrap:wrap;gap:1px;align-items:center;}
+  .revealBox .rvTiles .tp-sm{width:calc(var(--popW)*0.72);height:calc(var(--popW)*0.72/0.75);}
+  .revealBox .rvLog{max-height:160px;overflow-y:auto;border-top:1px dashed #5a4a30;margin-top:4px;padding-top:4px;}
+  .revealBox .rvLine{font-size:11px;color:#d8cba8;line-height:1.5;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .revealBox .rvDim{color:#8a7f68;font-size:11px;}
   #stage.pport .tColAdv{grid-column:1/3;}
   #stage.pport .tMainGrid{grid-template-columns:minmax(0,1fr);}  /* 合并栏内部上下堆叠 */
   #stage.pport .tSecRec{border-left:none;border-top:1px dashed #3a5546;padding-left:0;padding-top:4px;margin-top:4px;}
@@ -724,8 +734,8 @@
 <div id="topbar">
   <b>巢湖-金华红中</b><span id="info"></span><span class="sp"></span>
   <span class="topTag" id="roundTag">第 1/8 局</span>
-  <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，须先打出一只红中才能胡</span>
-  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="trainBtn" title="训练模式：先自己答，再听师傅讲；含成绩与弱项">训练</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="rotBtn" title="竖屏锁定时一键横屏：整个牌桌转 90°，再点回竖屏；解锁旋转后旋转手机也会自动跟随">横屏</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
+  <span class="topTag warn" id="warnTag" style="display:none">手里2只以上红中，先打出1只才能胡（打1只即解锁，多打/全打都行）</span>
+  <button id="rulesBtn">游戏规则</button><button id="tipsBtn">打法攻略</button><button id="histBtn">战绩</button><button id="teachBtn">教学模式</button><button id="revealBtn" title="摊牌模式（上帝视角）：直播三家暗牌与 AI 每一步碰/杠/出牌的思考理由，练习专用">摊牌</button><button id="trainBtn" title="训练模式：先自己答，再听师傅讲；含成绩与弱项">训练</button><button id="splitBtn">拆牌方式</button><button id="thinkBtn">讲思路</button><button id="reviewBtn">复盘</button><button id="warnBtn">打错提醒</button><button id="soundBtn">声音:开</button><button id="rotBtn" title="竖屏锁定时一键横屏：整个牌桌转 90°，再点回竖屏；解锁旋转后旋转手机也会自动跟随">横屏</button><button id="autoBtn" class="primary">托管</button><button id="restartBtn" title="跳过当前局，进入第 N+1 局（8 局一轮）">下一局</button>
 </div>
 <div id="table">
   <div class="seat" id="seat2"></div>
@@ -777,7 +787,7 @@
       <li>红中可替代任意牌，组成顺子、刻子、将牌或七对，可留可打。</li>
       <li>打出的红中，任何人都不能碰、杠、胡。</li>
       <li>本人打出红中后胡牌，按打出只数 2 的 n 次方翻倍：1 只×2、2 只×4、3 只×8、4 只×16；未胡不生效。</li>
-      <li>手里有 2 只以上红中、且本局没打出过红中时，禁止胡牌，必须先打出一只红中。</li>
+      <li>手里有 2 只以上红中、且本局没打出过红中时，禁止胡牌，必须先打出一只红中——打 1 只即解锁（之后手里剩下的红中照常当百搭），多打或全打也都可以。</li>
     </ol></div>
     <div class="ruleSec"><h4>四、碰牌与杠</h4><ol>
       <li>不能吃牌；可碰牌，不限次数，最多 4 组。</li>
@@ -1954,7 +1964,7 @@ function buildTingHTML(){
     let sh=null;try{sh=calcShanten(me.hand,me.melds);}catch(e){}
     // 2026-11-15 用户反馈「2只红中时听牌提示没说为什么没听」：红中封锁时给出规则原因，而不是笼统的"还没听牌"
     if(blockedByZRule(me)){
-      return '<div class="tingEmpty">不是牌型没到位——是<b>红中规则</b>：手里 '+zInHand(me)+' 只红中且本局没打过红中，必须先打出一只红中才能胡（当前向听 '+(sh!=null?sh:'?')+' 步）。打出一只后，这里会立刻重算听牌。</div>';
+      return '<div class="tingEmpty">不是牌型没到位——是<b>红中规则</b>：手里 '+zInHand(me)+' 只红中且本局没打过红中，必须先打出一只红中才能胡（打 1 只即解锁，多打或全打也行；当前向听 '+(sh!=null?sh:'?')+' 步）。打出一只后，这里会立刻重算听牌。</div>';
     }
     return '<div class="tingEmpty">当前还没听牌'+(sh!=null?'（向听 '+sh+' 步）':'')+'。先把搭子凑齐，一旦听牌，这里会列出所有能胡的牌与各自剩余张数。</div>';
   }
@@ -2167,7 +2177,7 @@ function recommendHandType(d,me){
     :found.text;
   // 红中策略
   let zStrategy;
-  if(d.zBlocked)zStrategy='红中限制：'+d.zN+'只红中且未打过红中，必须先打一只红中才能胡。';
+  if(d.zBlocked)zStrategy='红中限制：'+d.zN+'只红中且未打过红中，必须先打一只红中才能胡（打 1 只即解锁，多打或全打都行）。';
   else if(d.zN>=1)zStrategy='红中是癞子可代任意牌；主动打出后本人胡牌按2^n翻倍（1只×2、2只×4），打出的红中别家不能碰杠胡。';
   else zStrategy='无红中属硬胡：翻码6张、0张保底6分，可抢补杠。';
   // 杠上花（杠吊）
@@ -2504,6 +2514,59 @@ try{localStorage.removeItem('banshanTeach');}catch(e){}  // 2026-11-08：清除�
 try{teachOn=localStorage.getItem('banshanTeach2')==='1';}catch(e){teachOn=false;}
 function saveTeach(){try{localStorage.setItem('banshanTeach2',teachOn?'1':'0');}catch(e){}}
 let thinkOn=false;        // 讲思路视图（临时查看，不持久化）
+// ===== 2026-11-15 摊牌模式（上帝视角）：直播三家暗牌与 AI 每一步决策思路 =====
+// 默认关、绝不持久化——这是「对手分析只用玩家可见信息」铁律的用户明确授权例外：
+// 只在用户本会话手动开启时才读 AI 暗牌/决策理由，关闭或刷新即恢复上帝视角之外的一切原状
+let revealOn=false;
+function toggleReveal(){
+  revealOn=!revealOn;
+  const b=document.getElementById('revealBtn');if(b)b.classList.toggle('btnActive',revealOn);
+  if(revealOn&&!teachOn){ // 摊牌面板挂在教学抽屉「对手分析」栏——自动把教学抽屉带起来
+    teachOn=true;saveTeach();
+    const tb=document.getElementById('teachBtn');if(tb)tb.classList.add('btnActive');
+    refreshDock();
+  }
+  if(typeof G!=='undefined'&&G)updateTeachPanel(); // G 未建（开局前）时面板无从渲染，跳过
+  sndClick();
+  toast(revealOn?'摊牌模式开启：底部「对手分析」栏直播三家暗牌与 AI 思路（仅自己练习用，刷新后自动关闭）':'摊牌模式已关闭');
+}
+function pushReveal(txt){
+  if(!G||!revealOn)return;
+  if(!G.revealLog)G.revealLog=[];
+  G.revealLog.unshift(txt);
+  if(G.revealLog.length>60)G.revealLog.length=60;
+  scheduleTeachRefresh();
+}
+// 摊牌面板：三家暗牌明列（仅 revealOn）+ AI 思路日志（最新在上），挂在对手分析栏顶部
+function revealPanelHTML(){
+  if(!revealOn||typeof G==='undefined'||!G)return '';
+  let h='<div class="revealBox"><div class="rvHead">👁 上帝视角 · 摊牌中 —— 三家暗牌与 AI 实时思路（练习专用）</div>';
+  for(let i=1;i<=3;i++){
+    const pl=p(i);
+    h+='<div class="rvRow"><span class="rvName seatc'+i+'">'+pl.name+'</span><span class="rvTiles">'+(pl.hand.map(t=>tileDiv(t,true)).join('')||'<span class="rvDim">—</span>')+'</span></div>';
+  }
+  const log=(G&&G.revealLog)||[];
+  h+='<div class="rvLog">'+(log.length?log.map(x=>'<div class="rvLine">'+x+'</div>').join(''):'<div class="rvLine rvDim">等待各家摸牌 / 碰杠 / 出牌…</div>')+'</div></div>';
+  return h;
+}
+// AI 出牌日志：摸了什么（若有）、打了什么、为什么打这张（aiChooseDiscard 各分支插桩的 _whyDisc）
+function revealLogDiscard(pl,disc){
+  const drew=pl.hand.find(t=>t.uid===pl._lastUid&&t.uid!==disc.uid);
+  pushReveal('【'+pl.name+'】'+(drew?'摸 '+tileName(drew)+'，':'')+'打 '+tileName(disc)+' —— '+(pl._whyDisc||'统一精算最优'));
+}
+// 精算理由（仅摊牌开启时计算）：打这张之后的向听与听牌门数
+function whyMasterText(pl,disc){
+  try{
+    const rest=pl.hand.filter(t=>t.uid!==disc.uid);
+    const sh=calcShanten(rest,pl.melds);
+    let s='统一精算：打后向听 '+sh;
+    if(sh===0){
+      const vt=validTingIds(rest,pl.melds,pl);
+      s+='（已听 '+vt.length+' 门：'+vt.slice(0,5).map(x=>tileName(tileFromId(x))).join('、')+(vt.length>5?'…':'')+'）';
+    }
+    return s;
+  }catch(e){return '统一精算最优';}
+}
 function refreshDock(){
   const dock=document.getElementById('bottomDock');
   const teachEl=document.getElementById('teachPanel');
@@ -2842,7 +2905,7 @@ function updateSplitBar(){
     if(b.pair7>=4)sumHtml+=' · 七对 '+b.pair7+'/7 对';
     if(sumEl)sumEl.innerHTML=sumHtml;
     let h='';
-    if(b.zN)h+='<span class="sbGrp g-joker"><i>红中×'+b.zN+'</i>百搭'+(b.zN>=2&&!zDiscarded(me)?' <b>须先打 1 只才能胡</b>':' · 可补任意缺口')+'</span>';
+    if(b.zN)h+='<span class="sbGrp g-joker"><i>红中×'+b.zN+'</i>百搭'+(b.zN>=2&&!zDiscarded(me)?' <b>先打 1 只才能胡（打 1 只即解锁，多打也行）</b>':' · 可补任意缺口')+'</span>';
     if(b.meldN)h+='<span class="sbGrp g-meld"><i>副露×'+b.meldN+'</i>已亮面子</span>';
     for(const g of b.groups){
       const dl=g.draws.filter(d=>visibleLeft(d.id)>0).map(d=>d.name+'<em>'+visibleLeft(d.id)+'</em>').join(' / ');
@@ -2918,14 +2981,14 @@ function updateTeachPanel(){
   } // 训练模式：作答后才显示完整答案区
   h+='</div></div></div>'; // 关闭 tSecRec / tMainGrid / tColMain
   // 第2栏（2026-11-12 用户需求新增）：对手牌型分析 + 打牌分析，只用玩家可见信息
-  h+='<div class="tCol tColOpp"><div class="tColHead">对手分析 · 牌型与打法</div>'+opponentAnalysisHTML()+'</div>';
+  h+='<div class="tCol tColOpp"><div class="tColHead">对手分析 · 牌型与打法</div>'+revealPanelHTML()+opponentAnalysisHTML()+'</div>';
   // 第3栏：听牌一览（当前真实听牌状态，自动显示听哪些牌、各剩几张）
   const curTing=calcTing();
   h+='<div class="tCol tColTing"><div class="tColHead">听牌一览</div>';
   if(!curTing.length){
     // 2026-11-15：红中封锁时给出规则原因（用户反馈：2只红中时只显示"还没听牌"看不懂）
     if(blockedByZRule(me)){
-      h+='<div class="tTingHead tTingNone">不是牌型没到位——是<b>红中规则</b>：手里 '+zInHand(me)+' 只红中且本局没打过红中，先打出一只红中才能胡。打出后这里立刻重算听牌。</div>';
+      h+='<div class="tTingHead tTingNone">不是牌型没到位——是<b>红中规则</b>：手里 '+zInHand(me)+' 只红中且本局没打过红中，先打出一只红中才能胡（打 1 只即解锁，多打或全打也行）。打出后这里立刻重算听牌。</div>';
     }else{
       h+='<div class="tTingHead tTingNone">当前还没听牌，先按牌型方向把搭子凑齐。</div>';
     }
@@ -3807,18 +3870,18 @@ function masterDiscard(pl){
   return pl.hand.find(t=>t.id===cands[0].id);
 }
 function aiChooseDiscard(pl){
-  // 新规则：手里≥2红中且未打出过，必须先主动打出一只红中
-  if(blockedByZRule(pl))return pl.hand.find(t=>t.id==='Z');
+  // 新规则：手里≥2红中且未打出过，必须先主动打出一只红中（打 1 只即解封，可多打；摊牌模式下带理由直播）
+  if(blockedByZRule(pl)){pl._whyDisc='红中规则：手里 '+zInHand(pl)+' 只红中且本局未打过，先打一只解封（打 1 只即可，多打也行）';return pl.hand.find(t=>t.id==='Z');}
   const style=pl.style||'flexible';
   // 冒险大牌：牌型好且只有一只红中，按性格概率主动打掉、手里不留红中，走硬胡+翻倍（经验学习：打红中赢过加码、输过收敛）
   const dump=shouldDumpSingleZ(pl);
-  if(dump&&Math.random()<expParams(pl).dumpZRate)return pl.hand.find(t=>t.id==='Z');
+  if(dump&&Math.random()<expParams(pl).dumpZRate){pl._whyDisc='性格打法：手里只 1 只红中，主动甩掉换硬胡翻倍（'+AI_STYLE_NAME[style]+'）';return pl.hand.find(t=>t.id==='Z');}
   // 2026-11-09 用户需求：大牌路线锁定——起手评估一次 + 中盘复评（2026-11-11 审计升级：原仅起手一次，
   // 100 局清一色 0 兑现——起手主色不足 10 张、中期摸进主色的局面错过锁定窗口；中盘前 5 巡内复评一次，门槛更严 11 张）
   if(pl._plan===undefined||(pl._plan===null&&pl.discard.length>=1&&pl.discard.length<=5&&pl.melds.length===0))pl._plan=evalHandPlan(pl,pl.discard.length>0);
-  if(pl._plan){const pd=planDiscard(pl,pl._plan);if(pd)return pd;}
+  if(pl._plan){const pd=planDiscard(pl,pl._plan);if(pd){pl._whyDisc='已锁'+(pl._plan.kind==='qing'?'清一色（'+CFG.suitName[pl._plan.suit]+'）':'七对')+'路线，按路线拆这张不亏向听';return pd;}}
   // 统一高手精算：所有角色都逐张模拟向听、听牌宽度与有效进张，性格只影响大牌偏好
-  const master=masterDiscard(pl);if(master)return master;
+  const master=masterDiscard(pl);if(master){pl._whyDisc=revealOn?whyMasterText(pl,master):'统一精算：逐张模拟向听后的最优一打';return master;}
   const cand=pl.hand.filter(t=>t.id!=='Z');
   return cand.length?cand[0]:pl.hand[0];
 }
@@ -3889,19 +3952,22 @@ function minShantenAfterDiscard(hand,melds){
   return best;
 }
 function masterClaim(pl,id,kind){
+  // 2026-11-15 摊牌模式：返回 {ok,why}——why 是 AI 碰/杠决策的中文理由（摊牌开启时直播给用户看）
+  const W=(ok,why)=>({ok,why});
   const style=pl.style||'flexible';
   const d=handDiagnose(pl);
   const mp=MASTER_PROFILE[style]||MASTER_PROFILE.flexible;
   const rk=RISK[style]||RISK.flexible;
   const stance=bigHandStance(pl,d,1-mp.big);
+  const tn=tileName(tileFromId(id));
   // 方向保护：做七对（无副露）碰杠即破坏（暗杠拆豪华七对也拒）；做清一色别色不碰不杠
-  if(stance&&stance.kind==='seven')return false;
-  if(stance&&stance.kind==='qing'&&id[0]!==d.mainSuit)return false;
+  if(stance&&stance.kind==='seven')return W(false,'正在做七对——碰、杠任何牌都会毁掉七对，一律不动');
+  if(stance&&stance.kind==='qing'&&id[0]!==d.mainSuit)return W(false,'正在做清一色（'+CFG.suitName[d.mainSuit]+'），'+tn+'不是主色，不碰不杠');
   if(!stance){
     // 姿态未达阈值时保留原方向保护（低成型度也不破坏既有牌路）
     const lead=recommendHandType(d,pl).lead;
-    if(pl.melds.length===0&&lead==='七对')return false;
-    if(lead==='清一色'&&id[0]!==d.mainSuit)return false;
+    if(pl.melds.length===0&&lead==='七对')return W(false,'牌型方向偏七对，保对子不碰');
+    if(lead==='清一色'&&id[0]!==d.mainSuit)return W(false,'牌型方向偏清一色（'+CFG.suitName[d.mainSuit]+'），非主色不碰');
   }
   // 向听比较：不碰保持现状 vs 碰杠后再最优出牌
   const before=calcShanten(pl.hand,pl.melds);
@@ -3916,17 +3982,21 @@ function masterClaim(pl,id,kind){
   const boost=stance?rk.boost:0;
   if(kind==='gang'){
     // 杠有确定杠分+杠上花机会，仅在严重恶化时拒绝，否则按性格概率（姿态下更积极；对手紧时抢节奏再加成）
-    if(after>before+1)return false;
-    return Math.random()<Math.min(1,rate.gang+boost+rush);
+    if(after>before+1)return W(false,'杠'+tn+'后向听 '+before+'→'+after+'，恶化太多，不杠');
+    return W(Math.random()<Math.min(1,rate.gang+boost+rush),'杠分+杠上开花机会在手，向听 '+before+'→'+after+'，值得杠');
   }
   // 姿态加速容忍：做碰碰胡/清一色时为抢速度，激进/豪/闯/活型敢让碰后向听退一步，保守/沉稳型严格不退
   const tol=(stance&&(stance.kind==='pong'||stance.kind==='qing'))?rk.pengTol:0;
-  if(after>before+tol)return false;
-  if(!ztsClaimGate(pl,id,after,before))return false; // 2026-11-11 郑太顺五不碰：复合型/大肚子/已听贪碰/短牌防守
-  if(after<before)return true;
-  return Math.random()<Math.min(1,rate.peng+boost+rush);
+  if(after>before+tol)return W(false,'碰'+tn+'后向听 '+before+'→'+after+'，退步超出容忍度，不碰');
+  if(!ztsClaimGate(pl,id,after,before))return W(false,'郑太顺五不碰：复合型/大肚子/已听贪碰/短牌防守等情形，忍住不碰'); // 2026-11-11 郑太顺五不碰：复合型/大肚子/已听贪碰/短牌防守
+  if(after<before)return W(true,'碰'+tn+'后向听 '+before+'→'+after+'，明显进账');
+  return W(Math.random()<Math.min(1,rate.peng+boost+rush),'向听持平（'+before+'），按性格概率决定'+tn+'碰不碰');
 }
-function aiWantClaim(pl,id,kind){return masterClaim(pl,id,kind);}
+function aiWantClaim(pl,id,kind){
+  const r=masterClaim(pl,id,kind);
+  if(revealOn&&(!pl.human||pl.auto))pushReveal('【'+pl.name+'】'+(r.ok?'决定':'放弃')+(kind==='gang'?'杠':'碰')+tileName(tileFromId(id))+'：'+r.why);
+  return r.ok;
+}
 const TIMED={claim:1,gangself:1,zimo:1,qiang:1,discard:1};
 // 2026-11-10 用户需求：自己胡牌思考 2 分钟、打牌 10 分钟（碰/杠询问维持 10 秒）；
 // 出牌超时自动打出最优牌，其余超时自动过；测试脚本可临时改小本表加速
@@ -4009,7 +4079,7 @@ async function run(forceDealer){const myToken=++runToken;/* 2026-11-08 规则变
       if(!did&&canG){const bu=findBuGang(cur);if(bu.length&&aiWantClaim(cur,bu[0],'gang')&&buGangRiskOK(cur)){const rb=await checkQiangGang(cur.seat,bu[0]);if(myToken!==runToken)return;if(rb)break;doGang(cur,'bugang',bu[0]);did=true;}}
       gh=did;}
     if(gh){if(wallRemain()<=CFG.keepTiles){await showLiuJu();break;}drawTile(cur,true);render();const w2=analyzeWin(cur);if(w2.win){await showWin(cur.seat,'ganghua',w2);break;}}
-    let disc;if(cur.human&&!cur.auto){disc=await waitHuman('discard',{});if(myToken!==runToken)return;}else{disc=aiChooseDiscard(cur);await think();if(myToken!==runToken)return;} // 2026-11-11：打红中不再二次确认，点选即打出
+    let disc;if(cur.human&&!cur.auto){disc=await waitHuman('discard',{});if(myToken!==runToken)return;}else{disc=aiChooseDiscard(cur);await think();if(myToken!==runToken)return;if(revealOn&&(!cur.human||cur.auto))revealLogDiscard(cur,disc);} // 2026-11-11：打红中不再二次确认，点选即打出；2026-11-15：摊牌开启时直播 AI/托管代打出牌思路
     if(cur.human&&!cur.auto)recordMove(disc);
     discardTile(cur,disc);render();
     chatAfterDiscard(cur); // 牌桌闲聊：出牌后感想（进张得意/刚听牌/久无进展牢骚）
@@ -4711,6 +4781,7 @@ function startGame(){
   const rs=document.getElementById('roleSelect');rs.classList.add('show');
 }
 document.getElementById('startBtn').addEventListener('click',startGame);
+document.getElementById('revealBtn').addEventListener('click',toggleReveal); // 2026-11-15 摊牌模式：上帝视角看三家暗牌与 AI 思路
 // 2026-11-15 用户需求：顶部菜单可左右滑动——滑动中实时维护右缘渐隐（滑到底自动消失）
 document.getElementById('topbar').addEventListener('scroll',topbarFadeSync,{passive:true});
 const soundBtn=document.getElementById('soundBtn');

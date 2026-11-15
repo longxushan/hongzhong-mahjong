@@ -168,7 +168,7 @@ const ui = await page.evaluate(() => {
   out.sum2 = document.getElementById('sbSum').textContent;
   out.handRegrouped = document.querySelectorAll('#hand > .hGrp').length > 0
     && [...document.querySelectorAll('#hand > .hGrp .hLab')].some(x => x.textContent.includes('刻子'));
-  out.zRule = document.getElementById('sbBody').textContent.includes('须先打 1 只才能胡');
+  out.zRule = document.getElementById('sbBody').textContent.includes('先打 1 只才能胡'); // 2026-11-15 文案口径：打 1 只即解锁，多打也行
   document.getElementById('sbHead').click();
   out.folded = sb.classList.contains('fold') && localStorage.getItem('banshanSplitBar') === '0';
   document.getElementById('sbHead').click();

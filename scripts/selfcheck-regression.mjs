@@ -12,6 +12,8 @@ const list = [
   ['test-hand-drag.mjs', '手牌拖动配牌 · 12 组合布局'],
   ['test-teach-pool.mjs', '教学合并栏 · 牌河实况/打错提醒'],
   ['test-warn-band.mjs', '竖屏打错提醒 · 钉底不交叠'],
+  ['test-zblock-ting.mjs', '红中封锁 · 听牌计算'], // 2026-11-15
+  ['test-reveal.mjs', '摊牌模式 · 上帝视角'], // 2026-11-15
 ];
 const records = [];
 for (const [file, label] of list) {

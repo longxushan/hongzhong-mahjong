@@ -161,7 +161,7 @@ const r10 = await page.evaluate(() => {
   const ai = p(2); ai.style = 'grand';
   const ids = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W3','W6','B5','B5'];
   ai.hand = ids.map((x, i) => window.__mk(x, 970000 + i));
-  return { offSuit: masterClaim(ai, 'B5', 'peng'), mainSuit: masterClaim(ai, 'W4', 'peng') };
+  return { offSuit: masterClaim(ai, 'B5', 'peng').ok, mainSuit: masterClaim(ai, 'W4', 'peng').ok }; // 2026-11-15 masterClaim 改返回 {ok,why}（摊牌决策理由）
 });
 check('清一色姿态：别色对子拒碰', r10.offSuit === false, `别色碰=${r10.offSuit}（主色走向听比较=${r10.mainSuit}）`);
 
@@ -190,7 +190,7 @@ const r11 = await page.evaluate(() => {
   Math.random = () => 0.5;
   for (const st of ['aggressive', 'conservative']) {
     ai.style = st;
-    res[st] = masterClaim(ai, probe, 'peng');
+    res[st] = masterClaim(ai, probe, 'peng').ok; // 2026-11-15 masterClaim 改返回 {ok,why}
   }
   Math.random = backupRand;
   return res;
