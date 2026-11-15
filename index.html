@@ -1927,7 +1927,9 @@ function analyzeWin(pl){
   return{win:true,sevenPairs:sv&&!ap,deluxeSeven:deluxe,allPong:ap,qingyise:suits.size<=1};
 }
 function wouldWin(pl,id){
-  const fake={hand:pl.hand.concat([{id,uid:-1,suit:id==='Z'?'Z':id[0],rank:id==='Z'?0:parseInt(id[1],10)}]),melds:pl.melds};
+  // 2026-11-15 修复：fake 必须带上 discard——否则 blockedByZRule 里 zDiscarded(fake) 恒为 0，
+  // 「摸3只红中打过1只、手里仍剩2只」时规则本已放行，听牌计算却被误封锁为空
+  const fake={hand:pl.hand.concat([{id,uid:-1,suit:id==='Z'?'Z':id[0],rank:id==='Z'?0:parseInt(id[1],10)}]),melds:pl.melds,discard:pl.discard};
   return analyzeWin(fake);
 }
 function tileFromId(id){return {id,uid:-1,suit:id==='Z'?'Z':id[0],rank:id==='Z'?0:parseInt(id[1],10)};}
@@ -1950,6 +1952,10 @@ function buildTingHTML(){
   const me=p(0),ting=calcTing();
   if(!ting.length){
     let sh=null;try{sh=calcShanten(me.hand,me.melds);}catch(e){}
+    // 2026-11-15 用户反馈「2只红中时听牌提示没说为什么没听」：红中封锁时给出规则原因，而不是笼统的"还没听牌"
+    if(blockedByZRule(me)){
+      return '<div class="tingEmpty">不是牌型没到位——是<b>红中规则</b>：手里 '+zInHand(me)+' 只红中且本局没打过红中，必须先打出一只红中才能胡（当前向听 '+(sh!=null?sh:'?')+' 步）。打出一只后，这里会立刻重算听牌。</div>';
+    }
     return '<div class="tingEmpty">当前还没听牌'+(sh!=null?'（向听 '+sh+' 步）':'')+'。先把搭子凑齐，一旦听牌，这里会列出所有能胡的牌与各自剩余张数。</div>';
   }
   const list=ting.map(id=>({id,left:visibleLeft(id)})).sort((x,y)=>y.left-x.left);
@@ -2008,7 +2014,7 @@ function teachingAdvice(){
   for(const t of hand){
     if(seen[t.id])continue;seen[t.id]=1;
     const rest=hand.filter(x=>x.uid!==t.uid);
-    const fake={hand:rest,melds:me.melds};
+    const fake={hand:rest,melds:me.melds,discard:me.discard}; // 2026-11-15：补 discard，红中封锁口径与真实玩家一致
     const tings=[];
     for(const id of allIds){
       let w;try{w=wouldWin(fake,id);}catch(e){w={win:false};}
@@ -2397,22 +2403,23 @@ function poolReasonText(chosenId,bestId){
 }
 function allTileIds(){const a=[];for(const s of CFG.suits)for(let r=1;r<=9;r++)a.push(s+r);a.push('Z');return a;}
 // 有效听牌进张：只统计牌墙里还摸得到（剩余>0）的牌
-function validTingIds(handArr,melds){
+// pl（可选）：玩家上下文，带 discard 才能正确判定「手里≥2红中但本局已打过红中」的放行口径
+function validTingIds(handArr,melds,pl){
   const v=[];
   for(const x of allTileIds()){
     if(tileRemaining(x)<=0)continue;
-    let w;try{w=wouldWin({hand:handArr,melds},x);}catch(e){w={win:false};}
+    let w;try{w=wouldWin({hand:handArr,melds,discard:pl&&pl.discard},x);}catch(e){w={win:false};}
     if(w&&w.win)v.push(x);
   }
   return v;
 }
 // 给定手牌（含模拟摸牌），能否打出某一张后进入有效听牌
-function canReachTenpai(handArr,melds){
+function canReachTenpai(handArr,melds,pl){
   const seen={};
   for(const t of handArr){
     if(seen[t.id])continue;seen[t.id]=1;
     const ah=handArr.filter(x=>x.uid!==t.uid);
-    if(validTingIds(ah,melds).length)return true;
+    if(validTingIds(ah,melds,pl).length)return true;
   }
   return false;
 }
@@ -2445,14 +2452,14 @@ function teachPick(d){
     // ① 打出该牌后的向听数（核心，先看是否拆成型面子）
     const sh=calcShanten(ah,me.melds);
     // ② 打出后能否立即有效听牌
-    const vt=validTingIds(ah,me.melds);
+    const vt=validTingIds(ah,me.melds,me);
     let iw=0;for(const x of vt)iw+=visibleLeft(x);
     // ③ 若不能立即听牌，计算有效进张：再摸一张后能进入有效听牌
     const draws=[];let dw=0;
     for(const x of allTileIds()){
       const rem=visibleLeft(x);if(rem<=0)continue;
       const trial=ah.concat([tileFromId(x)]);
-      let ok;try{ok=canReachTenpai(trial,me.melds);}catch(e){ok=false;}
+      let ok;try{ok=canReachTenpai(trial,me.melds,me);}catch(e){ok=false;}
       if(ok){draws.push(x);dw+=rem;}
     }
     cands.push({id:t.id,sh,vt,iw,draws,dw,role:tileRoleRank(t.id,d)});
@@ -2916,7 +2923,12 @@ function updateTeachPanel(){
   const curTing=calcTing();
   h+='<div class="tCol tColTing"><div class="tColHead">听牌一览</div>';
   if(!curTing.length){
-    h+='<div class="tTingHead tTingNone">当前还没听牌，先按牌型方向把搭子凑齐。</div>';
+    // 2026-11-15：红中封锁时给出规则原因（用户反馈：2只红中时只显示"还没听牌"看不懂）
+    if(blockedByZRule(me)){
+      h+='<div class="tTingHead tTingNone">不是牌型没到位——是<b>红中规则</b>：手里 '+zInHand(me)+' 只红中且本局没打过红中，先打出一只红中才能胡。打出后这里立刻重算听牌。</div>';
+    }else{
+      h+='<div class="tTingHead tTingNone">当前还没听牌，先按牌型方向把搭子凑齐。</div>';
+    }
   }else{
     let totalLeft=0;for(const id of curTing)totalLeft+=visibleLeft(id);
     h+='<div class="tTingHead">当前听 <b>'+curTing.length+'</b> 种、共 <b>'+totalLeft+'</b> 张可胡</div>';
@@ -3053,11 +3065,11 @@ function discardQuality(pl,id){
   const i=pl.hand.findIndex(t=>t.id===id);if(i<0)return null;
   const ah=pl.hand.slice();ah.splice(i,1);
   const sh=calcShanten(ah,pl.melds);
-  const vt=validTingIds(ah,pl.melds);let iw=0;for(const x of vt)iw+=visibleLeft(x);
+  const vt=validTingIds(ah,pl.melds,pl);let iw=0;for(const x of vt)iw+=visibleLeft(x);
   let dw=0;
   for(const x of allTileIds()){
     const rem=visibleLeft(x);if(rem<=0)continue;
-    let ok;try{ok=canReachTenpai(ah.concat([tileFromId(x)]),pl.melds);}catch(e){ok=false;}
+    let ok;try{ok=canReachTenpai(ah.concat([tileFromId(x)]),pl.melds,pl);}catch(e){ok=false;}
     if(ok)dw+=rem;
   }
   return {sh,iw,dw};
@@ -3357,7 +3369,7 @@ function shouldDumpSingleZ(pl){
     if(maxSuit>=9)good='qing';
   }
   const ah=pl.hand.filter(t=>t.id!=='Z');
-  const vt=validTingIds(ah,pl.melds);
+  const vt=validTingIds(ah,pl.melds,pl);
   let iw=0;for(const x of vt)iw+=tileRemaining(x);
   // 去掉红中即听：牌已非常完整、红中多余，可直接不要红中
   if(iw>0)return good||'complete';
@@ -3367,7 +3379,7 @@ function shouldDumpSingleZ(pl){
   for(const x of allTileIds()){
     const rem=tileRemaining(x);if(rem<=0)continue;
     const trial=ah.concat([{id:x,uid:777888,suit:x[0],rank:x==='Z'?0:parseInt(x[1],10)}]);
-    let ok;try{ok=canReachTenpai(trial,pl.melds);}catch(e){ok=false;}
+    let ok;try{ok=canReachTenpai(trial,pl.melds,pl);}catch(e){ok=false;}
     if(ok)dw+=rem;
   }
   return dw>0?good:false;
@@ -3721,13 +3733,13 @@ function masterDiscard(pl){
     if(seen[t.id]||t.id==='Z')continue;seen[t.id]=1; // 红中由打红中专门逻辑处理，高手不轻易打
     const ah=pl.hand.filter(x=>x.uid!==t.uid);
     const sh=calcShanten(ah,pl.melds);
-    const vt=validTingIds(ah,pl.melds);
+    const vt=validTingIds(ah,pl.melds,pl);
     let iw=0;for(const x of vt)iw+=tileRemaining(x);
     let dw=0;
     for(const x of allTileIds()){
       const rem=tileRemaining(x);if(rem<=0)continue;
       const trial=ah.concat([{id:x,uid:777001,suit:x[0],rank:x==='Z'?0:parseInt(x[1],10)}]);
-      let ok;try{ok=canReachTenpai(trial,pl.melds);}catch(e){ok=false;}
+      let ok;try{ok=canReachTenpai(trial,pl.melds,pl);}catch(e){ok=false;}
       if(ok)dw+=rem;
     }
     cands.push({id:t.id,sh,iw,dw,saved:dead0-qxmgDeadMeldN(ah)}); // saved=打此牌消灭的死搭数
