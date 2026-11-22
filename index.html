@@ -1568,20 +1568,38 @@ const MUSIC_TRACKS=[
   {f:'music/track06.m4a',t:'ラブ・ストーリーは突然に · 小田和正'},
   {f:'music/track07.m4a',t:'听海 (live) · 张学友'}
 ];
-const MUSIC_LEVEL=0.32,MUSIC_DUCK=0.10; // 歌曲比合成伴奏响得多，整体压低，报牌时再压一档
-let musicAudio=null,musicIndex=0,musicFallback=false;
+const MUSIC_LEVEL=0.20,MUSIC_DUCK=0.06; // 2026-11-22 用户要求再降一档：商业录音母带电平高，别盖过报牌与动作词
+let musicAudio=null,musicIndex=-1,musicFallback=false;
+// 洗牌袋随机轮播：一轮内 7 首各播一次不重复，播完重新洗牌；且新轮首曲避开上一轮末曲，杜绝连播同一首
+let musicBag=[],musicBagPos=0;
+function musicShuffleBag(){
+  musicBag=MUSIC_TRACKS.map((_,i)=>i);
+  for(let i=musicBag.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    const tmp=musicBag[i];musicBag[i]=musicBag[j];musicBag[j]=tmp;
+  }
+  if(musicBag.length>1&&musicIndex>=0&&musicBag[0]===musicIndex){
+    const k=1+Math.floor(Math.random()*(musicBag.length-1));
+    const tmp=musicBag[0];musicBag[0]=musicBag[k];musicBag[k]=tmp;
+  }
+  musicBagPos=0;
+}
+function musicNextIndex(){
+  if(!musicBag.length||musicBagPos>=musicBag.length)musicShuffleBag();
+  return musicBag[musicBagPos++];
+}
 function musicVolume(ducked){return Math.min(1,Math.max(0,(soundOn?appVolume:0)*(ducked?MUSIC_DUCK:MUSIC_LEVEL)));}
 function musicStart(){
   if(!BGM_TRACK_MODE||!bgmOn||musicFallback)return;
   if(!musicAudio){
     musicAudio=new Audio();musicAudio.preload='auto';
-    musicAudio.addEventListener('ended',()=>{if(bgmOn&&!musicFallback)musicPlay((musicIndex+1)%MUSIC_TRACKS.length);});
+    musicAudio.addEventListener('ended',()=>{if(bgmOn&&!musicFallback)musicPlay(musicNextIndex());});
     musicAudio.addEventListener('error',()=>{ // 缺文件/误开时静默回退，不刷 404 报错
       if(musicFallback)return;musicFallback=true;musicStop();
       if(bgmOn&&AC&&!bgmTimer)bgmSchedule();
     });
   }
-  if(!musicAudio.getAttribute('src'))musicPlay(0);
+  if(!musicAudio.getAttribute('src'))musicPlay(musicNextIndex());
   else musicResume();
 }
 function musicPlay(i){

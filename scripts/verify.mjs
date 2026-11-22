@@ -462,6 +462,36 @@ try {
     music.tracks && music.localOnly && music.wired && ignOk && wfOk,
     `曲目=${music.tracks ? 7 : 0}（均为 music/ 本地相对路径），测试环境走合成=${music.localOnly}，开关/压低接线=${music.wired}，gitignore排除=${ignOk}，Pages不复制music=${wfOk}`);
 
+  // 2026-11-22 用户要求：本机歌曲 BGM 音量再降一档 + 由固定 1→7 顺序循环改为「洗牌袋」随机轮播
+  const shuffle = await page.evaluate(() => {
+    const hasFns = typeof musicNextIndex === 'function' && typeof musicShuffleBag === 'function';
+    const src = musicStart.toString();
+    const wired = src.includes('musicNextIndex()') && !/\(musicIndex\s*\+\s*1\)\s*%/.test(src);
+    const level = typeof MUSIC_LEVEL === 'number' ? MUSIC_LEVEL : -1;
+    const duck = typeof MUSIC_DUCK === 'number' ? MUSIC_DUCK : -1;
+    const seq = [], rounds = [];
+    musicBag = []; musicBagPos = 0; musicIndex = -1;
+    for (let r = 0; r < 5; r++) {
+      const round = [];
+      for (let k = 0; k < MUSIC_TRACKS.length; k++) round.push(musicNextIndex());
+      rounds.push(round); seq.push(...round);
+      musicIndex = round[round.length - 1]; // 模拟上一轮末曲，检验新轮是否会连播同一首
+    }
+    const eachRoundFull = rounds.every(r => new Set(r).size === MUSIC_TRACKS.length
+      && r.every(i => Number.isInteger(i) && i >= 0 && i < MUSIC_TRACKS.length));
+    const noRepeatAcross = rounds.every((r, i) => i === 0 || r[0] !== rounds[i - 1][rounds[i - 1].length - 1]);
+    const fixedSeq = Array.from({ length: seq.length }, (_, k) => k % MUSIC_TRACKS.length).join(',');
+    const shuffled = seq.join(',') !== fixedSeq;
+    const distinctOrders = new Set(rounds.map(r => r.join(','))).size;
+    musicBag = []; musicBagPos = 0; musicIndex = -1; // 复原，避免污染本页后续断言
+    return { hasFns, wired, level, duck, eachRoundFull, noRepeatAcross, shuffled, distinctOrders };
+  });
+  assert('本机歌曲 BGM：音量再降一档 + 洗牌袋随机轮播（一轮7首不重复、不连播同一首）',
+    shuffle.hasFns && shuffle.wired && shuffle.level > 0 && shuffle.level <= 0.22
+    && shuffle.duck > 0 && shuffle.duck <= 0.07
+    && shuffle.eachRoundFull && shuffle.noRepeatAcross && shuffle.shuffled && shuffle.distinctOrders >= 2,
+    `电平 ${shuffle.level}/压低 ${shuffle.duck}（原 0.32/0.10），随机接线=${shuffle.wired}，5轮各7首不重复=${shuffle.eachRoundFull}，跨轮不连播=${shuffle.noRepeatAcross}，非固定顺序=${shuffle.shuffled}，不同轮次顺序数=${shuffle.distinctOrders}`);
+
   // 2026-11-10 用户需求：开始不要有杂音——TTS 预热探测的「好」发声已移除（TTS 内容全走语音包 mp3）；
   // 保留：报牌条件取消（iOS 无声 bug 修复）、任意点击恢复音频通道
   const sndFix = await page.evaluate(() => ({
