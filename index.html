@@ -1435,14 +1435,16 @@ function sndClick(){if(!soundOn)return;ensureAudioPlaying();tone(620,0.04,'sine'
 // 版权说明：不嵌入任何 Beyond 原版录音 / 伴奏音频文件（本仓库是公开 GitHub Pages 站点，直接放有版权风险）。
 // 改为 WebAudio 程序化合成同风格原创伴奏：轻过载电吉他扫弦 + 稳定八分贝斯 + 摇滚鼓组（底鼓/军鼓/踩镲），
 // C 大调 1-5-6-3-4-1-4-5 走向（华语流行通用和声进行，不含任何原曲旋律），92 BPM、8 小节约 21 秒无缝循环。
-// 仍为零文件依赖（单文件架构不变），独立增益通道挂 masterGain 下，语音播报自动压低（ducking），
-// 切后台自动重同步防恢复时音符挤成一团。旧版民乐五声拨弦谱已退役，如需回退可从 git 历史取回。
+// 仍为零文件依赖（单文件架构不变），独立增益通道挂 masterGain 下，切后台自动重同步防恢复时音符挤成一团。
+// 2026-11-22 用户需求：人说话时背景音乐不再降低——ducking 已停用，BGM 全程恒定音量（见 BGM_DUCK_ON_VOICE）。
+// 旧版民乐五声拨弦谱已退役，如需回退可从 git 历史取回。
 // 2026-11-13 用户需求：去掉独立「音乐」开关，音效 / 语音 / BGM 统一由「声音」总开关控制。
 // bgmOn 恒跟随 soundOn；旧偏好 banshanBgm 必须清掉，否则界面已无按钮可恢复、音乐会被永久锁死。
 let bgmOn=soundOn,bgmTimer=null,bgmGainNode=null,bandBus=null;
 try{localStorage.removeItem('banshanBgm');}catch(e){}
 const mf=m=>440*Math.pow(2,(m-69)/12); // MIDI → 频率
-const BGM_LEVEL=0.62,BGM_DUCK=0.18;    // 乐队伴奏比原民乐拨弦更满，整体压低避免盖过报牌
+const BGM_LEVEL=0.62,BGM_DUCK=0.18;    // 乐队伴奏比原民乐拨弦更满，整体电平取 0.62 避免盖过报牌
+const BGM_DUCK_ON_VOICE=false;          // 2026-11-22 用户要求：人说话时 BGM 不降低；改 true 可恢复 ducking（目标电平 BGM_DUCK/MUSIC_DUCK）
 const BAND_BPM=92,BAND_E8=60/BAND_BPM/2;
 const BAND_CHORDS=[ // 8 小节：root=贝斯根音(MIDI)，notes=吉他和弦把位
   {root:36,notes:[60,64,67]},      // C
@@ -1536,12 +1538,13 @@ function bgmResync(){ // 切后台回来：丢弃旧排程（断开旧增益即�
   bandBus=null;
   bgmSchedule();
 }
-function bgmDuck(on){ // 语音播报时压低 BGM（合成伴奏与本地音源两条通道同步），播完缓慢回升
-  musicDuck(on);
+function bgmDuck(on){ // 2026-11-22 用户要求：人说话时 BGM 不降低；开关停用后两条通道统一恒定在各自正常电平
+  const d=BGM_DUCK_ON_VOICE&&!!on;
+  musicDuck(d);
   if(!bgmGainNode||!AC)return;
   try{
     bgmGainNode.gain.cancelScheduledValues(AC.currentTime);
-    bgmGainNode.gain.setTargetAtTime(on?BGM_DUCK:BGM_LEVEL,AC.currentTime,on?0.08:0.6);
+    bgmGainNode.gain.setTargetAtTime(d?BGM_DUCK:BGM_LEVEL,AC.currentTime,d?0.08:0.6);
   }catch(e){}
 }
 // ===== 本地音源 BGM（2026-11-22：用户提供 7 首歌，压缩为 96k AAC 放 music/）=====
@@ -1744,8 +1747,8 @@ function vpPlay(files,flush){ // 依序播放语音包（flush=true 时清空积
   if(!vpBusy)vpNext();
 }
 function vpNext(){
-  if(!vpQueue.length){vpBusy=false;bgmDuck(false);return;} // 队列空：BGM 缓升回正常音量
-  vpBusy=true;bgmDuck(true);
+  if(!vpQueue.length){vpBusy=false;bgmDuck(false);return;} // 队列空：解除播报态（BGM 恒定音量，不再 ducking）
+  vpBusy=true;bgmDuck(true); // 人说话；ducking 停用后此调用幂等，只维持正常电平
   const f=vpQueue.shift();
   try{
     if(!vpAudio)vpAudio=new Audio();

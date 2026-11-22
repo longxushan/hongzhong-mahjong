@@ -443,7 +443,7 @@ try {
     const btnTxt = btn.textContent;
     return { defOn, running, wired, band, synth, off, back, noBgmBtn, btnTxt };
   });
-  assert('默认背景音乐：Beyond 风格原创乐队伴奏（吉他扫弦+贝斯+鼓）+ 单一「声音」开关 + 播报压低',
+  assert('默认背景音乐：Beyond 风格原创乐队伴奏（吉他扫弦+贝斯+鼓）+ 单一「声音」开关 + 人说话时不压低',
     bgm.defOn && bgm.running && bgm.wired && bgm.band && bgm.off && bgm.back && bgm.noBgmBtn,
     `默认开=${bgm.defOn}，运行中=${bgm.running}，8小节92BPM乐队伴奏=${bgm.wired}，实测合成节点 osc=${bgm.synth.osc}/noise=${bgm.synth.buf}=${bgm.band}，开关往返=${bgm.off && bgm.back}，无独立音乐按钮=${bgm.noBgmBtn}（按钮「${bgm.btnTxt}」）`);
 
@@ -491,6 +491,47 @@ try {
     && shuffle.duck > 0 && shuffle.duck <= 0.07
     && shuffle.eachRoundFull && shuffle.noRepeatAcross && shuffle.shuffled && shuffle.distinctOrders >= 2,
     `电平 ${shuffle.level}/压低 ${shuffle.duck}（原 0.32/0.10），随机接线=${shuffle.wired}，5轮各7首不重复=${shuffle.eachRoundFull}，跨轮不连播=${shuffle.noRepeatAcross}，非固定顺序=${shuffle.shuffled}，不同轮次顺序数=${shuffle.distinctOrders}`);
+
+  // 2026-11-22 用户要求：背景音乐不要因为人说话声而降低 —— 两条通道全程恒定电平
+  const noDuck = await page.evaluate(() => {
+    const flag = typeof BGM_DUCK_ON_VOICE === 'boolean' && BGM_DUCK_ON_VOICE === false;
+    const wired = vpNext.toString().includes('bgmDuck(true)') && vpStop.toString().includes('bgmDuck(false)')
+      && bgmDuck.toString().includes('musicDuck');
+    const normalExpected = (soundOn ? appVolume : 0) * MUSIC_LEVEL;
+    const duckExpected = (soundOn ? appVolume : 0) * MUSIC_DUCK;
+    // 本机歌曲通道：探针对象承接 musicDuck 写入的音量
+    const saved = musicAudio, probe = { volume: -1 };
+    musicAudio = probe;
+    let normal = -1, during = -1;
+    try {
+      bgmDuck(false); normal = probe.volume;
+      bgmDuck(true);  during = probe.volume; // 模拟人说话
+    } finally { bgmDuck(false); musicAudio = saved; }
+    // 合成伴奏通道：钩住 gain 的目标值，验证播报时目标仍是 BGM_LEVEL 而非 BGM_DUCK
+    const targets = [];
+    let gainHooked = false;
+    const pr = window.AudioParam && window.AudioParam.prototype;
+    if (pr) {
+      const orig = pr.setTargetAtTime;
+      try {
+        pr.setTargetAtTime = function (v) { targets.push(v); return orig.apply(this, arguments); };
+        gainHooked = true;
+        bgmDuck(true);
+      } catch (e) { } finally { pr.setTargetAtTime = orig; }
+    }
+    bgmDuck(false);
+    return { flag, wired, normal, during, normalExpected, duckExpected, targets, gainHooked,
+             synthLevel: BGM_LEVEL, synthDuck: BGM_DUCK };
+  });
+  assert('人说话时背景音乐不降低：合成伴奏与本机歌曲两条通道全程恒定音量',
+    noDuck.flag && noDuck.wired && noDuck.normalExpected > 0
+    && Math.abs(noDuck.normal - noDuck.normalExpected) < 0.002
+    && Math.abs(noDuck.during - noDuck.normalExpected) < 0.002
+    && noDuck.duckExpected < noDuck.normalExpected
+    && noDuck.gainHooked && noDuck.targets.length > 0
+    && noDuck.targets.every(v => v === noDuck.synthLevel)
+    && noDuck.synthDuck < noDuck.synthLevel,
+    `停用开关=${noDuck.flag}，接线=${noDuck.wired}，歌曲通道 常态=${noDuck.normal}/说话时=${noDuck.during}（恒定 ${noDuck.normalExpected}，旧压低会是 ${noDuck.duckExpected}），合成通道 gain 目标=${JSON.stringify(noDuck.targets)}（恒定 ${noDuck.synthLevel}，旧压低 ${noDuck.synthDuck}）`);
 
   // 2026-11-10 用户需求：开始不要有杂音——TTS 预热探测的「好」发声已移除（TTS 内容全走语音包 mp3）；
   // 保留：报牌条件取消（iOS 无声 bug 修复）、任意点击恢复音频通道
