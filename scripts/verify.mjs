@@ -319,7 +319,7 @@ try {
   const missVoice = voiceFiles.filter(f => !fs.existsSync(path.join(ROOT, 'voice', f)));
   const vpTest = await page.evaluate(() => {
     const me = p(0);
-    const okFn = ['vpPlay','vpSayTile','vpSayAction','vpSayEastDong','vpSayZhuang','vpSayStance','vpUnlock','vpStop'].every(f => typeof window[f] === 'function');
+    const okFn = ['vpPlay','vpPlayNow','vpSayTile','vpSayAction','vpSayEastDong','vpSayZhuang','vpSayStance','vpUnlock','vpStop'].every(f => typeof window[f] === 'function');
     // 2026-11-09 角色语音改字幕：vpSayTile 应在 #table 生成头像锚定字幕气泡（ROLE_VOICE_ON=false）
     vpStop(); vpQueue = [];
     document.querySelectorAll('#table .chatBox').forEach(b => b.remove());
@@ -331,6 +331,26 @@ try {
   });
   assert('语音包：108 条台词齐全 + 报牌转字幕引擎', missVoice.length === 0 && vpTest.okFn && vpTest.subOk && vpTest.roleVoiceOff,
     missVoice.length ? '缺文件：' + missVoice.slice(0, 3).join(',') + ` 共${missVoice.length}个` : '引擎正常，报牌以字幕显示于头像下（角色语音关闭，host 台词保留）');
+
+  // 2026-11-22 修复：碰/杠动作词原用 vpPlay(flush) 只入队，会被紧随其后的出牌报牌 flush 清空而不发声
+  const actionVoice = await page.evaluate(() => {
+    const played = [], orig = HTMLMediaElement.prototype.play, oldSound = soundOn;
+    HTMLMediaElement.prototype.play = function () { played.push(String(this.src)); return Promise.resolve(); };
+    try {
+      soundOn = true;
+      const fake = { seat: 1, name: '福星道人' };
+      vpStop();
+      vpBusy = true;                      // 模拟上一条报牌正在播放（托管 0.2s 节奏下常态）
+      vpSayAction(fake, 'peng');          // 动作词必须立即开播，不能只排队
+      const srcA = vpAudio ? String(vpAudio.src) : '';
+      vpPlay(['w/W3.mp3'], true);         // 模拟碰后紧接着的出牌报牌（flush 插队）
+      const srcB = vpAudio ? String(vpAudio.src) : '';
+      vpStop();
+      return { played, srcA, srcB };
+    } finally { HTMLMediaElement.prototype.play = orig; soundOn = oldSound; }
+  });
+  assert('碰/杠动作词语音不被出牌报牌插队清空', /peng\.mp3/.test(actionVoice.srcA) && /peng\.mp3/.test(actionVoice.srcB) && actionVoice.played.some(s => /peng\.mp3/.test(s)),
+    `动作词立即开播=${/peng\.mp3/.test(actionVoice.srcA)} 报牌后仍保留=${/peng\.mp3/.test(actionVoice.srcB)} play=${actionVoice.played.length}次`);
 
   // 牌桌闲聊（2026-11-09 用户需求：打牌过程中每人说话/弹字幕表达感想）：七风格×六情境台词 + 座位气泡 + 84 条角色音色语音
   const chatOk = await page.evaluate(() => {

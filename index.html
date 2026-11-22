@@ -1682,9 +1682,22 @@ const ACTION_SAY={peng:'碰！',gang:'杠！',angang:'暗杠！',bugang:'补杠�
 // 报牌：出牌报牌名——2026-11-09 用户需求：报牌人声保留（语音+字幕双通道）；
 // flush 插队：AI 出牌快于语音时长时丢旧播新，报牌不错位
 function vpSayTile(pl,t){vpPlay([vpLib(pl)+(t.id==='Z'?'Z':t.id)],true);chatBubble(pl.seat,tileName(t));}
+// 动作词抢播（2026-11-22 修复）：碰/杠后必定紧接一次出牌报牌，而报牌也用 flush=true 插队；
+// 托管 0.2s 节奏下上一条报牌几乎总在播放（vpBusy=true），动作词只能排队、随即被报牌 flush 清空，
+// 于是「碰！」「杠！」永远不发声（自摸后没有紧随的出牌，所以只有自摸能响）。
+// 改为立即抢断当前音频并同步开播动作词：后续报牌 flush 只清队列、不打断正在播的动作词。
+function vpPlayNow(files){
+  if(!soundOn)return;
+  try{
+    vpQueue=files.slice();
+    if(vpAudio){vpAudio.pause();vpAudio.onended=null;vpAudio.onerror=null;}
+  }catch(e){}
+  vpBusy=false;
+  vpNext();
+}
 // 动作词：碰/杠/自摸/胡了——2026-11-09 用户需求：关键动作提示音保留（语音+字幕双通道），
-// 与评价性闲聊（纯字幕）区分；flush 插队保证动作音永远播最新的
-function vpSayAction(pl,key){vpPlay([vpLib(pl)+key],true);chatBubble(pl.seat,ACTION_SAY[key]||'');}
+// 与评价性闲聊（纯字幕）区分
+function vpSayAction(pl,key){vpPlayNow([vpLib(pl)+key]);chatBubble(pl.seat,ACTION_SAY[key]||'');}
 // 播报员句子（2026-11-09 台词改版）：
 // 开局「请先定东」→ 定东后「东是X」→ 东家掷骰前「X定庄家」→ 定庄后「庄家是X，请进入游戏出牌」
 // 各句 vpSayWait 等待整句播完再进下一步；托管模式只播不等
