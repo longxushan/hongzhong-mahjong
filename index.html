@@ -1571,7 +1571,7 @@ const MUSIC_TRACKS=[
   {f:'music/track06.m4a',t:'ラブ・ストーリーは突然に · 小田和正'},
   {f:'music/track07.m4a',t:'听海 (live) · 张学友'}
 ];
-const MUSIC_LEVEL=0.20,MUSIC_DUCK=0.06; // 2026-11-22 用户要求再降一档：商业录音母带电平高，别盖过报牌与动作词
+const MUSIC_LEVEL=0.30,MUSIC_DUCK=0.06; // 2026-11-22 23:15 用户反馈 0.20 太低：回调到 0.30（实际 0.240，比上一档响 50%，仍略低于最初 0.32）；ducking 停用后全程恒定
 let musicAudio=null,musicIndex=-1,musicFallback=false;
 // 洗牌袋随机轮播：一轮内 7 首各播一次不重复，播完重新洗牌；且新轮首曲避开上一轮末曲，杜绝连播同一首
 let musicBag=[],musicBagPos=0;

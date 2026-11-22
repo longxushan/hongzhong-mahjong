@@ -462,7 +462,7 @@ try {
     music.tracks && music.localOnly && music.wired && ignOk && wfOk,
     `曲目=${music.tracks ? 7 : 0}（均为 music/ 本地相对路径），测试环境走合成=${music.localOnly}，开关/压低接线=${music.wired}，gitignore排除=${ignOk}，Pages不复制music=${wfOk}`);
 
-  // 2026-11-22 用户要求：本机歌曲 BGM 音量再降一档 + 由固定 1→7 顺序循环改为「洗牌袋」随机轮播
+  // 2026-11-22 用户要求：本机歌曲 BGM 音量按反馈回调（0.32→0.20→0.30）+ 由固定 1→7 顺序循环改为「洗牌袋」随机轮播
   const shuffle = await page.evaluate(() => {
     const hasFns = typeof musicNextIndex === 'function' && typeof musicShuffleBag === 'function';
     const src = musicStart.toString();
@@ -486,11 +486,11 @@ try {
     musicBag = []; musicBagPos = 0; musicIndex = -1; // 复原，避免污染本页后续断言
     return { hasFns, wired, level, duck, eachRoundFull, noRepeatAcross, shuffled, distinctOrders };
   });
-  assert('本机歌曲 BGM：音量再降一档 + 洗牌袋随机轮播（一轮7首不重复、不连播同一首）',
-    shuffle.hasFns && shuffle.wired && shuffle.level > 0 && shuffle.level <= 0.22
+  assert('本机歌曲 BGM：音量回调到 0.30（不再过低）+ 洗牌袋随机轮播（一轮7首不重复、不连播同一首）',
+    shuffle.hasFns && shuffle.wired && shuffle.level >= 0.28 && shuffle.level <= 0.34
     && shuffle.duck > 0 && shuffle.duck <= 0.07
     && shuffle.eachRoundFull && shuffle.noRepeatAcross && shuffle.shuffled && shuffle.distinctOrders >= 2,
-    `电平 ${shuffle.level}/压低 ${shuffle.duck}（原 0.32/0.10），随机接线=${shuffle.wired}，5轮各7首不重复=${shuffle.eachRoundFull}，跨轮不连播=${shuffle.noRepeatAcross}，非固定顺序=${shuffle.shuffled}，不同轮次顺序数=${shuffle.distinctOrders}`);
+    `电平 ${shuffle.level}/压低 ${shuffle.duck}（0.20→${shuffle.level}，最初 0.32；压低值停用中），随机接线=${shuffle.wired}，5轮各7首不重复=${shuffle.eachRoundFull}，跨轮不连播=${shuffle.noRepeatAcross}，非固定顺序=${shuffle.shuffled}，不同轮次顺序数=${shuffle.distinctOrders}`);
 
   // 2026-11-22 用户要求：背景音乐不要因为人说话声而降低 —— 两条通道全程恒定电平
   const noDuck = await page.evaluate(() => {
