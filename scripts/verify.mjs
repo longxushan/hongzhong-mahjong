@@ -415,22 +415,37 @@ try {
   });
   assert('欢快麻将音效函数齐全', sfx.ok, 'sndDraw/Discard/Peng/Gang/Win/LiuJu/Click');
 
-  // 背景音乐（2026-11-13：独立「音乐」开关已移除，音效/语音/BGM 统一由「声音」总开关控制）
+  // 背景音乐（2026-11-22 换成 Beyond 风格原创乐队伴奏：吉他扫弦+贝斯+鼓；2026-11-13 起 BGM 由「声音」总开关统一控制）
   const bgm = await page.evaluate(() => {
     const defOn = bgmOn === true && soundOn === true;
-    const running = bgmTimer !== null && !!bgmGainNode;
-    const wired = BGM_MELODY.length === 8 && bgmSchedule.toString().includes('BGM_MELODY')
-      && vpNext.toString().includes('bgmDuck') && startGame.toString().includes('bgmStart');
+    const running = bgmTimer !== null && !!bgmGainNode && !!bandBus;
+    const sch = bgmSchedule.toString();
+    const wired = BAND_CHORDS.length === 8 && BAND_BPM === 92
+      && sch.includes('bandStrum') && sch.includes('bandBass') && sch.includes('bandDrum')
+      && vpNext.toString().includes('bgmDuck') && startGame.toString().includes('bgmStart')
+      && typeof BGM_MELODY === 'undefined' && !sch.includes('mp3'); // 不引用原版录音/旧谱
+    const synth = (() => { // 重新排一段，实测确实在合成音频节点（不是空转定时器）
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor || !AC) return { osc: 0, buf: 0 };
+      const pr = Ctor.prototype, oo = pr.createOscillator, ob = pr.createBufferSource;
+      let osc = 0, buf = 0;
+      pr.createOscillator = function () { osc++; return oo.apply(this, arguments); };
+      pr.createBufferSource = function () { buf++; return ob.apply(this, arguments); };
+      try { bgmResync(); } catch (e) { }
+      pr.createOscillator = oo; pr.createBufferSource = ob;
+      return { osc, buf };
+    })();
+    const band = synth.osc > 100 && synth.buf > 20;
     const btn = document.getElementById('soundBtn');
     const noBgmBtn = !document.getElementById('bgmBtn');
     const off = (() => { btn.click(); return bgmOn === false && soundOn === false && bgmTimer === null; })();
     const back = (() => { btn.click(); return bgmOn === true && soundOn === true && bgmTimer !== null && !!bgmGainNode; })();
     const btnTxt = btn.textContent;
-    return { defOn, running, wired, off, back, noBgmBtn, btnTxt };
+    return { defOn, running, wired, band, synth, off, back, noBgmBtn, btnTxt };
   });
-  assert('默认欢快背景音乐：民乐拨弦 BGM 运转 + 单一「声音」开关统一启停 + 播报压低',
-    bgm.defOn && bgm.running && bgm.wired && bgm.off && bgm.back && bgm.noBgmBtn,
-    `默认开=${bgm.defOn}，运行中=${bgm.running}，8 小节五声旋律=${bgm.wired}，开关往返=${bgm.off && bgm.back}，无独立音乐按钮=${bgm.noBgmBtn}（按钮「${bgm.btnTxt}」）`);
+  assert('默认背景音乐：Beyond 风格原创乐队伴奏（吉他扫弦+贝斯+鼓）+ 单一「声音」开关 + 播报压低',
+    bgm.defOn && bgm.running && bgm.wired && bgm.band && bgm.off && bgm.back && bgm.noBgmBtn,
+    `默认开=${bgm.defOn}，运行中=${bgm.running}，8小节92BPM乐队伴奏=${bgm.wired}，实测合成节点 osc=${bgm.synth.osc}/noise=${bgm.synth.buf}=${bgm.band}，开关往返=${bgm.off && bgm.back}，无独立音乐按钮=${bgm.noBgmBtn}（按钮「${bgm.btnTxt}」）`);
 
   // 2026-11-10 用户需求：开始不要有杂音——TTS 预热探测的「好」发声已移除（TTS 内容全走语音包 mp3）；
   // 保留：报牌条件取消（iOS 无声 bug 修复）、任意点击恢复音频通道

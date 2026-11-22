@@ -1430,70 +1430,115 @@ function sndGang(){if(!soundOn)return;ensureAudioPlaying();noise(0.1,1600,0.2);t
 function sndWin(){if(!soundOn)return;ensureAudioPlaying();[523,659,784,1047].forEach((f,i)=>tone(f,i===3?0.18:0.11,'triangle',0.18,i*0.11));tone(1319,0.22,'triangle',0.16,0.46);tone(1568,0.3,'triangle',0.15,0.62,1047);}
 function sndLiuJu(){if(!soundOn)return;ensureAudioPlaying();tone(660,0.18,'sine',0.11,0,590);tone(494,0.24,'sine',0.10,0.14,440);}
 function sndClick(){if(!soundOn)return;ensureAudioPlaying();tone(620,0.04,'sine',0.08,0,900);}
-// ===== 欢快麻将背景音乐（2026-11-10 用户要求：默认开启） =====
-// WebAudio 程序化合成：C 宫五声音阶欢快小曲（扬琴式拨弦音色 + 低音根音 + 轻木鱼节拍），
-// 8 小节 ~15 秒循环；独立增益通道挂 masterGain 下（受全局声音开关/音量控制），语音播报时自动压低（ducking）。
-// 零文件依赖（单文件架构不变），切后台自动重同步防恢复时音符挤成一团。
-// 2026-11-13 用户需求：去掉独立「音乐」开关，音效 / 语音 / 背景音乐统一由「声音」总开关控制。
-// bgmOn 不再独立持久化，恒跟随 soundOn；旧偏好 banshanBgm 必须清掉，否则界面已无按钮可恢复、
-// 音乐会被永久锁死在关态。函数体 bgmStart/bgmStop/bgmSchedule/bgmResync 全部保留。
-let bgmOn=soundOn,bgmTimer=null,bgmGainNode=null;
+// ===== 背景音乐：Beyond 风格原创乐队伴奏（2026-11-22 用户要求「换个背景音乐，用 beyond 的伴奏，试试」）=====
+// 版权说明：不嵌入任何 Beyond 原版录音 / 伴奏音频文件（本仓库是公开 GitHub Pages 站点，直接放有版权风险）。
+// 改为 WebAudio 程序化合成同风格原创伴奏：轻过载电吉他扫弦 + 稳定八分贝斯 + 摇滚鼓组（底鼓/军鼓/踩镲），
+// C 大调 1-5-6-3-4-1-4-5 走向（华语流行通用和声进行，不含任何原曲旋律），92 BPM、8 小节约 21 秒无缝循环。
+// 仍为零文件依赖（单文件架构不变），独立增益通道挂 masterGain 下，语音播报自动压低（ducking），
+// 切后台自动重同步防恢复时音符挤成一团。旧版民乐五声拨弦谱已退役，如需回退可从 git 历史取回。
+// 2026-11-13 用户需求：去掉独立「音乐」开关，音效 / 语音 / BGM 统一由「声音」总开关控制。
+// bgmOn 恒跟随 soundOn；旧偏好 banshanBgm 必须清掉，否则界面已无按钮可恢复、音乐会被永久锁死。
+let bgmOn=soundOn,bgmTimer=null,bgmGainNode=null,bandBus=null;
 try{localStorage.removeItem('banshanBgm');}catch(e){}
 const mf=m=>440*Math.pow(2,(m-69)/12); // MIDI → 频率
-const BGM_MELODY=[ // 8 小节 × 8 个八分音位（0=休止）；C 宫五声：C D E G A
-  [72,69,67,69,72,0,69,67],[64,67,69,67,64,62,60,0],
-  [67,69,72,74,76,74,72,69],[72,69,67,69,67,0,64,0],
-  [69,72,74,76,79,76,74,72],[74,72,69,72,69,67,69,0],
-  [72,74,76,79,81,79,76,74],[76,74,72,69,67,0,72,0]
+const BGM_LEVEL=0.62,BGM_DUCK=0.18;    // 乐队伴奏比原民乐拨弦更满，整体压低避免盖过报牌
+const BAND_BPM=92,BAND_E8=60/BAND_BPM/2;
+const BAND_CHORDS=[ // 8 小节：root=贝斯根音(MIDI)，notes=吉他和弦把位
+  {root:36,notes:[60,64,67]},      // C
+  {root:43,notes:[59,62,67]},      // G
+  {root:45,notes:[57,60,64]},      // Am
+  {root:40,notes:[55,59,64]},      // Em
+  {root:41,notes:[53,57,60,65]},   // F
+  {root:36,notes:[60,64,67]},      // C
+  {root:41,notes:[53,57,60,65]},   // F
+  {root:43,notes:[59,62,67,71]}    // G（收尾加高音，推向循环头）
 ];
-const BGM_BASS=[48,43,45,52,48,45,43,48]; // 每小节低音根音（宫/徵/羽轮换）
-const BGM_BPM=126,BGM_E8=60/BGM_BPM/2;    // 八分音符时长
-function bgmPluck(m,when,gain,decay){ // 扬琴/琵琶式拨弦：主音三角波 + 倍频泛音，快速指数衰减
+const BAND_DIST=(()=>{const n=1024,c=new Float32Array(n),k=6;for(let i=0;i<n;i++){const x=i*2/n-1;c[i]=(1+k)*x/(1+k*Math.abs(x));}return c;})();
+function bandStrum(notes,when,gain,up){ // 电吉他扫弦：锯齿+方波双振荡轻微失谐，共用轻过载+低通总线，逐音错开 14ms
+  if(!AC||!bgmGainNode||!bandBus)return;
+  const t=AC.currentTime+when;
+  const g=AC.createGain();
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(gain,t+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0008,t+0.28);
+  g.connect(bandBus);
+  notes.forEach((m,i)=>{
+    const f=mf(m),st=t+(up?(notes.length-1-i):i)*0.014;
+    const gg=AC.createGain();gg.gain.value=0.42/notes.length;
+    const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=-7;
+    const o2=AC.createOscillator();o2.type='square';o2.frequency.value=f;o2.detune.value=7;
+    o.connect(gg);o2.connect(gg);gg.connect(g);
+    o.start(st);o.stop(t+0.3);o2.start(st);o2.stop(t+0.3);
+  });
+}
+function bandBass(m,when,gain,dur){ // 贝斯：三角波主音 + 正弦同频加厚，低通只留基频区
   if(!AC||!bgmGainNode)return;
   const t=AC.currentTime+when,f=mf(m);
   const o=AC.createOscillator();o.type='triangle';o.frequency.value=f;
-  const o2=AC.createOscillator();o2.type='sine';o2.frequency.value=f*2;
-  const g=AC.createGain(),g2=AC.createGain();
-  g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(0.0008,t+decay);
-  g2.gain.setValueAtTime(gain*0.35,t);g2.gain.exponentialRampToValueAtTime(0.0006,t+decay*0.7);
-  o.connect(g);g.connect(bgmGainNode);o2.connect(g2);g2.connect(bgmGainNode);
-  o.start(t);o.stop(t+decay+0.05);o2.start(t);o2.stop(t+decay+0.05);
+  const o2=AC.createOscillator();o2.type='sine';o2.frequency.value=f;
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=420;
+  const g=AC.createGain();g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  const g2=AC.createGain();g2.gain.value=0.45;
+  o.connect(lp);o2.connect(g2);g2.connect(lp);lp.connect(g);g.connect(bgmGainNode);
+  o.start(t);o.stop(t+dur+0.02);o2.start(t);o2.stop(t+dur+0.02);
 }
-function bgmTick(when,gain){ // 轻木鱼嗒：短促带通噪声
+function bandDrum(kind,when,gain){ // kick=下滑正弦 / snare=高通噪声+鼓皮音调 / hat=短促高通噪声
   if(!AC||!bgmGainNode)return;
-  const t=AC.currentTime+when,len=Math.max(1,Math.floor(AC.sampleRate*0.05));
-  const buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
-  const src=AC.createBufferSource();src.buffer=buf;
-  const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1900;f.Q.value=2.5;
-  const g=AC.createGain();g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(0.0006,t+0.05);
-  src.connect(f);f.connect(g);g.connect(bgmGainNode);src.start(t);
-}
-function bgmSchedule(){ // 一次排完整 8 小节（~15 秒），段末 setTimeout 无缝接下一段
-  if(!AC||!bgmOn)return;
-  if(!bgmGainNode){bgmGainNode=AC.createGain();bgmGainNode.gain.value=0.9;bgmGainNode.connect(masterGain);}
-  for(let bar=0;bar<BGM_MELODY.length;bar++){
-    const base=bar*BGM_E8*8;
-    for(let k=0;k<8;k++)if(BGM_MELODY[bar][k])bgmPluck(BGM_MELODY[bar][k],base+k*BGM_E8,0.13,0.42);
-    bgmPluck(BGM_BASS[bar],base,0.085,0.6);          // 低音正拍
-    bgmPluck(BGM_BASS[bar],base+4*BGM_E8,0.06,0.5);  // 低音第三拍（轻）
-    for(let k=0;k<4;k++)bgmTick(base+k*2*BGM_E8,0.045); // 木鱼每拍
+  const t=AC.currentTime+when;
+  if(kind==='kick'){
+    const o=AC.createOscillator();o.type='sine';
+    o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(46,t+0.12);
+    const g=AC.createGain();g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(0.0006,t+0.2);
+    o.connect(g);g.connect(bgmGainNode);o.start(t);o.stop(t+0.22);return;
   }
-  bgmTimer=setTimeout(bgmSchedule,BGM_MELODY.length*8*BGM_E8*1000-60);
+  const dur=kind==='snare'?0.15:0.045,len=Math.max(1,Math.floor(AC.sampleRate*dur));
+  const buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,kind==='snare'?1.4:2.4);
+  const src=AC.createBufferSource();src.buffer=buf;
+  const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=kind==='snare'?1200:6500;
+  const g=AC.createGain();g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(0.0006,t+dur);
+  src.connect(hp);hp.connect(g);g.connect(bgmGainNode);src.start(t);
+  if(kind==='snare'){
+    const o=AC.createOscillator();o.type='triangle';o.frequency.value=185;
+    const g2=AC.createGain();g2.gain.setValueAtTime(gain*0.5,t);g2.gain.exponentialRampToValueAtTime(0.0006,t+0.09);
+    o.connect(g2);g2.connect(bgmGainNode);o.start(t);o.stop(t+0.1);
+  }
+}
+function bgmSchedule(){ // 一次排完整 8 小节（~21 秒），段末 setTimeout 无缝接下一段
+  if(!AC||!bgmOn)return;
+  if(!bgmGainNode){
+    bgmGainNode=AC.createGain();bgmGainNode.gain.value=BGM_LEVEL;bgmGainNode.connect(masterGain);
+    const sh=AC.createWaveShaper();sh.curve=BAND_DIST;sh.oversample='2x';
+    const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2100;lp.Q.value=0.7;
+    sh.connect(lp);lp.connect(bgmGainNode);bandBus=sh;
+  }
+  for(let bar=0;bar<BAND_CHORDS.length;bar++){
+    const base=bar*BAND_E8*8,ch=BAND_CHORDS[bar];
+    for(let k=0;k<8;k++){
+      const t=base+k*BAND_E8,down=(k%2===0);
+      bandStrum(ch.notes,t,down?0.17:0.08,!down);       // 正拍下扫重、反拍上扫轻
+      bandDrum('hat',t,k%2?0.035:0.05);
+      if(down)bandBass(ch.root+(k===6?7:0),t,0.11,BAND_E8*1.7); // 稳定八分贝斯，末拍走五度
+    }
+    bandDrum('kick',base,0.22);bandDrum('kick',base+4*BAND_E8,0.18);
+    bandDrum('snare',base+2*BAND_E8,0.15);bandDrum('snare',base+6*BAND_E8,0.15);
+  }
+  bgmTimer=setTimeout(bgmSchedule,BAND_CHORDS.length*8*BAND_E8*1000-60);
 }
 function bgmStart(){initAudio();if(!AC||!bgmOn||bgmTimer)return;bgmSchedule();}
-function bgmStop(){if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;}if(bgmGainNode){try{bgmGainNode.disconnect();}catch(e){}bgmGainNode=null;}}
+function bgmStop(){if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;}if(bgmGainNode){try{bgmGainNode.disconnect();}catch(e){}bgmGainNode=null;}bandBus=null;}
 function bgmResync(){ // 切后台回来：丢弃旧排程（断开旧增益即静音），从段头重新起
   if(!bgmOn)return;
   if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;}
   if(bgmGainNode){try{bgmGainNode.disconnect();}catch(e){}bgmGainNode=null;}
+  bandBus=null;
   bgmSchedule();
 }
-function bgmDuck(on){ // 语音播报时压低 BGM 至 ~1/3，播完缓慢回升
+function bgmDuck(on){ // 语音播报时压低 BGM，播完缓慢回升
   if(!bgmGainNode||!AC)return;
   try{
     bgmGainNode.gain.cancelScheduledValues(AC.currentTime);
-    bgmGainNode.gain.setTargetAtTime(on?0.3:0.9,AC.currentTime,on?0.08:0.6);
+    bgmGainNode.gain.setTargetAtTime(on?BGM_DUCK:BGM_LEVEL,AC.currentTime,on?0.08:0.6);
   }catch(e){}
 }
 // 角色性别：7 个角色中仅“梅姐”为女性，其余为男性
