@@ -447,6 +447,21 @@ try {
     bgm.defOn && bgm.running && bgm.wired && bgm.band && bgm.off && bgm.back && bgm.noBgmBtn,
     `默认开=${bgm.defOn}，运行中=${bgm.running}，8小节92BPM乐队伴奏=${bgm.wired}，实测合成节点 osc=${bgm.synth.osc}/noise=${bgm.synth.buf}=${bgm.band}，开关往返=${bgm.off && bgm.back}，无独立音乐按钮=${bgm.noBgmBtn}（按钮「${bgm.btnTxt}」）`);
 
+  // 2026-11-22 本地音源分流：7 首压缩歌曲仅本机播放，绝不入库 / 不发布到公开 Pages
+  const music = await page.evaluate(() => ({
+    tracks: typeof MUSIC_TRACKS !== 'undefined' && MUSIC_TRACKS.length === 7
+      && MUSIC_TRACKS.every(t => /^music\/track0[1-7]\.m4a$/.test(t.f)),
+    localOnly: typeof BGM_TRACK_MODE === 'boolean' && BGM_TRACK_MODE === false, // verify 用 file:// 打开，应自动走合成
+    wired: bgmStart.toString().includes('musicStart') && bgmStop.toString().includes('musicStop')
+      && bgmDuck.toString().includes('musicDuck'),
+  }));
+  const ignOk = /^music\//m.test(fs.readFileSync(path.join(ROOT, '.gitignore'), 'utf8'));
+  const wfTxt = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pages.yml'), 'utf8');
+  const wfOk = !/cp -r music|_site\/music/.test(wfTxt);
+  assert('本地音源分流：7 首压缩歌曲不入库/不发布，公网与测试环境自动回退合成伴奏',
+    music.tracks && music.localOnly && music.wired && ignOk && wfOk,
+    `曲目=${music.tracks ? 7 : 0}（均为 music/ 本地相对路径），测试环境走合成=${music.localOnly}，开关/压低接线=${music.wired}，gitignore排除=${ignOk}，Pages不复制music=${wfOk}`);
+
   // 2026-11-10 用户需求：开始不要有杂音——TTS 预热探测的「好」发声已移除（TTS 内容全走语音包 mp3）；
   // 保留：报牌条件取消（iOS 无声 bug 修复）、任意点击恢复音频通道
   const sndFix = await page.evaluate(() => ({

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>巢湖-金华红中</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230e6b4f'/%3E%3Ccircle cx='32' cy='32' r='17' fill='%23e0645a'/%3E%3C/svg%3E">
 <style>
   :root{--gold:#d9a441;--red:#c0392b;--felt:#0e6b4f;--felt2:#0a543e;--hand:54px;--hand2:43px;--sm:30px;--disc:24px;--back:26px;--seatgap:6px;--sideMin:96px;--sideMax:118px;
     --topfs:13px;--tagfs:11px;--topgap:10px;--btnpad:8px 14px;--btnfs:14px;--volw:88px;}
@@ -1525,22 +1526,76 @@ function bgmSchedule(){ // 一次排完整 8 小节（~21 秒），段末 setTim
   }
   bgmTimer=setTimeout(bgmSchedule,BAND_CHORDS.length*8*BAND_E8*1000-60);
 }
-function bgmStart(){initAudio();if(!AC||!bgmOn||bgmTimer)return;bgmSchedule();}
-function bgmStop(){if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;}if(bgmGainNode){try{bgmGainNode.disconnect();}catch(e){}bgmGainNode=null;}bandBus=null;}
+function bgmStart(){initAudio();if(!bgmOn)return;if(BGM_TRACK_MODE){musicStart();return;}if(!AC||bgmTimer)return;bgmSchedule();}
+function bgmStop(){if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;}if(bgmGainNode){try{bgmGainNode.disconnect();}catch(e){}bgmGainNode=null;}bandBus=null;musicStop();}
 function bgmResync(){ // 切后台回来：丢弃旧排程（断开旧增益即静音），从段头重新起
   if(!bgmOn)return;
+  if(BGM_TRACK_MODE){musicResume();return;}
   if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;}
   if(bgmGainNode){try{bgmGainNode.disconnect();}catch(e){}bgmGainNode=null;}
   bandBus=null;
   bgmSchedule();
 }
-function bgmDuck(on){ // 语音播报时压低 BGM，播完缓慢回升
+function bgmDuck(on){ // 语音播报时压低 BGM（合成伴奏与本地音源两条通道同步），播完缓慢回升
+  musicDuck(on);
   if(!bgmGainNode||!AC)return;
   try{
     bgmGainNode.gain.cancelScheduledValues(AC.currentTime);
     bgmGainNode.gain.setTargetAtTime(on?BGM_DUCK:BGM_LEVEL,AC.currentTime,on?0.08:0.6);
   }catch(e){}
 }
+// ===== 本地音源 BGM（2026-11-22：用户提供 7 首歌，压缩为 96k AAC 放 music/）=====
+// 版权约束：这些是商业录音，只允许在用户本机播放——music/ 已加入 .gitignore 不入库，
+// Pages workflow 只复制 index.html + voice/，公开站点永远拿不到这些文件，因此不构成公开传播。
+// 分流：仅 http(s)+localhost/127.0.0.1（本地预览服务）自动启用；file://（本机双击、全部自动化测试）
+// 与 github.io 等公网域名一律走 WebAudio 合成伴奏，保证公开站点零侵权、零 404、测试不受干扰。
+// 手动覆盖：?bgm=tracks 强制歌曲、?bgm=synth 强制合成。任一首加载失败会静默回退合成伴奏。
+const BGM_TRACK_MODE=(()=>{
+  try{
+    const q=new URLSearchParams(location.search);
+    if(q.get('bgm')==='synth')return false;
+    if(q.get('bgm')==='tracks')return true;
+    if(location.protocol!=='http:'&&location.protocol!=='https:')return false;
+    return /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(location.hostname);
+  }catch(e){return false;}
+})();
+const MUSIC_TRACKS=[
+  {f:'music/track01.m4a',t:'永遠の嘘をついてくれ · 中岛美雪'},
+  {f:'music/track02.m4a',t:'銀の龍の背に乗って · 中岛美雪'},
+  {f:'music/track03.m4a',t:'月半小夜曲 · 李克勤'},
+  {f:'music/track04.m4a',t:'山那边 · 郭涛'},
+  {f:'music/track05.m4a',t:'昴-すばる- · 谷村新司'},
+  {f:'music/track06.m4a',t:'ラブ・ストーリーは突然に · 小田和正'},
+  {f:'music/track07.m4a',t:'听海 (live) · 张学友'}
+];
+const MUSIC_LEVEL=0.32,MUSIC_DUCK=0.10; // 歌曲比合成伴奏响得多，整体压低，报牌时再压一档
+let musicAudio=null,musicIndex=0,musicFallback=false;
+function musicVolume(ducked){return Math.min(1,Math.max(0,(soundOn?appVolume:0)*(ducked?MUSIC_DUCK:MUSIC_LEVEL)));}
+function musicStart(){
+  if(!BGM_TRACK_MODE||!bgmOn||musicFallback)return;
+  if(!musicAudio){
+    musicAudio=new Audio();musicAudio.preload='auto';
+    musicAudio.addEventListener('ended',()=>{if(bgmOn&&!musicFallback)musicPlay((musicIndex+1)%MUSIC_TRACKS.length);});
+    musicAudio.addEventListener('error',()=>{ // 缺文件/误开时静默回退，不刷 404 报错
+      if(musicFallback)return;musicFallback=true;musicStop();
+      if(bgmOn&&AC&&!bgmTimer)bgmSchedule();
+    });
+  }
+  if(!musicAudio.getAttribute('src'))musicPlay(0);
+  else musicResume();
+}
+function musicPlay(i){
+  if(!musicAudio)return;
+  musicIndex=i;
+  const tr=MUSIC_TRACKS[i];
+  musicAudio.src=tr.f;
+  musicAudio.volume=musicVolume(false);
+  try{document.title='巢湖-金华红中 · ♪ '+tr.t;}catch(e){}
+  const pr=musicAudio.play();if(pr&&pr.catch)pr.catch(()=>{});
+}
+function musicStop(){if(musicAudio){try{musicAudio.pause();}catch(e){}}}
+function musicResume(){if(musicAudio&&bgmOn&&!musicFallback&&musicAudio.paused){const pr=musicAudio.play();if(pr&&pr.catch)pr.catch(()=>{});}}
+function musicDuck(on){if(musicAudio){try{musicAudio.volume=musicVolume(on);}catch(e){}}}
 // 角色性别：7 个角色中仅“梅姐”为女性，其余为男性
 const FEMALE_ROLES=['梅姐'];
 function isFemaleName(nm){return FEMALE_ROLES.indexOf(nm)>=0;}
@@ -4919,7 +4974,8 @@ rotBtnSync();
 // 2026-11-13：独立「音乐」按钮与 banshanBgm 偏好已移除；背景音乐随「声音」总开关启停。
 // 保持 AudioContext 活跃：系统据此识别为媒体播放，音量键控制游戏声音
 ['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(AC&&AC.state==='suspended')AC.resume();},{passive:true}));
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume();if(!document.hidden&&bgmTimer)bgmResync();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume();if(!document.hidden&&bgmTimer)bgmResync();if(!document.hidden&&BGM_TRACK_MODE)musicResume();});
+document.addEventListener('click',()=>{if(BGM_TRACK_MODE)musicResume();},{passive:true}); // 自动播放被拦时，任意点击即可恢复本地音源
 if(AC)AC.addEventListener('statechange',()=>{if(AC.state==='suspended')AC.resume();});
 addEventListener('resize',layout);
 // 2026-11-12 方向自适应：旋转时先清掉方向滞回再重排。部分浏览器只发 resize 不发

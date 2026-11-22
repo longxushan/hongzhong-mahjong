@@ -10,3 +10,6 @@ shot-*.png
 # 测试探针截图
 *-phase.png
 _audit8
+
+# 本地音源：商业录音，仅用户本机播放，不入库、不发布到公开 Pages
+music/
